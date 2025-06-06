@@ -1,0 +1,18 @@
+:root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    color: rgba(35, 82, 104, 0.87);
+    background-color: #fffff2;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --default-boarder: 1px solid #e8ebf0;
+    --sidebar-width: 220px;
+    --header-height: 46px;
+    --max-width: 1440px;
+    --icon-size: 1rem;
+    --z-index-main-header: 700;
+    --sticky-header-without-actions-height: calc(var(--top-nav-height) + 1px);
+    --sticky-header-with-actions-height: calc(var(--sticky-header-without-actions-height) + var(--article-actions-container-height) + 1px);
+  }

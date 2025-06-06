@@ -1,0 +1,51 @@
+/* Header.module.css */
+.stickyHeader {
+    margin: 0;
+    width: 100%;
+    position: sticky;
+    top: 0; /* Stick to the top of the viewport */
+    z-index: var(--z-index-main-header); /* Ensure Header is above other elements */
+}
+
+header {
+    margin: 0;
+    background-color: #f4f5fa;
+    border-bottom: var(--default-boarder);;
+    color: white;
+    position: relative;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: var(--header-height); /* Fixed height */
+    
+}
+
+
+header .logo {
+    font-size: 20px;
+    color: #0f2d6d; /* Example color for logo */
+}
+
+header ul {
+    list-style: none;
+    display: flex;
+    margin: 20px;
+    padding: 0;
+}
+
+header ul li {
+    margin: 0 14px 0 14px;
+}
+
+header ul li a {
+    color: #253047;
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+header ul li a:hover {
+    color: #2560ce; /* Hover effect */
+    text-decoration: underline;
+}

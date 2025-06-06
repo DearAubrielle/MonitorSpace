@@ -1,0 +1,50 @@
+.sidebarContainer{
+    position: sticky;
+    --offset: var(--sticky-header-with-actions-height);
+    --max-height: calc(100vh - var(--offset));
+    max-height: var(--max-height);
+    top: var(--offset);
+    grid-area: sidebar;
+    padding-bottom: 20px;
+}
+
+.sidebar{
+    
+    background-color: #ffffff;
+    padding: 0 20px 100px 20px;
+    flex-direction: column;
+    display: flex;
+    width: var(--sidebar-width);
+    height: 100vh;
+    max-height: calc(100vh - var(--header-height));
+    position: fixed;
+    overflow: auto;
+    margin-bottom: 30px;
+    scrollbar-width: thin;
+    border-right: var(--default-boarder);
+        
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    margin: 15px 0;
+}
+
+.sidebar ul li a {
+    color: rgb(90, 66, 109);
+    text-decoration: none;
+}
+
+.sidebar ul li a:hover {
+    color: #f72f71;
+}
+
+.activeLink {
+    font-weight: bold;
+    border-left: 4px solid #007bff; /* Example border color */
+    padding-left: 10px; /* Adjust padding to align text properly */
+}

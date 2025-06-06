@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+#layout {
+    grid-template-columns: 100%;
+
+}
+main {
+    grid-area: main;
+    background-color: #fde2f0;
+    padding: 40px;
+    
+    
+}
+.mainWrapper {
+    display: grid;
+    margin: 0;
+    grid-template-areas: "sidebar main";
+    grid-template-columns: var(--sidebar-width) 1fr;
+}
