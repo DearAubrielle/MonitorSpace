@@ -43,8 +43,8 @@ def draw_bbox_from_keypoints(frame, keypoints):
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
 # โหลดโมเดล
-model = tf.saved_model.load("C:/Users/Milamix/Documents/GitHub/MonitorSpace/Python_camera")
-cap = cv2.VideoCapture("http://192.168.100.101/videostream.cgi?user=admin&pwd=888888")  # หรือ IP camera URL
+model = tf.saved_model.load("MonitorSpace/Python_camera") # file path to your saved model
+cap = cv2.VideoCapture("http://192.168.100.101/videostream.cgi?user=user&pwd=pasword")  # หรือ IP camera URL
 
 while True:
     ret, frame = cap.read()
