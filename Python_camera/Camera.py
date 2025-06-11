@@ -44,7 +44,7 @@ def draw_bbox_from_keypoints(frame, keypoints):
 
 # โหลดโมเดล
 model = tf.saved_model.load("C:/Users/Milamix/Documents/GitHub/MonitorSpace/Python_camera")
-cap = cv2.VideoCapture(0)  # หรือ IP camera URL
+cap = cv2.VideoCapture("http://192.168.100.101/videostream.cgi?user=admin&pwd=888888")  # หรือ IP camera URL
 
 while True:
     ret, frame = cap.read()
@@ -64,14 +64,17 @@ while True:
         draw_bbox_from_keypoints(frame, keypoints)
 
         if NOTIFY_MODE == 'once' and not fall_detected:
-            send_line_notify_image("🚨 ตรวจพบว่ามีการล้ม!", frame)
+            print("🚨 ล้ม detected!")
+            # send_line_notify_image("🚨 ตรวจพบว่ามีการล้ม!", frame)
             fall_detected = True
 
         elif NOTIFY_MODE == 'repeat':
-            send_line_notify_image("🚨 ล้มอยู่ในกรอบกล้อง", frame)
+            print("🚨 ล้ม detected!")
+            # send_line_notify_image("🚨 ล้มอยู่ในกรอบกล้อง", frame)
 
         elif NOTIFY_MODE == 'limit' and notify_count < NOTIFY_LIMIT:
-            send_line_notify_image(f"🚨 การล้มครั้งที่ {notify_count+1}", frame)
+            print(f"🚨 การล้มครั้งที่ ..  detected!")
+            # send_line_notify_image(f"🚨 การล้มครั้งที่ {notify_count+1}", frame)
             notify_count += 1
 
     else:

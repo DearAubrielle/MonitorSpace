@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import tensorflow as tf
 import requests
 
 LINE_NOTIFY_TOKEN = 'YOUR_LINE_NOTIFY_TOKEN'  # ใส่ Token ของคุณที่นี่
@@ -42,8 +41,6 @@ def draw_bbox_from_keypoints(frame, keypoints):
         x2, y2 = int(max(x_coords)), int(max(y_coords))
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-# โหลดโมเดล
-model = tf.saved_model.load("C:/Users/Milamix/Documents/GitHub/MonitorSpace/Python_camera")
 cap = cv2.VideoCapture(0)  # หรือ IP camera URL
 
 while True:
