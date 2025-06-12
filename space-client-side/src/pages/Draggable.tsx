@@ -1,36 +1,50 @@
 // App.tsx
-import React, { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   DndContext,
   useDraggable,
   DragEndEvent,
 } from "@dnd-kit/core";
 
-// Type for box position
-type Position = {
-  x: number;
-  y: number;
+// Type for box position as percentage
+type PercentPosition = {
+  x: number; // 0 to 1
+  y: number; // 0 to 1
 };
 
 // Props for each draggable box
 interface DraggableBoxProps {
   id: string;
-  position: Position;
+  position: PercentPosition;
+  containerWidth: number;
+  containerHeight: number;
 }
 
-// Size of each box
-const boxSize = { width: 80, height: 80 };
+// Box size as a percentage of container size
+const BOX_SIZE_PERCENT = 0.15;
 
 // Draggable box component
-const DraggableBox: React.FC<DraggableBoxProps> = ({ id, position }) => {
+const DraggableBox: React.FC<DraggableBoxProps> = ({
+  id,
+  position,
+  containerWidth,
+  containerHeight,
+}) => {
+  // Make box size square based on the smallest side of the container
+  const boxSide = Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT;
+
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
+
+  // Convert percent to px for rendering
+  const left = position.x * (containerWidth - boxSide);
+  const top = position.y * (containerHeight - boxSide);
 
   const style: React.CSSProperties = {
     position: "absolute",
-    top: position.y,
-    left: position.x,
-    width: boxSize.width,
-    height: boxSize.height,
+    top,
+    left,
+    width: boxSide,
+    height: boxSide,
     backgroundColor: "#03A9F4",
     color: "white",
     display: "flex",
@@ -54,11 +68,29 @@ const DraggableBox: React.FC<DraggableBoxProps> = ({ id, position }) => {
 export default function Draggable() {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const [boxes, setBoxes] = useState<Record<string, Position>>({
-    box1: { x: 40, y: 50 },
-    box2: { x: 150, y: 100 },
-    box3: { x: 300, y: 200 },
+  // Store positions as percentages
+  const [boxes, setBoxes] = useState<Record<string, PercentPosition>>({
+    box1: { x: 0.1, y: 0.1 },
+    box2: { x: 0.3, y: 0.3 },
+    box3: { x: 0.6, y: 0.6 },
   });
+
+  const [containerSize, setContainerSize] = useState({ width: 600, height: 480 });
+
+  // Update container size on resize
+  useEffect(() => {
+    function updateSize() {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    }
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { delta, active } = event;
@@ -69,43 +101,62 @@ export default function Draggable() {
     const containerWidth = container.offsetWidth;
     const containerHeight = container.offsetHeight;
 
+    // Use square box size for calculations
+    const boxSide = Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT;
+
     const current = boxes[id];
     if (!current) return;
 
-    const newX = current.x + delta.x;
-    const newY = current.y + delta.y;
+    // Convert percent to px
+    const currentX = current.x * (containerWidth - boxSide);
+    const currentY = current.y * (containerHeight - boxSide);
+
+    let newX = currentX + delta.x;
+    let newY = currentY + delta.y;
 
     // Clamp to stay inside container
-    const clampedX = Math.max(0, Math.min(newX, containerWidth - boxSize.width));
-    const clampedY = Math.max(0, Math.min(newY, containerHeight - boxSize.height));
+    newX = Math.max(0, Math.min(newX, containerWidth - boxSide));
+    newY = Math.max(0, Math.min(newY, containerHeight - boxSide));
+
+    // Convert back to percent
+    const percentX = (containerWidth - boxSide) === 0 ? 0 : newX / (containerWidth - boxSide);
+    const percentY = (containerHeight - boxSide) === 0 ? 0 : newY / (containerHeight - boxSide);
 
     setBoxes((prev) => ({
       ...prev,
-      [id]: { x: clampedX, y: clampedY },
+      [id]: { x: percentX, y: percentY },
     }));
   };
 
   return (
-    <div style={{ padding: 40, background: "#fefef0", height: "100vh" }}>
+    <div style={{ padding: 24, background: "#fefef0", minHeight: "100vh" }}>
       <h2 style={{ color: "#236478" }}>Multi-Box Drag (TSX)</h2>
       <div
         ref={containerRef}
         style={{
           position: "relative",
-          width: 500,
-          height: 400,
+          width: "100%",
+          maxWidth: 600,
+          aspectRatio: "5 / 4",
           border: "2px solid #ccc",
           borderRadius: 12,
           backgroundColor: "#fff",
           overflow: "hidden",
+          margin: "0 auto",
         }}
       >
         <DndContext onDragEnd={handleDragEnd}>
           {Object.entries(boxes).map(([id, position]) => (
-            <DraggableBox key={id} id={id} position={position} />
+            <DraggableBox
+              key={id}
+              id={id}
+              position={position}
+              containerWidth={containerSize.width}
+              containerHeight={containerSize.height}
+            />
           ))}
         </DndContext>
       </div>
     </div>
   );
-};
+}
