@@ -31,8 +31,8 @@ const CONTAINER_SIZE_PRESETS = [
 const BOX_SIZE_PERCENT = 0.15;
 
 // Minimum and maximum box size in pixels
-const MIN_BOX_SIZE = 10;
-const MAX_BOX_SIZE = 60;
+const MIN_BOX_SIZE = 20;
+const MAX_BOX_SIZE = 40;
 
 // Draggable box component
 const DraggableBox: React.FC<DraggableBoxProps> = ({
@@ -122,7 +122,7 @@ export default function Draggable() {
   }, []);
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { delta, active } = event;
+    const { active, delta } = event;
     const id = active.id as string;
     const container = containerRef.current;
     if (!container) return;
@@ -131,19 +131,28 @@ export default function Draggable() {
     const containerHeight = containerSize.height;
 
     // Use square box size for calculations
-    const boxSize = Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT;
+    const boxSize = Math.max(
+      MIN_BOX_SIZE,
+      Math.min(Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT, MAX_BOX_SIZE)
+    );
 
     const current = boxes[id];
     if (!current) return;
 
-    // Convert percent to px
+    // Get the current box's top-left in px
     const currentX = current.x * (containerWidth - boxSize);
     const currentY = current.y * (containerHeight - boxSize);
 
+    // The new top-left, after drag
     let newX = currentX + delta.x;
     let newY = currentY + delta.y;
 
-    // Clamp to stay inside container
+    // If you want the box's center to be at the cursor, offset by half the box size
+    // (Uncomment the next two lines if you want this behavior)
+    // newX = newX + boxSize / 2;
+    // newY = newY + boxSize / 2;
+
+    // Clamp so the box stays inside the container
     newX = Math.max(0, Math.min(newX, containerWidth - boxSize));
     newY = Math.max(0, Math.min(newY, containerHeight - boxSize));
 
@@ -191,8 +200,8 @@ export default function Draggable() {
           borderRadius: 12,
           backgroundColor: "#fff",
           overflow: "hidden",
-          margin: "0 auto",
-          transition: "width 0.3s, height 0.3s",
+          margin: "0",
+          transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
         }}
       >
         <DndContext onDragEnd={handleDragEnd}>
