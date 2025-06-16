@@ -28,7 +28,7 @@ const CONTAINER_SIZE_PRESETS = [
 ];
 
 // Box size as a percentage of container size
-const BOX_SIZE_PERCENT = 0.15;
+const BOX_SIZE_PERCENT = 0.07;
 
 // Minimum and maximum box size in pixels
 const MIN_BOX_SIZE = 20;
@@ -59,13 +59,17 @@ const DraggableBox: React.FC<DraggableBoxProps> = ({
     left,
     width: boxSize,
     height: boxSize,
+    fontSize: "12px",
     backgroundColor: "#03A9F4",
     color: "white",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
+    borderRadius: 50,
     cursor: "grab",
+    margin: 0,
+    padding: 0,
+
     transform: transform
       ? `translate(${transform.x}px, ${transform.y}px)`
       : undefined,
@@ -87,9 +91,9 @@ export default function Draggable() {
 
   // Store positions as percentages
   const [boxes, setBoxes] = useState<Record<string, PercentPosition>>({
-    box1: { x: 0.1, y: 0.1 },
-    box2: { x: 0.3, y: 0.3 },
-    box3: { x: 0.6, y: 0.6 },
+    b1: { x: 0.1, y: 0.1 },
+    b2: { x: 0.3, y: 0.3 },
+    b3: { x: 0.6, y: 0.6 },
   });
 
   // Track container width and height from preset
@@ -147,8 +151,7 @@ export default function Draggable() {
     let newX = currentX + delta.x;
     let newY = currentY + delta.y;
 
-    // If you want the box's center to be at the cursor, offset by half the box size
-    // (Uncomment the next two lines if you want this behavior)
+    // offset by half the box size,box's center at the cursor uncomment next two line
     // newX = newX + boxSize / 2;
     // newY = newY + boxSize / 2;
 
@@ -201,6 +204,7 @@ export default function Draggable() {
           backgroundColor: "#fff",
           overflow: "hidden",
           margin: "0",
+          boxSizing: "content-box", 
           transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
         }}
       >
