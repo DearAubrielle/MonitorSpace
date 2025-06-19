@@ -3,53 +3,59 @@ import cvzone
 import math
 from ultralytics import YOLO
 
-cap = cv2.VideoCapture(0)
-# cap = cv2.VideoCapture("http://192.168.100.101/videostream.cgi?user=user&pwd=pasword")  # หรือ IP camera URL
+cap = cv2.VideoCapture("http://192.168.100.101/videostream.cgi?user=admin&pwd=888888")
 
 model = YOLO('yolov8s.pt')
 
-classnames = []
 with open('classes.txt', 'r') as f:
     classnames = f.read().splitlines()
 
+SKIP_FRAMES = 3  # Process every 3rd frame
+frame_count = 0
+FALL_ASPECT_RATIO = 1.2  # If width/height > this, likely fallen
+CONFIDENCE_THRESHOLD = 80
+PADDING = 20  # Padding in pixels
 
 while True:
     ret, frame = cap.read()
-    frame = cv2.resize(frame, (980,740))
+    if not ret:
+        break
 
+    frame_count += 1
+    if frame_count % SKIP_FRAMES != 0:
+        continue
+
+    frame_h, frame_w = frame.shape[:2]
     results = model(frame)
 
     for info in results:
-        parameters = info.boxes
-        for box in parameters:
-            x1, y1, x2, y2 = box.xyxy[0]
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-            confidence = box.conf[0]
-            class_detect = box.cls[0]
-            class_detect = int(class_detect)
-            class_detect = classnames[class_detect]
-            conf = math.ceil(confidence * 100)
+        for box in info.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            confidence = float(box.conf[0])
+            class_idx = int(box.cls[0])
+            class_name = classnames[class_idx] if class_idx < len(classnames) else str(class_idx)
+            conf_percent = math.ceil(confidence * 100)
 
+            if conf_percent > CONFIDENCE_THRESHOLD and class_name == 'person':
+                # Add padding, ensuring coordinates stay within frame
+                x1_pad = max(x1 - PADDING, 0)
+                y1_pad = max(y1 - PADDING, 0)
+                x2_pad = min(x2 + PADDING, frame_w - 1)
+                y2_pad = min(y2 + PADDING, frame_h - 1)
 
-            # implement fall detection using the coordinates x1,y1,x2
-            height = y2 - y1
-            width = x2 - x1
-            threshold  = height - width
+                width = x2_pad - x1_pad
+                height = y2_pad - y1_pad
+                aspect_ratio = width / height if height > 0 else 0
 
-            if conf > 80 and class_detect == 'person':
-                cvzone.cornerRect(frame, [x1, y1, width, height], l=30, rt=6)
-                cvzone.putTextRect(frame, f'{class_detect}', [x1 + 8, y1 - 12], thickness=2, scale=2)
-            
-            if threshold < 0:
-                cvzone.putTextRect(frame, 'Fall Detected', [height, width], thickness=2, scale=2)
-            
-            else:pass
+                cvzone.cornerRect(frame, [x1_pad, y1_pad, width, height], l=30, rt=6)
+                cvzone.putTextRect(frame, f'{class_name} {conf_percent}%', [x1_pad + 8, y1_pad - 12], thickness=2, scale=2)
 
+                if aspect_ratio > FALL_ASPECT_RATIO:
+                    cvzone.putTextRect(frame, 'Fall Detected!', [x1_pad, y2_pad + 30], thickness=2, scale=2, colorR=(0,0,255))
 
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('t'):
         break
-
 
 cap.release()
 cv2.destroyAllWindows()
