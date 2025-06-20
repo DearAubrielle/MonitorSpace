@@ -10,6 +10,7 @@ import DndKit from './pages/DndKit.tsx';
 import Draggable from './pages/Draggable.tsx';
 import FloorPlanPage from './pages/FloorplanPage.tsx';
 import SensorDataComponent from './pages/SensorDataComponent.tsx';
+import FloorplanTest from './pages/FloorplanTest.tsx';
 
 const routes = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ const routes = createBrowserRouter([
       { index: true, Component: FloorPlan },
       { path: '/home', Component: Home },
       { path: '/googogaga', Component: Googogaga },
+      { path: '/floorplantest', Component: FloorplanTest },
       { path: '/watage', Component: Watage },
       { path: '/floorplan', Component: FloorPlan },
       { path: '/about', Component: About },
