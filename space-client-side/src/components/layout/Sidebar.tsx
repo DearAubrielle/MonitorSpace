@@ -3,6 +3,9 @@ import styles from './Sidebar.module.css';
 
 const Sidebar: React.FC = () => {
   const navLinks = [
+    { to: "/floorplantest", label: "Floor Plan Test" },
+    { to: "/sensordata", label: "Sensor Data" },
+
     { to: "/floorplan", label: "Floor Plan" },
     { to: "/googogaga", label: "Googogaga" },
     { to: "/watage", label: "Watage" },
