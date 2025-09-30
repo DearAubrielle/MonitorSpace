@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-<<<<<<< Updated upstream
-=======
+
 const http = require("http");
 const WebSocket = require("ws");
 const path = require("path");
@@ -9,7 +8,7 @@ const dotenv = require("dotenv");
 
 const db = require('./db'); // Make sure this is at the top if not already
 dotenv.config();
->>>>>>> Stashed changes
+
 const app = express();
 const port = 8080;
 const usersRoutes = require("./routes/users");
@@ -30,10 +29,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/floorplans", floorplansRoutes);
 app.use('/private_uploads', express.static(path.join(__dirname, 'private_uploads')));
 
-<<<<<<< Updated upstream
-app.listen(port, () => {
-  console.log(`Server started on port ${port} index.js at http://localhost:${port} jaaaaaaaZz`);
-=======
+
 // Create HTTP server and WebSocket server
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -66,7 +62,7 @@ server.listen(port, () => {
   // Log database connection info
   const dbConfig = db.pool ? db.pool.config.connectionConfig : db.config.connectionConfig;
   console.log(`Database running on ${dbConfig.host}, database: ${dbConfig.database}, user: ${dbConfig.user}`);
->>>>>>> Stashed changes
+
 });
 
 
