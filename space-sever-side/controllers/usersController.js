@@ -3,9 +3,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
-  const { username, password } = req.body;
-  const hash = await bcrypt.hash(password, 10);
-  await db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash]);
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await db.query(
+    'INSERT INTO users (username, email, password) VALUES (?, ?, ?)', 
+    [username, email, hashedPassword]
+  );
   res.json({ message: 'User registered' });
 };
 
@@ -16,6 +22,8 @@ exports.login = async (req, res) => {
   if (rows.length === 0 || !(await bcrypt.compare(password, rows[0].password))) {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
+
+  console.log(`Login success for user: ${username}`); // Log login success
 
   const token = jwt.sign({ id: rows[0].id }, process.env.JWT_SECRET, { expiresIn: '1h' });
   res.json({ token });

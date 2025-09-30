@@ -1,13 +1,21 @@
 const express = require("express");
 const cors = require("cors");
+
+
 const http = require("http");
 const WebSocket = require("ws");
 const path = require("path");
+const dotenv = require("dotenv");
+
+const db = require('./db'); // Make sure this is at the top if not already
+dotenv.config();
+
 
 const app = express();
 const port = 8080;
 const usersRoutes = require("./routes/users");
 const floorplansRoutes = require("./routes/floorplans");
+
 
 const corsOptions = {
   origin: ["http://localhost:5173"],
@@ -20,6 +28,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use("/api/users", usersRoutes);
 app.use("/api/floorplans", floorplansRoutes);
 app.use('/private_uploads', express.static(path.join(__dirname, 'private_uploads')));
+
 
 // Create HTTP server and WebSocket server
 const server = http.createServer(app);
@@ -43,6 +52,19 @@ function broadcastSensorData() {
     }
   });
 }
+
+
+// Emit data every 2 seconds (simulate sensor data)
+setInterval(broadcastSensorData, 2000);
+
+// Start server
+server.listen(port, () => {
+  console.log(`Server started on port ${port} (HTTP + WebSocket) at http://localhost:${port}`);
+  // Log database connection info
+  const dbConfig = db.pool ? db.pool.config.connectionConfig : db.config.connectionConfig;
+  console.log(`Database running on ${dbConfig.host}, database: ${dbConfig.database}, user: ${dbConfig.user}`);
+
+});
 
 // Emit data every 2 seconds (simulate sensor data)
 setInterval(broadcastSensorData, 2000);
