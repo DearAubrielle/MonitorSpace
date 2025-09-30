@@ -110,21 +110,6 @@ export default function Draggable() {
     });
   }, [containerSizePreset]);
 
-  // Optionally, update width on window resize if you want
-  useEffect(() => {
-    function updateSize() {
-      if (containerRef.current) {
-        setContainerSize((prev) => ({
-          ...prev,
-          width: containerRef.current?.offsetWidth ?? prev.width,
-        }));
-      }
-    }
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, delta } = event;
     const id = active.id as string;

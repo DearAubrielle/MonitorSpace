@@ -1,161 +1,278 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import styles from './FloorPlan.module.css';
+import { useRef, useEffect, useState } from 'react';
+import AspectRatioBox from '../components/AspectRatioBox';
 import {
   DndContext,
   useDraggable,
-  useSensor,
-  useSensors,
-  PointerSensor,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-type Device = {
-  sensor_id: number;
-  sensor_name: string;
-  sensor_type: string;
-  location: string;
-  floorplan_id: number; // Allow null for items not associated with a floorplan
-  x_position: number | null; // Allow null for items not associated with a floorplan
-  y_position: number | null; // Allow null for items not associated with a floorplan
+
+// Type for box position as percentage
+type PercentPosition = {
+  x: number; // 0 to 1
+  y: number; // 0 to 1
 };
 
-// Reusable draggable device component
-function DraggableDevice({
-  device,
-  onDragEnd,
-}: {
-  device: Device;
-  onDragEnd: (id: number, x: number, y: number) => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: device.sensor_id,
-  });
-
-  const style: React.CSSProperties = {
-    position: 'absolute',
-    top: device.y_position,
-    left: device.x_position,
-    transform: transform
-      ? `translate(${transform.x}px, ${transform.y}px)`
-      : undefined,
-    //backgroundColor: device.status === 'online' ? 'green' : 'red',
-    color: 'white',
-    padding: '2px 5px',
-    borderRadius: '4px',
-    cursor: 'grab',
-    transformOrigin: 'top left',
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      {device.sensor_name}
-    </div>
-  );
-}
-type FloorPlan = {
+// Device type
+interface Device {
+  id: string;
+  name: string;
+  device_type_id: number;
   floorplan_id: number;
+  x_percent: number; // 0 to 1
+  y_percent: number; // 0 to 1
+}
+
+// Props for each draggable box
+// Update DraggableBoxProps to accept onClick
+interface DraggableBoxProps {
+  id: string;
+  label: string;
+  position: PercentPosition;
+  containerWidth: number;
+  containerHeight: number;
+  onClick?: () => void; // <-- add this
+}
+
+interface floorplan {
+  id: number;
   name: string;
   image_url: string;
   description: string;
 }
+// Box size as a percentage of container size
+const BOX_SIZE_PERCENT = 0.07;
 
-export default function FloorPlanPage() {
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [selectedFloor, setSelectedFloor] = useState<FloorPlan | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
+// Minimum and maximum box size in pixels
+const MIN_BOX_SIZE = 20;
+const MAX_BOX_SIZE = 40;
 
-  const sensors = useSensors(useSensor(PointerSensor));
+// Draggable box component
+const DraggableBox: React.FC<DraggableBoxProps> = ({
+  id,
+  label,
+  position,
+  containerWidth,
+  containerHeight,
+  onClick,
+}) => {
+  // Box size is always square, clamped between MIN_BOX_SIZE and MAX_BOX_SIZE
+  const boxSize = Math.max(
+    MIN_BOX_SIZE,
+    Math.min(Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT, MAX_BOX_SIZE)
+  );
 
-  useEffect(() => {
-  fetch(`${SERVER_URL}/api/floorplans`)
-    .then((res) => res.json())
-    .then((data) => {
-      console.log('floorPlans API response:', data);
-      setFloorPlans(data.floorPlans); // adjust if your API returns a different structure
-    });
-}, []);
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
-  const handleSelectFloor = (floorId: number) => {
-    axios.get(`/api/floor/${floorId}`).then((res) => {
-      setSelectedFloor(res.data.floor);
-      setDevices(res.data.devices);
-    });
-  };
+  // Convert percent to px for rendering
+  const left = position.x * (containerWidth - boxSize);
+  const top = position.y * (containerHeight - boxSize);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const id = event.active.id;
-    const device = devices.find((d) => d.sensor_id === id);
-    if (!device || !event.delta) return;
+  const style: React.CSSProperties = {
+    position: "absolute",
+    top,
+    left,
+    width: boxSize,
+    height: boxSize,
+    fontSize: "12px",
+    backgroundColor: "#03A9F4",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 50,
+    cursor: "grab",
+    margin: 0,
+    padding: 0,
 
-    // Update local state
-    const updatedDevices = devices.map((d) =>
-      d.sensor_id === id
-        ? {
-            ...d,
-            x: d.x + event.delta.x,
-            y: d.y + event.delta.y,
-          }
-        : d
-    );
-    setDevices(updatedDevices);
-
-    // Optional: send update to backend
-    const movedDevice = updatedDevices.find((d) => d.sensor_id === id);
-    axios.post('/api/device/update-position', {
-      id,
-      x: movedDevice?.x,
-      y: movedDevice?.y,
-    });
+    transform: transform
+      ? `translate(${transform.x}px, ${transform.y}px)`
+      : undefined,
+    transition: transform ? "none" : "transform 0.2s",
   };
 
   return (
-    <div style={{ display: 'flex' }}>
-      <div
-        style={{
-          width: '200px',
-          padding: '1rem',
-          borderRight: '1px solid #ccc',
-        }}
-      >
-        <h3>Floor Plans</h3>
-        <ul>
-          {Array.isArray(floorPlans) ? (
-            floorPlans.map((floor) => (
-              <li key={floor.floorplan_id}>
-                <button onClick={() => handleSelectFloor(floor.floorplan_id)}>
-                  {floor.name}
-                </button>
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={style}
+      onPointerUp={onClick} // <-- use onPointerUp instead of onClick
+    >
+      {label}
+    </div>
+  );
+};
+
+export default function FloorplanPage() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [floorplans, setFloorplans] = useState<floorplan[]>([]);
+  const [selected, setSelected] = useState<floorplan | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 500, height: 500 });
+  const [devices, setDevices] = useState<Device[]>([]);
+  // Fetch floorplans only (no image size logic here)
+  useEffect(() => {
+    const fetchFloorplans = async () => {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/floorplans/getf`);
+        const data = await response.json();
+        setFloorplans(data);
+        if (data && data.length > 0) {
+          setSelected(data[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching floorplans:', error);
+      }
+    };
+
+    fetchFloorplans();
+  }, []);
+
+  // Fetch devices from backend
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/floorplans/getd`);
+        const data = await response.json();
+        setDevices(data);
+      } catch (error) {
+        console.error('Error fetching devices:', error);
+      }
+    };
+    fetchDevices();
+  }, []);
+
+  // Only fetch image size when selected floorplan changes
+  useEffect(() => {
+    if (selected) {
+      const img = new window.Image();
+      img.onload = () => {
+        setContainerSize({
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        });
+      };
+      img.src = SERVER_URL + selected.image_url;
+    }
+  }, [selected]);
+
+  // Responsive: update rendered width/height on resize
+  const [renderedSize, setRenderedSize] = useState({ width: 1, height: 1 });
+  useEffect(() => {
+    function updateSize() {
+      if (containerRef.current) {
+        setRenderedSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    }
+    window.addEventListener('resize', updateSize);
+    updateSize();
+    return () => window.removeEventListener('resize', updateSize);
+  }, [containerSize.width, containerSize.height]);
+
+  // Store device positions separately for drag state
+  const [devicePositions, setDevicePositions] = useState<Record<string, PercentPosition>>({});
+
+  // Update devicePositions when devices or selected floorplan changes
+  useEffect(() => {
+    if (!selected) return;
+    const filtered = devices.filter(d => d.floorplan_id === selected.id);
+    const positions: Record<string, PercentPosition> = {};
+    filtered.forEach(device => {
+      positions[device.id] = { x: device.x_percent, y: device.y_percent };
+    });
+    setDevicePositions(positions);
+  }, [devices, selected]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, delta } = event;
+    const id = active.id as string;
+    const containerWidth = renderedSize.width;
+    const containerHeight = renderedSize.height;
+
+    const boxSize = Math.max(
+      MIN_BOX_SIZE,
+      Math.min(Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT, MAX_BOX_SIZE)
+    );
+
+    const current = devicePositions[id];
+    if (!current) return;
+
+    const currentX = current.x * (containerWidth - boxSize);
+    const currentY = current.y * (containerHeight - boxSize);
+
+    let newX = currentX + delta.x;
+    let newY = currentY + delta.y;
+
+    newX = Math.max(0, Math.min(newX, containerWidth - boxSize));
+    newY = Math.max(0, Math.min(newY, containerHeight - boxSize));
+
+    const percentX = (containerWidth - boxSize) === 0 ? 0 : newX / (containerWidth - boxSize);
+    const percentY = (containerHeight - boxSize) === 0 ? 0 : newY / (containerHeight - boxSize);
+
+    setDevicePositions((prev) => ({
+      ...prev,
+      [id]: { x: percentX, y: percentY },
+    }));
+  };
+
+  // Example handler
+  const handleDeviceClick = (device: Device) => {
+    alert(`Device: ${device.name} (ID: ${device.id})`);
+    // Or open a popup, etc.
+  };
+
+  return (
+    <div>
+      <h2 style={{ fontSize: '1rem', marginLeft: '0.7rem' }}>Floor Plan</h2>
+      <div className={styles.Wrapper}>
+        {/* Floorplan List */}
+        <div className={styles.FloorList}>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {floorplans.map((plan) => (
+              <li
+                key={plan.id}
+                onClick={() => setSelected(plan)}
+                className={`${styles.List} ${selected?.id === plan.id ? styles.Selected : styles.Unselected}`}
+              >
+                {plan.name}
               </li>
-            ))
-          ) : (
-            <p>No floor plans found</p>
+            ))}
+          </ul>
+        </div>
+
+        {/* Floorplan Image with Drag-and-Drop */}
+        <div className={styles.FloorPlan}>
+          {selected && (
+            <div ref={containerRef} style={{ width: '100%' }}>
+              <AspectRatioBox
+                originalWidth={containerSize.width}
+                originalHeight={containerSize.height}
+                backgroundImage={SERVER_URL + selected.image_url}
+                maxWidth="100%"
+              >
+                <DndContext onDragEnd={handleDragEnd}>
+                  {devices
+                    .filter(device => device.floorplan_id === selected?.id)
+                    .map(device => (
+                      <DraggableBox
+                        key={device.id}
+                        id={device.id}
+                        label={device.id}
+                        position={devicePositions[device.id] || { x: device.x_percent, y: device.y_percent }}
+                        containerWidth={renderedSize.width}
+                        containerHeight={renderedSize.height}
+                        onClick={() => handleDeviceClick(device)} // <-- add this
+                      />
+                    ))}
+                </DndContext>
+              </AspectRatioBox>
+            </div>
           )}
-        </ul>
-      </div>
-
-      <div style={{ flex: 1, position: 'relative', padding: '1rem' }}>
-        {selectedFloor ? (
-          <div style={{ position: 'relative' }}>
-            <h2>{selectedFloor.name}</h2>
-            <img
-              src={selectedFloor.image_url}
-              alt={selectedFloor.name}
-              style={{ width: '100%', maxWidth: '800px' }}
-            />
-
-            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-              {devices.map((device) => (
-                <DraggableDevice
-                  key={device.sensor_id}
-                  device={device}
-                  onDragEnd={handleDragEnd}
-                />
-              ))}
-            </DndContext>
-          </div>
-        ) : (
-          <p>Select a floor to view it.</p>
-        )}
+        </div>
       </div>
     </div>
   );

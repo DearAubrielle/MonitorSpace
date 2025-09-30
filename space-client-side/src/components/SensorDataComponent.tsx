@@ -1,5 +1,5 @@
 // SensorData.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type SensorData = {
   temperature: string;
@@ -9,26 +9,36 @@ type SensorData = {
 
 export default function SensorDataComponent() {
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Connect to the correct WebSocket port (8080)
-    const socket = new WebSocket('ws://localhost:8080');
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data) as SensorData;
-      setSensorData(data);
-    };
+    const socket = new WebSocket('ws://localhost:8080/');
+    socketRef.current = socket;
 
     socket.onopen = () => {
       console.log('WebSocket connection established');
     };
 
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    socket.onerror = (event) => {
+      console.error('WebSocket error:', event);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as SensorData;
+        setSensorData(data);
+      } catch {
+        console.error('Failed to parse message:', event.data);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log('WebSocket closed');
     };
 
     return () => {
-      socket.close();
+      socketRef.current?.close();
+      console.log('WebSocket cleanup called');
     };
   }, []);
 

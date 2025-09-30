@@ -24,7 +24,7 @@ const AspectRatioBox: React.FC<AspectRatioBoxProps> = ({
   const containerStyle: React.CSSProperties = {
     position: "relative",
     width: "100%",
-    paddingBottom: `${aspectRatio * 100}%`, // maintains ratio
+    paddingBottom: `${aspectRatio * 100}%`, // maintains ratio in responsive design important for aspect ratio
     maxWidth,
     maxHeight,
     ...style
