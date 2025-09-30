@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
+
 const http = require("http");
 const WebSocket = require("ws");
 const path = require("path");
@@ -9,11 +10,11 @@ const dotenv = require("dotenv");
 const db = require('./db'); // Make sure this is at the top if not already
 dotenv.config();
 
+
 const app = express();
 const port = 8080;
 const usersRoutes = require("./routes/users");
 const floorplansRoutes = require("./routes/floorplans");
-const path = require("path");
 
 
 const corsOptions = {
@@ -22,7 +23,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
-
 
 // Mount routes
 app.use("/api/users", usersRoutes);
@@ -53,6 +53,7 @@ function broadcastSensorData() {
   });
 }
 
+
 // Emit data every 2 seconds (simulate sensor data)
 setInterval(broadcastSensorData, 2000);
 
@@ -65,6 +66,13 @@ server.listen(port, () => {
 
 });
 
+// Emit data every 2 seconds (simulate sensor data)
+setInterval(broadcastSensorData, 2000);
+
+// Start server
+server.listen(port, () => {
+  console.log(`Server started on port ${port} (HTTP + WebSocket) at http://localhost:${port}`);
+});
 
 
 
