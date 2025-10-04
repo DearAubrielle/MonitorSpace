@@ -1,0 +1,140 @@
+.container {
+  min-height: 100vh;
+  padding: 0 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 10px;
+}
+.Wrapper {
+  max-width: 100% ;
+  display: grid;
+  grid-template-areas: 
+  "left right";
+  grid-template-columns: 7fr 3fr;
+  gap: 1rem;
+}
+.left {
+  grid-area: left;
+}
+.right {
+  font-size: 20px;
+  grid-area: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: hsl(0, 0%, 0%);
+}
+
+.addButton {
+    margin-top: 10px;
+  padding: 0.75rem 1.5rem;
+  background-color:hsl(223, 58%, 16%);
+  color: hsl(0, 0%, 100%);
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.addButton:hover {
+  opacity: 0.9;
+}
+
+.deviceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.deviceCard {
+  padding: 0 1.5rem 2rem;
+  border: 1px solid hsl(223, 31%, 75%);
+  border-radius: 8px;
+  background-color: hsl(0, 0%, 100%);
+  box-shadow: 0 1px 3px rgba(148, 147, 147, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.deviceCard:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.deviceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.deviceName {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(223, 58%, 16%);
+}
+
+.statusBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.statusBadge.online {
+  background-color: hsl(120, 70%, 90%);
+  color: hsl(120, 70%, 30%);
+}
+
+.statusBadge.offline {
+  background-color: hsl(225, 29%, 95%);
+  color: hsl(222, 14%, 47%);
+}
+
+.deviceType {
+  color: hsl(222, 10%, 47%);
+}
+
+.deviceActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionButton {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background-color: hsl(223, 58%, 16%);
+  color: hsl(223, 31%, 75%);
+  border: none;
+  border-radius: 2px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.actionButton:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .deviceGrid {
+    grid-template-columns: 1fr;
+  }
+}

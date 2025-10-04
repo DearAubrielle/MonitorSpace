@@ -3,7 +3,6 @@ import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
   const navLinks = [
-    { to: '/floorplantest', label: 'Floor Plan Test' },
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/floorplanpage', label: 'Floor Plans' },
     { to: '/device', label: 'Devices' },

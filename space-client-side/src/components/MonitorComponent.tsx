@@ -31,12 +31,15 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
                         boxShadow: selectedCameraId === camera.id ? '0 0 8px #0078d4' : undefined,
                         position: 'relative',
                         background: '#fff',
+                        alignItems: 'left',
+                        display: 'flex',
+                        flexDirection: 'column',
                     }}
                 >
                     <div style={{ fontWeight: 'bold', marginBottom: 8 }}>{camera.name}</div>
-                    <video
+                    <img
                         src={camera.streamUrl}
-                        controls
+                        alt={camera.name}
                         style={{ width: '100%', borderRadius: 4 }}
                     />
                     <button

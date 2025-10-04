@@ -141,7 +141,7 @@ export default function FloorplanTest() {
   useEffect(() => {
     const fetchDevices = async () => {
       try {
-        const response = await fetch(`${SERVER_URL}/api/floorplans/getd`);
+        const response = await fetch(`${SERVER_URL}/api/devices/getd`);
         const data = await response.json();
         setDevices(data);
       } catch (error) {
@@ -265,7 +265,7 @@ export default function FloorplanTest() {
       // Send a PUT request for each device being added
       await Promise.all(
         toAdd.map((device) =>
-          fetch(`${SERVER_URL}/api/floorplans/putd/${device.id}`, {
+          fetch(`${SERVER_URL}/api/devices/putd/${device.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ floorplan_id: selected.id }),
