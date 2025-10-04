@@ -27,6 +27,7 @@ app.use(express.json({ limit: "10mb" }));
 // Mount routes
 app.use("/api/users", usersRoutes);
 app.use("/api/floorplans", floorplansRoutes);
+app.use("/api/devices", require("./routes/devices"));
 app.use('/private_uploads', express.static(path.join(__dirname, 'private_uploads')));
 
 
@@ -53,9 +54,27 @@ function broadcastSensorData() {
   });
 }
 
+// Broadcast helper
+function broadcast(data) {
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify(data));
+    }
+  });
+}
 
-// Emit data every 2 seconds (simulate sensor data)
-setInterval(broadcastSensorData, 2000);
+
+// --- Send all device latest values every 2s ---
+setInterval(async () => {
+  try {
+    const [rows] = await db.query(
+      "SELECT id, latest_value FROM devices"
+    );
+    broadcast(rows); // send all devices in one packet
+  } catch (err) {
+    console.error("DB error:", err);
+  }
+}, 2000);
 
 // Start server
 server.listen(port, () => {
@@ -66,39 +85,3 @@ server.listen(port, () => {
 
 });
 
-// Emit data every 2 seconds (simulate sensor data)
-setInterval(broadcastSensorData, 2000);
-
-// Start server
-server.listen(port, () => {
-  console.log(`Server started on port ${port} (HTTP + WebSocket) at http://localhost:${port}`);
-});
-
-
-
-/* 
-function asyncOperation() {
-
-    let counter = 0;
-
-    return function() {
-
-        counter += 1;
-
-        console.log(`Operation called ${counter} times`);
-
-    };
-
-}
-
-const operation = asyncOperation();
-
-operation(); // Output: Operation called 1 times
-
-operation(); // Output: Operation called 2 times
-
-(function() {
-    let localVariable = 'I am private';
-    console.log(localVariable);
-})();
-console.log(typeof localVariable); */
