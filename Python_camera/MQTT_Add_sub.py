@@ -43,37 +43,54 @@ def on_message(client, userdata, msg):
     print(msg.topic + " " + str(msg.qos) + " " + msg.payload.decode("utf-8"))
 
     try:
+        # รูปแบบ topic คือ sensortype + กับ sensorid
+        # Topic[0] = sensortype
+        # Topic[1] = sensorid
         Topic = msg.topic.split('/')
         mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
         mycursor = mydb.cursor()
 
-        sql = "UPDATE sensor_data SET value = %s WHERE id = %s"
+        sql = "UPDATE devices SET latest_value = %s WHERE path_topic = %s"
         # val = (msg.payload.decode("utf-8"),Topic[1],)
-        val = (2568,1,)
+        # val = (2568,1,)
+        val = (msg.payload.decode("utf-8"),msg.topic,)
         mycursor.execute(sql, val)
 
         print("msg.payload: ",msg.payload.decode("utf-8"))
+        print("msg.topic.split :",Topic)
         # sql = "SELECT sensor_type FROM tb_zone WHERE id = %s"
 
-        # val = (Topic[1],)
-        # mycursor.execute("SELECT sensor_type,sensor_val,val_alert FROM tb_zone WHERE id = %s",val)
-        # sensor_info = mycursor.fetchall()
+        val = (Topic[1],)
+        mycursor.execute("SELECT latest_value,min_alert,max_alert,name FROM devices WHERE id = %s",val)
+        sensor_info = mycursor.fetchall()
 
+
+
+        sql = "SELECT d.id AS device_id, d.name AS device_name, f.name AS floorplan_name FROM devices d JOIN floorplan f ON d.floorplan_id = f.id WHERE d.id = %s"
+        mycursor.execute(sql,val)
+        floorplan_name = mycursor.fetchall()
+        print(floorplan_name)
         # for sensor in sensor_info:
         #     print(sensor)
 
-        # print("sensor_info[0][2]",sensor_info[0][2])
+        # sensor_info[0][0] = latest_value
+        # sensor_info[0][1] = min_alert
+        # sensor_info[0][2] = max_alert
+        # sensor_info[0][3] = name
 
-        # if(sensor_info[0][0] == "humidity"):
-        #     if(float(sensor_info[0][1])>sensor_info[0][2]):
-        #         send_line_message("มีความชื้นเกิน60%")
-        #         send_line_message(sensor_info[0][2])
-        # if(sensor_info[0][0] == "temperature"):
-        #     if(float(sensor_info[0][1])>48):
-        #         send_line_message("อุณหภทิสูงเกิน 50 องศาเซลเซียส")
-        # if(sensor_info[0][0] == "Gas"):
-        #     if(float(sensor_info[0][1])>320):
-        #         send_line_message("ตรวจจับGasอันตราย")
+        print("sensor_info[0][2]",sensor_info[0][0])
+
+        if(Topic[0] == "HumiditySensor"):
+            if(float(sensor_info[0][0])>float(sensor_info[0][2])):
+                send_line_message("มีความชื้นเกิน60%")
+                send_line_message(sensor_info[0][2])
+        if(Topic[0] == "TemperatureSensor"):
+            # send_line_message("ทดสอบการแจ้งเตือน TemperatureSensor อุณหภูมิ:"+sensor_info[0][0]+"อยู่"+floorplan_name[0][2])
+            if(float(sensor_info[0][0])>float(sensor_info[0][2])):
+                send_line_message("ตรวจพบอุณหภูมิสูงเกิน 50 องศาเซลเซียส")
+        if(Topic[0] == "GasSensor"):
+            if(float(sensor_info[0][0])>float(sensor_info[0][2])):
+                send_line_message("ตรวจจับGasอันตราย ที่ Sensor"+sensor_info[0][3]+"อยู่ที่"+floorplan_name[0][2])
 
         mydb.commit()
         mydb.close()
@@ -95,16 +112,18 @@ client.username_pw_set("Vittapong", "HappyS7*")
 client.connect("49ee04006403486ea360ca6114faf597.s2.eu.hivemq.cloud", 8883)
 mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
 mycursor = mydb.cursor()
-client.subscribe("layout_id21/70", qos=1)
-print("Subscribed to topic:layout_id21/70")
-# mycursor.execute("SELECT MQTT_Topic FROM tb_zone")
-# topics = mycursor.fetchall()
-# for topic in topics:
-#     if topic[0] is not None and topic[0] != '':  # ตรวจสอบว่า topic ไม่เป็น null และไม่ว่างเปล่า
-#         client.subscribe(topic[0], qos=1)
-#         print("Subscribed to topic:", topic[0])
-#     else:
-#         print("Invalid topic:", topic[0])
+
+# client.subscribe("layout_id21/70", qos=1)
+# print("Subscribed to topic:layout_id21/70")
+
+mycursor.execute("SELECT path_topic FROM devices")
+topics = mycursor.fetchall()
+for topic in topics:
+    if topic[0] is not None and topic[0] != '':  # ตรวจสอบว่า topic ไม่เป็น null และไม่ว่างเปล่า
+        client.subscribe(topic[0], qos=1)
+        print("Subscribed to topic:", topic[0])
+    else:
+        print("Invalid topic:", topic[0])
 client.loop_start()
 
 @app.route('/')
