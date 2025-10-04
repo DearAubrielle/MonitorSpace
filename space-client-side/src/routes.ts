@@ -12,8 +12,8 @@ import DevicesDrop from './components/DevicesDrop.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import DndColumns from './pages/DndColumns.tsx';
 import MonitorPage from './pages/MonitorPage.tsx';
-import Device from './pages/Device.tsx';
 import Member from './pages/Member.tsx';
+import Devices from './pages/Devices.tsx';
 const routes = createBrowserRouter([
   {
     Component: App,
@@ -29,8 +29,9 @@ const routes = createBrowserRouter([
       { path: '/devicesdrop', Component: DevicesDrop },
       { path: '/dndcolumns', Component: DndColumns },
       { path: '/monitor', Component: MonitorPage },
-      { path: '/device', Component: Device },
-      { path: '/member', Component: Member }
+      { path: '/device', Component: Devices },
+      { path: '/member', Component: Member },
+
     ],
   },
   { path: '/login', Component: Login },
