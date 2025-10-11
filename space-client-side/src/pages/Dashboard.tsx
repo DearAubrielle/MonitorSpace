@@ -16,8 +16,9 @@ interface Device {
 interface DeviceType {
   id: number;
   name: string;
-  image_url: string;
+  icon_url: string;
   has_value?: number;
+  unit?: string;
 }
 interface floorplan {
   id: number;
@@ -257,7 +258,7 @@ export default function Dashboard() {
                         (t) => t.id === device.device_type_id
                       );
                       const icon = type
-                        ? SERVER_URL + type.image_url
+                        ? SERVER_URL + type.icon_url
                         : '/icons/default.png';
                       return (
                         <DeviceItem
@@ -327,6 +328,12 @@ export default function Dashboard() {
                
               <div>
                 <b>Latest Value:</b> {deviceValues[modalDevice.id] ?? modalDevice.latest_value}
+                <b>
+                  {(() => {
+                    const type = deviceTypes.find(t => t.id === modalDevice.device_type_id);
+                    return type && type.unit ? ` ${type.unit}` : '';
+                  })()}
+                </b>
               </div>
               <button
                 onClick={() => setModalDevice(null)}

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const devicesController = require('../controllers/devicesController');
+const devicesController = require('./controllers/devicesController');
 
 // GET all devices in a floorplan
 router.get('/getd', devicesController.getAllDevices);

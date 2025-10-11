@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const floorplansController = require('../controllers/floorplansController');
+const floorplansController = require('./controllers/floorplansController');
 
 // GET all floorplans
 router.get('/getf', floorplansController.getAllFloorplans);

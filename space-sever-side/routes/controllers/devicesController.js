@@ -1,5 +1,5 @@
 const e = require("express");
-const db = require("../db");
+const db = require("../../db");
 
 exports.getAllDevices = async (req, res) => {
   try {

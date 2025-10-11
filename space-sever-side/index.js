@@ -1,16 +1,15 @@
 const express = require("express");
 const cors = require("cors");
-
-
+const jwt = require("jsonwebtoken");
 const http = require("http");
 const WebSocket = require("ws");
 const path = require("path");
 const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
 
 const db = require('./db'); // Make sure this is at the top if not already
+
 dotenv.config();
-
-
 const app = express();
 const port = 8080;
 const usersRoutes = require("./routes/users");
@@ -19,10 +18,13 @@ const floorplansRoutes = require("./routes/floorplans");
 
 const corsOptions = {
   origin: ["http://localhost:5173"],
+  credentials: true,
 };
 
+app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
+
 
 // Mount routes
 app.use("/api/users", usersRoutes);
@@ -75,6 +77,7 @@ setInterval(async () => {
     console.error("DB error:", err);
   }
 }, 2000);
+
 
 // Start server
 server.listen(port, () => {
