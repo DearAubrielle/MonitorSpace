@@ -1,156 +1,31 @@
 import styles from './FloorPlan.module.css';
 import { useRef, useEffect, useState } from 'react';
 import AspectRatioBox from '../components/AspectRatioBox';
-import { DndContext, useDraggable, DragEndEvent } from '@dnd-kit/core';
+import { DndContext } from '@dnd-kit/core';
+import { useFloorplan } from '../context/useFlooplan';
+import type { Device } from '../types/Device';
+import DraggableBox from '../components/DraggableBox';
+import Modal from '../components/Modal';
+import Button from '../components/Button';
+import { handleDragEndFactory, PercentPosition } from '../utils/handleDragEnd';
+
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
-// Type for box position as percentage
-type PercentPosition = {
-  x: number; // 0 to 1
-  y: number; // 0 to 1
-};
 
-// Device type
-interface Device {
-  id: string;
-  name: string;
-  device_type_id: number;
-  floorplan_id: number;
-  x_percent: number; // 0 to 1
-  y_percent: number; // 0 to 1
-}
-
-// Props for each draggable box
-// Update DraggableBoxProps to accept onClick
-interface DraggableBoxProps {
-  id: string;
-  label: string;
-  position: PercentPosition;
-  containerWidth: number;
-  containerHeight: number;
-  onClick?: () => void; // <-- add this
-  onDoubleClick?: () => void; // <-- add this
-}
-
-interface floorplan {
-  id: number;
-  name: string;
-  image_url: string;
-  description: string;
-}
-// Box size as a percentage of container size
-const BOX_SIZE_PERCENT = 0.07;
-
-// Minimum and maximum box size in pixels
-const MIN_BOX_SIZE = 20;
-const MAX_BOX_SIZE = 40;
-
-// Draggable box component
-const DraggableBox: React.FC<DraggableBoxProps> = ({
-  id,
-  label,
-  position,
-  containerWidth,
-  containerHeight,
-  onClick,
-  onDoubleClick,
-}) => {
-  // Box size is always square, clamped between MIN_BOX_SIZE and MAX_BOX_SIZE
-  const boxSize = Math.max(
-    MIN_BOX_SIZE,
-    Math.min(
-      Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT,
-      MAX_BOX_SIZE
-    )
-  );
-
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
-
-  // Convert percent to px for rendering
-  const left = position.x * (containerWidth - boxSize);
-  const top = position.y * (containerHeight - boxSize);
-
-  const style: React.CSSProperties = {
-    position: 'absolute',
-    top,
-    left,
-    width: boxSize,
-    height: boxSize,
-    fontSize: '12px',
-    backgroundColor: '#03A9F4',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 50,
-    cursor: 'grab',
-    margin: 0,
-    padding: 0,
-
-    transform: transform
-      ? `translate(${transform.x}px, ${transform.y}px)`
-      : undefined,
-    transition: transform ? 'none' : 'transform 0.2s',
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      style={style}
-      onPointerUp={onClick} // <-- use onPointerUp instead of onClick
-      onDoubleClick={onDoubleClick} // <-- add this
-    >
-      {label}
-    </div>
-  );
-};
 
 export default function FloorplanTest() {
+  const { floorplans, selected, setSelected, devices, setDevices } = useFloorplan();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [floorplans, setFloorplans] = useState<floorplan[]>([]);
-  const [selected, setSelected] = useState<floorplan | null>(null);
   const [containerSize, setContainerSize] = useState({
     width: 500,
     height: 500,
   });
-  const [devices, setDevices] = useState<Device[]>([]);
   const [showOverlay, setShowOverlay] = useState(false);
   const [modalDevice, setModalDevice] = useState<Device | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
-  // Fetch floorplans from backend and set the first as selected
-  useEffect(() => {
-    const fetchFloorplans = async () => {
-      try {
-        const response = await fetch(`${SERVER_URL}/api/floorplans/getf`);
-        const data = await response.json();
-        setFloorplans(data);
-        if (data && data.length > 0) {
-          setSelected(data[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching floorplans:', error);
-      }
-    };
 
-    fetchFloorplans();
-  }, []);
-
-  // Fetch all devices from backend
-  useEffect(() => {
-    const fetchDevices = async () => {
-      try {
-        const response = await fetch(`${SERVER_URL}/api/devices/getd`);
-        const data = await response.json();
-        setDevices(data);
-      } catch (error) {
-        console.error('Error fetching devices:', error);
-      }
-    };
-    fetchDevices();
-  }, []);
-
+  
   // When selected floorplan changes, load its image and set container size
   useEffect(() => {
     if (selected) {
@@ -189,51 +64,20 @@ export default function FloorplanTest() {
   // Update devicePositions when devices or selected floorplan changes
   useEffect(() => {
     if (!selected) return;
-    const filtered = devices.filter((d) => d.floorplan_id === selected.id);
+    const filtered = devices?.filter((d) => d.floorplan_id === selected.id);
     const positions: Record<string, PercentPosition> = {};
-    filtered.forEach((device) => {
+    filtered?.forEach((device) => {
       positions[device.id] = { x: device.x_percent, y: device.y_percent };
     });
     setDevicePositions(positions);
   }, [devices, selected]);
 
-  // Handles drag end event to update device position (percent-based)
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, delta } = event;
-    const id = active.id as string;
-    const containerWidth = renderedSize.width;
-    const containerHeight = renderedSize.height;
-
-    const boxSize = Math.max(
-      MIN_BOX_SIZE,
-      Math.min(
-        Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT,
-        MAX_BOX_SIZE
-      )
-    );
-
-    const current = devicePositions[id];
-    if (!current) return;
-
-    const currentX = current.x * (containerWidth - boxSize);
-    const currentY = current.y * (containerHeight - boxSize);
-
-    let newX = currentX + delta.x;
-    let newY = currentY + delta.y;
-
-    newX = Math.max(0, Math.min(newX, containerWidth - boxSize));
-    newY = Math.max(0, Math.min(newY, containerHeight - boxSize));
-
-    const percentX =
-      containerWidth - boxSize === 0 ? 0 : newX / (containerWidth - boxSize);
-    const percentY =
-      containerHeight - boxSize === 0 ? 0 : newY / (containerHeight - boxSize);
-
-    setDevicePositions((prev) => ({
-      ...prev,
-      [id]: { x: percentX, y: percentY },
-    }));
-  };
+    // Handles drag end event to update device position (percent-based)
+    const handleDragEnd = handleDragEndFactory({
+      devicePositions,
+      setDevicePositions,
+      renderedSize,
+    });
 
   // Opens modal with device info on double click
   const handleDeviceClick = (device: Device) => {
@@ -241,7 +85,7 @@ export default function FloorplanTest() {
   };
 
   // Devices not yet on the selected floor plan
-  const availableDevices = devices.filter(
+  const availableDevices = devices?.filter(
     (d) => !selected || d.floorplan_id !== selected.id
   );
 
@@ -265,7 +109,7 @@ export default function FloorplanTest() {
       // Send a PUT request for each device being added
       await Promise.all(
         toAdd.map((device) =>
-          fetch(`${SERVER_URL}/api/devices/putd/${device.id}`, {
+          fetch(`${SERVER_URL}/api/devices/putdf/${device.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ floorplan_id: selected.id }),
@@ -274,11 +118,11 @@ export default function FloorplanTest() {
       );
       // Update local state after successful update
       setDevices((prev) =>
-        prev.map((d) =>
+        prev ? prev.map((d) =>
           toAdd.find((add) => add.id === d.id)
             ? { ...d, floorplan_id: selected.id }
             : d
-        )
+        ) : []
       );
       setToAdd([]);
       setShowOverlay(false);
@@ -287,14 +131,72 @@ export default function FloorplanTest() {
       // Optionally show an error message to the user
     }
   };
+  const handleSaveAllDevicePositions = async () => {
+    if (!selected) return;
+
+    try {
+      // Get all devices for this floorplan
+      const safeDevices = devices ?? [];
+      const floorDevices = safeDevices.filter(
+        (d) => d.floorplan_id === selected.id
+      );
+
+      // Send PUT requests for each device’s current position
+      await Promise.all(
+        floorDevices.map(async (device) => {
+          const pos = devicePositions[device.id];
+          if (!pos) return;
+
+          await fetch(`${SERVER_URL}/api/devices/putdlo/${device.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              x_percent: pos.x,
+              y_percent: pos.y,
+            }),
+          });
+        })
+      );
+      console.log(
+        'Saving device positions:',
+        floorDevices.map((d) => ({
+          id: d.id,
+          pos: devicePositions[d.id],
+        }))
+      );
+      setDevices((prev) =>
+        prev ? prev.map((device) =>
+          devicePositions[device.id]
+            ? {
+                ...device,
+                x_percent: devicePositions[device.id].x,
+                y_percent: devicePositions[device.id].y,
+              }
+            : device
+        ) : []
+      );
+
+      console.log('All device positions saved successfully');
+      alert('Device positions saved!');
+    } catch (error) {
+      console.error('Failed to save device positions:', error);
+      alert('Failed to save positions');
+    }
+  };
 
   return (
     <div>
       <h2 style={{ fontSize: '1rem', marginLeft: '0.7rem' }}>Floor Plan</h2>
       <div style={{ margin: '0.7rem 0 1rem 0.7rem' }}>
-        <button onClick={() => setShowOverlay(true)} disabled={!selected}>
+        <Button onClick={() => setEditMode((prev) => !prev)} variant={editMode ? 'secondary' : 'primary'}>
+          {editMode ? 'Exit Edit Mode' : 'Edit'}
+        </Button>
+        <Button onClick={() => setShowOverlay(true)} disabled={!selected}>
           Add Device to Floor Plan
-        </button>
+        </Button>
+        <Button onClick={handleSaveAllDevicePositions} variant="primary">
+          Save Changes
+        </Button>
       </div>
       <div className={styles.Wrapper} style={{ position: 'relative' }}>
         {/* Overlay Add Device Panel */}
@@ -319,7 +221,7 @@ export default function FloorplanTest() {
             {/* Available Devices */}
             <div style={{ flex: 1, marginRight: 12 }}>
               <div style={{ fontWeight: 600, marginBottom: 12 }}>Devices</div>
-              {availableDevices.map((device) => (
+              {availableDevices?.map((device) => (
                 <div
                   key={device.id}
                   style={{
@@ -396,38 +298,21 @@ export default function FloorplanTest() {
                   </button>
                 </div>
               ))}
-              <button
-                style={{
-                  marginTop: 24,
-                  background: '#e6f0fa',
-                  color: '#2563eb',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '10px 24px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  opacity: toAdd.length === 0 ? 0.5 : 1,
-                }}
+              <Button
+                style={{ marginTop: 24, opacity: toAdd.length === 0 ? 0.5 : 1 }}
                 disabled={toAdd.length === 0}
                 onClick={handleSave}
+                variant="primary"
               >
                 Save
-              </button>
-              <button
-                style={{
-                  marginTop: 8,
-                  background: '#fff',
-                  color: '#888',
-                  border: '1px solid #ccc',
-                  borderRadius: 6,
-                  padding: '8px 18px',
-                  fontWeight: 400,
-                  cursor: 'pointer',
-                }}
+              </Button>
+              <Button
+                style={{ marginTop: 8 }}
                 onClick={() => setShowOverlay(false)}
+                variant="secondary"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -435,7 +320,7 @@ export default function FloorplanTest() {
         {/* Floorplan List */}
         <div className={styles.FloorList}>
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {floorplans.map((plan) => (
+            {floorplans?.map((plan) => (
               <li
                 key={plan.id}
                 onClick={() => setSelected(plan)}
@@ -459,12 +344,12 @@ export default function FloorplanTest() {
               >
                 <DndContext onDragEnd={handleDragEnd}>
                   {devices
-                    .filter((device) => device.floorplan_id === selected?.id)
-                    .map((device) => (
+                    ?.filter((device) => device.floorplan_id === selected?.id)
+                    ?.map((device) => (
                       <DraggableBox
                         key={device.id}
-                        id={device.id}
-                        label={device.id}
+                        id={String(device.id)}
+                        label={String(device.id)}
                         position={
                           devicePositions[device.id] || {
                             x: device.x_percent,
@@ -473,7 +358,8 @@ export default function FloorplanTest() {
                         }
                         containerWidth={renderedSize.width}
                         containerHeight={renderedSize.height}
-                        onDoubleClick={() => handleDeviceClick(device)} // <-- add this
+                        onDoubleClick={() => handleDeviceClick(device)}
+                        disabled={!editMode}
                       />
                     ))}
                 </DndContext>
@@ -483,29 +369,9 @@ export default function FloorplanTest() {
         </div>
 
         {/* Device Info Modal */}
-        {modalDevice && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 100,
-            }}
-          >
-            <div
-              style={{
-                background: '#fff',
-                padding: 24,
-                borderRadius: 8,
-                minWidth: 300,
-              }}
-            >
+        <Modal open={!!modalDevice} onClose={() => setModalDevice(null)}>
+          {modalDevice && (
+            <>
               <h3>Device Info</h3>
               <div>
                 <b>Name:</b> {modalDevice.name}
@@ -513,15 +379,9 @@ export default function FloorplanTest() {
               <div>
                 <b>ID:</b> {modalDevice.id}
               </div>
-              <button
-                onClick={() => setModalDevice(null)}
-                style={{ marginTop: 16 }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </Modal>
       </div>
     </div>
   );

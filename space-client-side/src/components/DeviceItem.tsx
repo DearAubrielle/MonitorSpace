@@ -1,10 +1,12 @@
+// Type for box position as percentage
+export type PercentPosition = {
+  x: number; // 0 to 1
+  y: number; // 0 to 1
+};
 export interface DevicesBoxProps {
   id: string;
   label: string;
-  position: {
-    x: number;
-    y: number;
-  };
+  position: PercentPosition;
   containerWidth: number;
   containerHeight: number;
   iconURL?: string;

@@ -1,13 +1,19 @@
 .Wrapper {
-  margin-top: 20px;
   max-width: 100% ;
   display: grid;
+  margin: auto 6%;
   grid-template-areas: 
-  "left right";
-  grid-template-columns: 7fr 3fr;
+  "list floorplan"
+  "list .";
+  grid-template-columns: 2fr 8fr;
   gap: 1rem;
+  height: inherit;
+  position: relative;
 }
+
+
 .camera {
+  margin: auto 6%;
   display: flex;
   background-color: white;
   border-radius: 8px;
@@ -17,59 +23,20 @@
   border: var(--default-boarder);
   height: auto;
   min-width: 100px;
+  display: grid;
   justify-content: left;
 
 }
-.left {
-  grid-area: left;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
-  padding: 0.8rem;
-  overflow-y: auto;
-  border: var(--default-boarder);
-  height: max(50vh, 80vh);
-  min-width: 100px;
+
+.buttonGroup {
+  position: relative;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.right {
-  grid-area: right;
-  padding: 1.5rem;
-  background-color: rgb(255, 255, 255);
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
-  overflow-y: auto;
-  border: var(--default-boarder);
-  height: max(50vh, 80vh);
-  min-width: 100px;
-}
-.BreifingWrapper {
-  max-width: 100% ;
-  display: grid;
-  grid-template-areas: 
-  "selectionbar content"
-  "camera camera";
-  grid-template-columns: 2.5fr 7.5fr;
-  gap: 1rem;
-}
-.selectionbar {
-  grid-area: selectionbar;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
-  padding: 0.8rem;
-  overflow-y: auto;
-  border: var(--default-boarder);
-  height: max(50vh, 80vh);
-  min-width: 100px;
-}
-.content {
-  grid-area: content;
-  padding: 1.5rem;
-  background-color: rgb(255, 255, 255);
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
-  overflow-y: auto;
-  border: var(--default-boarder);
-  height: max(50vh, 80vh);
-  min-width: 100px;
+
+.title {
+  position: inherit;
+  text-align: center;
 }

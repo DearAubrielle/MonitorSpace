@@ -22,7 +22,7 @@ export default function Login() {
 
   return (
     <>
-      {redirect && <Navigate to="/floorplantest" replace />}
+      {redirect && <Navigate to="/floorplanpage" replace />}
       <div
         style={{
           display: 'flex',

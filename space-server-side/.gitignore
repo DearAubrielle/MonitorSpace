@@ -1,0 +1,8 @@
+/node_modules/
+/dist/
+/**/*.map
+/**/*.d.ts
+/tsconfig.tsbuildinfo
+/private_uploads/
+LICENSE
+readme.md

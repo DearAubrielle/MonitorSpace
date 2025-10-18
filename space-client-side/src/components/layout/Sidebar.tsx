@@ -7,10 +7,6 @@ export default function Sidebar() {
     { to: '/floorplanpage', label: 'Floor Plans' },
     { to: '/device', label: 'Devices' },
     { to: '/member', label: 'Members' },
-    { to: '/watage', label: ' ___________________ ' },
-    { to: '/monitor', label: 'Monitor' },
-    { to: '/sensordata', label: 'Sensor Data' },
-    { to: '/googogaga', label: 'CCTV' },
   ];
   return (
     <div className={styles.sidebarContainer}>
