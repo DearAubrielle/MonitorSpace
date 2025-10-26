@@ -2,7 +2,7 @@ import Button from '@/components/Button';
 import { useFloorplan } from '@/context/useFlooplan';
 import { useEffect, useState } from 'react';
 import type { Device } from '../types/Device';
-import styles from './Devices.module.css';
+import styles from './devices.module.css';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 const Devices = () => {
