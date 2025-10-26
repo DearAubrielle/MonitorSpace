@@ -6,6 +6,7 @@ const WebSocket = require("ws");
 const path = require("path");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
+const rateLimit = require("express-rate-limit");
 
 const db = require('./db'); // Make sure this is at the top if not already
 
@@ -20,7 +21,14 @@ const corsOptions = {
   origin: ["http://localhost:5173"],
   credentials: true,
 };
-
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+app.use(limiter);
 app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
@@ -37,24 +45,6 @@ app.use('/private_uploads', express.static(path.join(__dirname, 'private_uploads
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// Dummy sensor data generator (replace with real sensor reading)
-function getSensorData() {
-  return {
-    temperature: (20 + Math.random() * 5).toFixed(2),
-    humidity: (30 + Math.random() * 10).toFixed(2),
-    timestamp: new Date().toISOString()
-  };
-}
-
-// Broadcast data to all connected clients
-function broadcastSensorData() {
-  const data = JSON.stringify(getSensorData());
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
-  });
-}
 
 // Broadcast helper
 function broadcast(data) {
