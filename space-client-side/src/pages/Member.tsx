@@ -9,6 +9,8 @@ interface Member {
   email: string;
   role: string;
   created_at?: string;
+  display_name?: string;
+  permissions?: string;
 }
 
 interface Role {
@@ -328,7 +330,7 @@ export default function Member() {
                 <div className={styles.roleSection}>
                   <span className={styles.roleLabel}>Role</span>
                   <span className={`${styles.roleBadge} ${getRoleBadgeColor(member.role)}`}>
-                    {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                    {member.display_name || member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                   </span>
                 </div>
                 
@@ -411,7 +413,7 @@ export default function Member() {
                 <div className={styles.detailRow}>
                   <span className={styles.detailLabel}>Role:</span>
                   <span className={styles.detailValue}><span className={`${styles.roleBadge} ${getRoleBadgeColor(selectedMember.role)}`}>
-                    {selectedMember.role.charAt(0).toUpperCase() + selectedMember.role.slice(1)}
+                    {selectedMember.display_name || selectedMember.role.charAt(0).toUpperCase() + selectedMember.role.slice(1)}
                   </span></span>
                 </div>
               </div>
