@@ -13,12 +13,7 @@ type MonitorComponentProps = {
 };
 
 const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
-    const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
     const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-
-    const handleSelectCamera = (id: string) => {
-        setSelectedCameraId(id === selectedCameraId ? null : id);
-    };
 
     const handleImageError = (cameraId: string) => {
         setImageErrors(prev => ({ ...prev, [cameraId]: true }));
@@ -30,9 +25,7 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
                 {cameras.map((camera) => (
                     <div
                         key={camera.id}
-                        className={`${styles.cameraCard} ${
-                            selectedCameraId === camera.id ? styles.cameraCardSelected : ''
-                        }`}
+                        className={styles.cameraCard}
                     >
                         <div className={styles.cameraHeader}>
                             <h3 className={styles.cameraTitle}>{camera.name}</h3>
@@ -60,23 +53,10 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
                             )}
                         </div>
 
-                        <div className={styles.cameraActions}>
-                            <button
-                                onClick={() => handleSelectCamera(camera.id)}
-                                className={`${styles.detailsButton} ${
-                                    selectedCameraId === camera.id ? styles.detailsButtonActive : ''
-                                }`}
-                            >
-                                {selectedCameraId === camera.id ? 'Hide Details' : 'Show Details'}
-                            </button>
+                        <div className={styles.cameraDetails}>
+                            <h4>Camera Information</h4>
+                            <p>{camera.details}</p>
                         </div>
-
-                        {selectedCameraId === camera.id && (
-                            <div className={styles.cameraDetails}>
-                                <h4>Camera Information</h4>
-                                <p>{camera.details}</p>
-                            </div>
-                        )}
                     </div>
                 ))}
             </div>

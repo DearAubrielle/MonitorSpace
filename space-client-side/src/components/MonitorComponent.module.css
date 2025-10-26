@@ -6,9 +6,11 @@
 
 .cameraGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1rem;
     justify-content: center;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .cameraCard {
@@ -19,6 +21,9 @@
     overflow: hidden;
     transition: all 0.3s ease;
     position: relative;
+    max-width: 450px;
+    width: 100%;
+    justify-self: center;
 }
 
 .cameraCard:hover {
@@ -184,6 +189,11 @@
     .cameraGrid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
+        max-width: 450px;
+    }
+    
+    .cameraCard {
+        max-width: 100%;
     }
     
     .monitorContainer {
@@ -200,5 +210,16 @@
     
     .cameraDetails {
         padding: 0 1rem 1rem 1rem;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .cameraGrid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .cameraCard {
+        max-width: 400px;
     }
 }
