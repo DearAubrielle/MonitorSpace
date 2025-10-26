@@ -7,3 +7,5 @@
 LICENSE
 readme.md
 .env
+.env.example
+.env.production
