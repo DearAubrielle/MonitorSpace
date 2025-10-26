@@ -46,5 +46,7 @@ const routes = createBrowserRouter([
   },
   { path: '/login', Component: Login },
   { path: '/register', Component: Register },
-]);
+], {
+  basename: '/MonitorSpace',
+});
 export default routes;
