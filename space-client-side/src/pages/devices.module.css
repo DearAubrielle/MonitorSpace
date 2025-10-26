@@ -1,6 +1,70 @@
 .container {
   min-height: 100vh;
-  padding: 0 2rem;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e8f4f8 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.devicesWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.headerSection {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 0.5rem;
+}
+
+.pageSubtitle {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.deviceStats {
+  display: flex;
+  gap: 3rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.statNumber {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: #6c757d;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .header {
@@ -19,6 +83,7 @@
   grid-template-columns: 7fr 3fr;
   gap: 1rem;
 }
+
 .left {
   grid-area: left;
 }
@@ -53,21 +118,23 @@
 
 .deviceGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
 }
 
 .deviceCard {
-  padding: 0 1.5rem 2rem;
-  border: 1px solid hsl(223, 31%, 75%);
-  border-radius: 8px;
-  background-color: hsl(0, 0%, 100%);
-  box-shadow: 0 1px 3px rgba(148, 147, 147, 0.1);
-  transition: box-shadow 0.2s;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  padding: 1.5rem;
 }
 
 .deviceCard:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .deviceHeader {
@@ -79,62 +146,197 @@
 .deviceName {
   font-size: 1.25rem;
   font-weight: 600;
-  color: hsl(223, 58%, 16%);
-}
-
-.statusBadge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-transform: capitalize;
-}
-
-.statusBadge.online {
-  background-color: hsl(120, 70%, 90%);
-  color: hsl(120, 70%, 30%);
-}
-
-.statusBadge.offline {
-  background-color: hsl(225, 29%, 95%);
-  color: hsl(222, 14%, 47%);
+  color: #212529;
+  margin-bottom: 0.5rem;
 }
 
 .deviceType {
-  color: hsl(222, 10%, 47%);
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .deviceActions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .actionButton {
   flex: 1;
-  padding: 0.5rem 1rem;
-  background-color: hsl(223, 58%, 16%);
-  color: hsl(223, 31%, 75%);
-  border: none;
-  border-radius: 2px;
-  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  color: #3b82f6;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
 }
 
 .actionButton:hover {
-  opacity: 0.8;
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
-  .container {
+  .devicesWrapper {
     padding: 1rem;
   }
 
-  .title {
-    font-size: 1.5rem;
+  .pageTitle {
+    font-size: 1.75rem;
+  }
+
+  .actionBar {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .deviceStats {
+    justify-content: center;
+    gap: 2rem;
   }
 
   .deviceGrid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(209, 209, 209, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fade-in 0.2s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+.modal {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  background: rgb(255, 255, 255);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 400px;
+  border: 1px solid var(--default-border);
+  animation: scale-in 0.1s ease-out;
+}
+
+.headerDetail {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: rgb(15, 47, 100);
+  margin-top: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgb(186, 194, 218);
+}
+
+.detailsGrid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.detailRow {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  line-height: 1.5;
+  border-bottom: 1px solid rgb(211, 215, 226);
+  box-shadow: 0 1px 2px rgba(236, 236, 236, 0.15);
+
+  
+}
+
+.label {
+  font-weight: 400;
+  color: rgb(89, 103, 119);
+}
+
+.value {
+  font-weight: 600;
+  color: rgb(0, 55, 131);
+}
+
+.editValue {
+  flex: 1;
+  margin:5px 0;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgb(186, 194, 218);
+  box-shadow: inset 0 1px 3px rgba(148, 147, 147, 0.2);
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  width: 100%;
+  color: rgb(0, 55, 131);
+}
+.footer {
+  font-weight: 600;
+  margin-top: 1.5rem;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+  border-top: 1px solid rgb(186, 194, 218);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.successOverlay {
+  backdrop-filter: blur(5px);
+}
+
+.successModal {
+  min-width: 200px;
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #10b95cff;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+}
+
+.successIcon {
+  font-size: 3rem;
+  color: #10b95cff;
+  margin-bottom: 1rem;
+}
+
+.successTitle {
+  color: #1c6d56ff;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.successMessage {
+  color: #256d58ff;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
 }

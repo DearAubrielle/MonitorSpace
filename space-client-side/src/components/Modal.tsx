@@ -1,10 +1,13 @@
-import * as React from 'react';
+
 
 interface ModalProps {
   open: boolean;
-  onClose: () => void;
   children: React.ReactNode;
   style?: React.CSSProperties;
+  position?: {
+    x: number;
+    y: number;
+  };
 }
 
 const defaultOverlayStyle: React.CSSProperties = {
@@ -22,21 +25,66 @@ const defaultOverlayStyle: React.CSSProperties = {
 
 const defaultModalStyle: React.CSSProperties = {
   background: '#fff',
-  padding: 24,
   borderRadius: 8,
   minWidth: 300,
+  maxWidth: '70%',
+  padding: 32,
+  display: 'flex',
+  flexDirection: 'column',
 };
 
-const Modal: React.FC<ModalProps> = ({ open, onClose, children, style }) => {
+export default function Modal({ open, children, style, position }: ModalProps) {
   if (!open) return null;
+
+  // Calculate modal positioning
+  const getModalPosition = (): React.CSSProperties => {
+    if (!position) {
+      return {
+        alignItems: 'center',
+        justifyContent: 'center',
+      };
+    }
+
+    // Position modal near the device with smart positioning to avoid viewport edges
+    const modalWidth = 400; // Approximate modal width
+    const modalHeight = 300; // Approximate modal height
+    const offset = 20; // Distance from device
+
+    let left = position.x + offset;
+    let top = position.y - modalHeight / 2;
+
+    // Adjust if modal would go off-screen
+    if (left + modalWidth > window.innerWidth) {
+      left = position.x - modalWidth - offset; // Show to the left of device
+    }
+    if (left < 0) {
+      left = offset; // Minimum distance from left edge
+    }
+    if (top < 0) {
+      top = offset; // Minimum distance from top
+    }
+    if (top + modalHeight > window.innerHeight) {
+      top = window.innerHeight - modalHeight - offset; // Adjust to fit in viewport
+    }
+
+    return {
+      alignItems: 'flex-start',
+      justifyContent: 'flex-start',
+      paddingTop: `${top}px`,
+      paddingLeft: `${left}px`,
+    };
+  };
+
+  const overlayStyles = {
+    ...defaultOverlayStyle,
+    ...getModalPosition(),
+  };
+
   return (
-    <div style={defaultOverlayStyle}>
+    <div style={overlayStyles}>
       <div style={{ ...defaultModalStyle, ...style }}>
         {children}
-        <button onClick={onClose} style={{ marginTop: 16 }}>Close</button>
       </div>
     </div>
   );
 };
-
-export default Modal;

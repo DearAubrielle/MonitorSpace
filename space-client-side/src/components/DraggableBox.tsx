@@ -16,7 +16,7 @@ export interface DraggableBoxProps {
   containerWidth: number;
   containerHeight: number;
   iconURL?: string;
-  onClick?: () => void;
+  onClick?: (event?: React.PointerEvent) => void;
   onDoubleClick?: () => void;
   disabled?: boolean;
   alert?: boolean;
@@ -71,7 +71,7 @@ export default function  DraggableBox({
     transform: isDragging && transform
       ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
       : undefined,
-    cursor: disabled ? 'default' : 'grab',
+    cursor: disabled ? 'pointer' : 'grab',
     opacity: !disabled ? 0.6 : 1,
   };
 
@@ -81,7 +81,7 @@ export default function  DraggableBox({
       {...(!disabled ? listeners : {})}
       {...(!disabled ? attributes : {})}
       style={style}
-      onPointerUp={onClick}
+      onPointerUp={(e) => onClick?.(e)}
       onDoubleClick={onDoubleClick}
     >
     </div>

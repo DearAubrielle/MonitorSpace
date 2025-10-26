@@ -73,6 +73,7 @@ setInterval(async () => {
       "SELECT id, latest_value FROM devices"
     );
     broadcast(rows); // send all devices in one packet
+    console.log("Broadcasted device values");
   } catch (err) {
     console.error("DB error:", err);
   }

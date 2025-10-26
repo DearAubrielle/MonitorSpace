@@ -3,6 +3,7 @@ export interface Device {
   name: string;
   device_type_id: number;
   floorplan_id: number;
+  path_topic: string;
   x_percent: number; // 0 to 1
   y_percent: number; // 0 to 1
   latest_value: number;

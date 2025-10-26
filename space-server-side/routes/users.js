@@ -12,7 +12,17 @@ router.post('/register', userController.register);
 // Login a user
 router.post('/login', userController.login);
 
-// refresh token endpoint
+// Get user profile (protected)
+router.get('/profile', verifyAccessToken, userController.getProfile);
+
+// Refresh token endpoint
 router.post('/refresh-token', verifyRefreshToken, userController.refreshToken);
+
+// Update user role (protected route)
+router.put('/update-role/:id', verifyAccessToken, userController.updateUserRole);
+
+// Role management routes
+router.get('/roles', verifyAccessToken, userController.getAllRoles);
+router.post('/roles', verifyAccessToken, userController.createRole);
 
 module.exports = router;

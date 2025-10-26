@@ -11,8 +11,6 @@ body {
 
 main {
     grid-area: main;
-    padding: 1rem 2rem 90vh 2rem;
-    
     
 }
 .mainWrapper {

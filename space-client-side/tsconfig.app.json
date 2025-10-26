@@ -21,7 +21,10 @@
       "@/components/*": ["./components/*"],
       "@/context/*": ["./context/*"],
       "@/pages/*": ["./pages/*"],
-      "@/images/*": ["./images/*"]
+      "@/images/*": ["./images/*"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/types/*": ["./types/*"],
+      "@/utils/*": ["./utils/*"],
     },
     /* Linting */
     "strict": true,

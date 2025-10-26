@@ -38,8 +38,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem("accessToken", accessToken); // Persist token securely
 
       const decoded = jwtDecode<DecodedToken>(accessToken);
-      setRole(decoded.role);
-      setUser(decoded);
+      
+      // Fetch user profile with permissions
+      try {
+        const profileRes = await api.get("/api/users/profile", {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const userWithPermissions = {
+          ...decoded,
+          permissions: profileRes.data.permissions
+        };
+        setUser(userWithPermissions);
+        setRole(decoded.role);
+      } catch (profileError) {
+        console.warn("Failed to fetch user permissions:", profileError);
+        setRole(decoded.role);
+        setUser(decoded);
+      }
     } catch (error) {
       // Optionally, handle error more gracefully
       console.error("Login failed:", error);
@@ -53,8 +68,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setToken(accessToken);
 
     const decoded = jwtDecode<DecodedToken>(accessToken);
-    setRole(decoded.role);
-    setUser(decoded);
+    
+    // Fetch user profile with permissions
+    try {
+      const profileRes = await api.get("/api/users/profile", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const userWithPermissions = {
+        ...decoded,
+        permissions: profileRes.data.permissions
+      };
+      setUser(userWithPermissions);
+      setRole(decoded.role);
+    } catch (profileError) {
+      console.warn("Failed to fetch user permissions:", profileError);
+      setRole(decoded.role);
+      setUser(decoded);
+    }
   }
 
   function logout(): void {

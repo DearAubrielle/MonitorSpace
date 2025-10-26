@@ -1,15 +1,9 @@
 import App from '../App.tsx';
 import { createBrowserRouter } from 'react-router';
 import Login from '../pages/Login.tsx';
-import Googogaga from '../Googogaga.tsx';
-import FloorPlan from '../pages/FloorPlan.tsx';
 import FloorPlanPage from '../pages/FloorplanPage.tsx';
-import SensorDataComponent from '../components/SensorDataComponent.tsx';
-import FloorplanTest from '../pages/FloorplanTest.tsx';
 import Register from '../pages/Register.tsx'; 
-import DevicesDrop from '../components/DevicesDrop.tsx';
 import Dashboard from '../pages/Dashboard.tsx';
-import MonitorPage from '../pages/MonitorPage.tsx';
 import Member from '../pages/Member.tsx';
 import Devices from '../pages/Devices.tsx';
 import PrivateRoute from '../utils/PrivateRoute.tsx';
@@ -21,21 +15,32 @@ const routes = createBrowserRouter([
     children: [
       { path: "/dashboard", 
         element: (
-          <PrivateRoute allowedRoles={['user', 'admin']}>
+          <PrivateRoute allowedRoles={['user','manager', 'admin']}>
             <Dashboard />
           </PrivateRoute>
         ),
       },
-      { path: '/googogaga', Component: Googogaga },
-      { path: '/floorplantest', Component: FloorplanTest },
-      { path: '/floorplan', Component: FloorPlan },
-      { path: '/floorplanpage', Component: FloorPlanPage },
-      { path: '/sensordata', Component: SensorDataComponent },
-      { path: '/devicesdrop', Component: DevicesDrop },
-      { path: '/monitor', Component: MonitorPage },
-      { path: '/device', Component: Devices },
-      { path: '/member', Component: Member },
-      
+      { path: '/floorplan', 
+         element: (
+          <PrivateRoute allowedRoles={['admin']}>
+            <FloorPlanPage />
+          </PrivateRoute>
+        ),
+       },
+      { path: '/device', 
+        element: (
+          <PrivateRoute allowedRoles={['admin']}>
+            <Devices />
+          </PrivateRoute>
+        ),
+      },
+      { path: '/member', 
+        element: (
+          <PrivateRoute allowedRoles={['admin']}>
+            <Member />
+          </PrivateRoute>
+        ),
+      },
 
     ],
   },

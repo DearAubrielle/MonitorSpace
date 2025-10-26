@@ -5,27 +5,36 @@ import { DndContext } from '@dnd-kit/core';
 import { useFloorplan } from '../context/useFlooplan';
 import type { Device } from '../types/Device';
 import DraggableBox from '../components/DraggableBox';
-import Modal from '../components/Modal';
 import Button from '../components/Button';
 import { handleDragEndFactory, PercentPosition } from '../utils/handleDragEnd';
+import FloorplanCreateDialog from '../components/floorplan/FloorplanCreateDialog';
+import FloorplanEditDialog from '../components/floorplan/FloorplanEditDialog';
+import ImageUpload from '../components/floorplan/ImageUpload';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
-
-
 export default function FloorplanPage() {
-  const { floorplans, selected, setSelected, devices, setDevices, deviceTypes } = useFloorplan();
+  const {
+    floorplans,
+    selected,
+    setSelected,
+    devices,
+    setDevices,
+    deviceTypes,
+  } = useFloorplan();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({
     width: 500,
     height: 500,
   });
   const [showOverlay, setShowOverlay] = useState(false);
-  const [modalDevice, setModalDevice] = useState<Device | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [openCreateFloorplan, setOpenCreateFloorplan] = useState(false);
+  const [openEditFloorplan, setOpenEditFloorplan] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
 
-
-  
   // When selected floorplan changes, load its image and set container size
   useEffect(() => {
     if (selected) {
@@ -62,7 +71,9 @@ export default function FloorplanPage() {
   >({});
 
   // Store the original positions for revert
-  const [originalPositions, setOriginalPositions] = useState<Record<string, PercentPosition>>({});
+  const [originalPositions, setOriginalPositions] = useState<
+    Record<string, PercentPosition>
+  >({});
 
   // Update devicePositions and originalPositions when devices or selected floorplan changes
   useEffect(() => {
@@ -76,17 +87,12 @@ export default function FloorplanPage() {
     setOriginalPositions(positions);
   }, [devices, selected]);
 
-    // Handles drag end event to update device position (percent-based)
-    const handleDragEnd = handleDragEndFactory({
-      devicePositions,
-      setDevicePositions,
-      renderedSize,
-    });
-
-  // Opens modal with device info on double click
-  const handleDeviceClick = (device: Device) => {
-    setModalDevice(device);
-  };
+  // Handles drag end event to update device position (percent-based)
+  const handleDragEnd = handleDragEndFactory({
+    devicePositions,
+    setDevicePositions,
+    renderedSize,
+  });
 
   // Devices not yet on the selected floor plan
   const availableDevices = devices?.filter(
@@ -122,11 +128,13 @@ export default function FloorplanPage() {
       );
       // Update local state after successful update
       setDevices((prev) =>
-        prev ? prev.map((d) =>
-          toAdd.find((add) => add.id === d.id)
-            ? { ...d, floorplan_id: selected.id }
-            : d
-        ) : []
+        prev
+          ? prev.map((d) =>
+              toAdd.find((add) => add.id === d.id)
+                ? { ...d, floorplan_id: selected.id }
+                : d
+            )
+          : []
       );
       setToAdd([]);
       setShowOverlay(false);
@@ -169,15 +177,17 @@ export default function FloorplanPage() {
         }))
       );
       setDevices((prev) =>
-        prev ? prev.map((device) =>
-          devicePositions[device.id]
-            ? {
-                ...device,
-                x_percent: devicePositions[device.id].x,
-                y_percent: devicePositions[device.id].y,
-              }
-            : device
-        ) : []
+        prev
+          ? prev.map((device) =>
+              devicePositions[device.id]
+                ? {
+                    ...device,
+                    x_percent: devicePositions[device.id].x,
+                    y_percent: devicePositions[device.id].y,
+                  }
+                : device
+            )
+          : []
       );
 
       console.log('All device positions saved successfully');
@@ -188,231 +198,327 @@ export default function FloorplanPage() {
       alert('Failed to save positions');
     }
   };
+  const handleNewFloorplan = () => {
+    setNewName('');
+    setNewDescription('');
+    setNewImageFile(null);
+    setOpenCreateFloorplan(true);
+  };
 
+  // Accept optional data from the create dialog: { name, description, imageFile }
+  const submitNewFloorplan = async (data?: {
+    name: string;
+    description: string;
+    imageFile: File | null;
+  }) => {
+    const name = data?.name ?? newName;
+    const description = data?.description ?? newDescription;
+    const imageFile = data?.imageFile ?? newImageFile;
+
+    if (!name) {
+      alert('Please provide a name');
+      return;
+    }
+
+    // Image is now required
+    if (!imageFile) {
+      alert(
+        'Please select an image file. Image is required for creating a floorplan.'
+      );
+      return;
+    }
+
+    try {
+      const form = new FormData();
+      form.append('name', name);
+      form.append('description', description);
+      form.append('image', imageFile);
+
+      const res = await fetch(`${SERVER_URL}/api/floorplans/createf`, {
+        method: 'POST',
+        body: form,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create floorplan');
+      }
+
+      const created = await res.json();
+      // Append to local list and select it
+      setDevices((prev) => prev ?? prev); // no-op to keep TS happy if needed
+      setOpenCreateFloorplan(false);
+      // If API returned the created floorplan, select it
+      if (created && created.id) {
+        setSelected(created);
+      }
+    } catch (err) {
+      console.error(err);
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create floorplan';
+      alert(errorMessage);
+    }
+  };
+
+  const handleEditFloorplan = () => {
+    if (!selected) return;
+    setOpenEditFloorplan(true);
+  };
+
+  const submitEditFloorplan = async (data: {
+    id: number;
+    name: string;
+    description: string;
+    imageFile: File | null;
+  }) => {
+    try {
+      const form = new FormData();
+      form.append('name', data.name);
+      form.append('description', data.description);
+      if (data.imageFile) {
+        form.append('image', data.imageFile);
+      }
+
+      const res = await fetch(`${SERVER_URL}/api/floorplans/edit/${data.id}`, {
+        method: 'PUT',
+        body: form,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update floorplan');
+      }
+
+      const updated = await res.json();
+
+      // Update the selected floorplan
+      setSelected(updated);
+
+      // Update floorplans list in context
+      // Note: You might need to add an update function to your FloorplanContext
+
+      setOpenEditFloorplan(false);
+      alert('Floorplan updated successfully!');
+    } catch (err) {
+      console.error(err);
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to update floorplan';
+      alert(errorMessage);
+    }
+  };
   return (
-    <div>
-      <div className={styles.mainWrap} >
-      <h2 style={{ fontSize: '1rem' }}>Floor Plan</h2>
-      <div style={{ marginBottom: '1rem'}}>
-        <Button
-          style={{ margin: '5px' }}
-          onClick={() => {
-            if (editMode) {
-              // Exiting edit mode, revert positions if not saved
-              setDevicePositions(originalPositions);
-            }
-            setEditMode((prev) => !prev);
-          }}
-          variant={editMode ? 'secondary' : 'primary'}
-        >
-          {editMode ? 'Exit Edit Mode' : 'Edit'}
-        </Button>
-        {editMode && (
-          <>
-            <Button onClick={() => setShowOverlay(true)} disabled={!selected}>
-              Add Device to Floor Plan
+    <div className={styles.floorplanContainer}>
+      <div className={styles.floorplanWrapper}>
+        {/* Header Section */}
+        <div className={styles.headerSection}>
+          <h1 className={styles.pageTitle}>Floor Plan Management</h1>
+          <p className={styles.pageSubtitle}>
+            Create, edit, and manage your floor plans and device locations
+          </p>
+        </div>
+
+        {/* Action Bar */}
+        <div className={styles.actionBar}>
+          <div className={styles.actionGroup}>
+            <Button onClick={handleNewFloorplan} variant="primary">
+              New Floor Plan
             </Button>
-            <Button onClick={handleSaveAllDevicePositions} variant="primary">
-              Save Changes
-            </Button>
-          </>
-        )}
-      </div>
-      <div className={styles.Wrapper} style={{ position: 'relative' }}>
-        {/* Overlay Add Device Panel */}
-        {showOverlay && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 40,
-              left: '10%',
-              width: '80%',
-              minHeight: 350,
-              background: '#fff',
-              border: '1px solid #bbb',
-              borderRadius: 8,
-              display: 'flex',
-              zIndex: 10,
-              boxShadow: '0 2px 12px #0001',
-              padding: 24,
-              gap: 12,
-            }}
-          >
-            {/* Available Devices */}
-            <div style={{ flex: 1, marginRight: 12 }}>
-              <div style={{ fontWeight: 600, marginBottom: 12 }}>Devices</div>
-              {availableDevices?.map((device) => (
-                <div
-                  key={device.id}
-                  style={{
-                    background: '#f5faff',
-                    color: '#2563eb',
-                    borderRadius: 8,
-                    padding: '10px 12px',
-                    marginBottom: 10,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    fontWeight: 500,
-                    opacity: toAdd.find((d) => d.id === device.id) ? 0.5 : 1,
-                    pointerEvents: toAdd.find((d) => d.id === device.id)
-                      ? 'none'
-                      : 'auto',
-                  }}
-                  onClick={() => handleAddToFloorPlan(device)}
-                >
-                  {device.name}
-                </div>
-              ))}
-            </div>
-            {/* Devices to be added */}
-            <div
-              style={{
-                flex: 1,
-                marginLeft: 12,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              }}
-            >
-              <div style={{ fontWeight: 600, marginBottom: 12 }}>
-                To current floor plan
-              </div>
-              {toAdd.length === 0 && (
-                <div style={{ color: '#888', marginBottom: 12 }}>
-                  No devices selected
-                </div>
-              )}
-              {toAdd.map((device) => (
-                <div
-                  key={device.id}
-                  style={{
-                    background: '#e6f0fa',
-                    color: '#2563eb',
-                    borderRadius: 8,
-                    padding: '10px 12px',
-                    marginBottom: 10,
-                    textAlign: 'center',
-                    fontWeight: 500,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    maxWidth: 220,
-                  }}
-                >
-                  <span>{device.name}</span>
-                  <button
-                    style={{
-                      marginLeft: 12,
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#f44336',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      fontSize: 16,
-                    }}
-                    onClick={() => handleRemoveFromFloorPlan(device)}
-                    title="Remove"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+
+            {selected && (
               <Button
-                style={{ marginTop: 24, opacity: toAdd.length === 0 ? 0.5 : 1 }}
-                disabled={toAdd.length === 0}
-                onClick={handleSave}
-                variant="primary"
-              >
-                Save
-              </Button>
-              <Button
-                style={{ marginTop: 8 }}
-                onClick={() => setShowOverlay(false)}
+                onClick={handleEditFloorplan}
                 variant="secondary"
               >
-                Cancel
+                Edit Floor Plan
               </Button>
-            </div>
+            )}
           </div>
-        )}
 
-        {/* Floorplan List */}
-        <div className={styles.FloorList}>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {floorplans?.map((plan) => (
-              <li
-                key={plan.id}
-                onClick={() => setSelected(plan)}
-                className={`${styles.List} ${selected?.id === plan.id ? styles.Selected : styles.Unselected}`}
-              >
-                {plan.name}
-              </li>
-            ))}
-          </ul>
+          <div className={styles.actionGroup}>
+            <Button
+              onClick={() => {
+                if (editMode) {
+                  setDevicePositions(originalPositions);
+                }
+                setEditMode((prev) => !prev);
+              }}
+              variant={editMode ? 'secondary' : 'primary'}
+            >
+              {editMode ? 'Exit Edit Mode' : 'Edit Mode'}
+            </Button>
+            
+            {editMode && (
+              <>
+                <Button 
+                  onClick={() => setShowOverlay(true)} 
+                  disabled={!selected}
+                  variant="secondary"
+                >
+                  Add Devices
+                </Button>
+                <Button 
+                  onClick={handleSaveAllDevicePositions} 
+                  variant="primary"
+                >
+                  Save Changes
+                </Button>
+              </>
+            )}
+          </div>
         </div>
+        {/* New Floorplan Modal */}
+        <FloorplanCreateDialog
+          open={openCreateFloorplan}
+          onOpenChange={setOpenCreateFloorplan}
+          onSubmit={submitNewFloorplan}
+          ImageUpload={ImageUpload}
+        />
 
-        {/* Floorplan Image with Drag-and-Drop */}
-        <div className={styles.FloorPlan}>
-          {selected && (
-            <div ref={containerRef} style={{ width: '100%' }}>
-              <AspectRatioBox
-                originalWidth={containerSize.width}
-                originalHeight={containerSize.height}
-                backgroundImage={SERVER_URL + selected.image_url}
-                maxWidth="100%"
-              >
+        {/* Edit Floorplan Modal */}
+        <FloorplanEditDialog
+          open={openEditFloorplan}
+          onOpenChange={setOpenEditFloorplan}
+          onSubmit={submitEditFloorplan}
+          ImageUpload={ImageUpload}
+          floorplan={selected}
+          serverUrl={SERVER_URL}
+        />
+        <div className={styles.Wrapper} style={{ position: 'relative' }}>
+          {/* Overlay Add Device Panel */}
+          {showOverlay && (
+            <div className={styles.deviceOverlay}>
+              <div className={styles.overlayContent}>
+                {/* Available Devices */}
+                <div className={styles.deviceSection}>
+                  <h3 className={styles.sectionTitle}>Available Devices</h3>
+                  <div className={styles.deviceList}>
+                    {availableDevices?.map((device) => (
+                      <div
+                        key={device.id}
+                        className={`${styles.deviceItem} ${
+                          toAdd.find((d) => d.id === device.id) ? styles.deviceItemDisabled : ''
+                        }`}
+                        onClick={() => !toAdd.find((d) => d.id === device.id) && handleAddToFloorPlan(device)}
+                      >
+                        {device.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 
-                <DndContext onDragEnd={handleDragEnd}>
-                  {devices
-                    ?.filter((device) => device.floorplan_id === selected?.id)
-                    ?.map((device) => {
-                      const type = deviceTypes?.find(
-                        (t) => t.id === device.device_type_id
-                      );
-                      const icon = type
-                        ? SERVER_URL + type.icon_url
-                        : '/icons/default.png';
-                      return (
-                        <DraggableBox
-                          key={device.id}
-                          id={String(device.id)}
-                          iconURL={icon}
-                          label={String(device.id)}
-                          position={
-                          devicePositions[device.id] || {
-                            x: device.x_percent,
-                            y: device.y_percent,
-                          }
-                        }
-                        containerWidth={renderedSize.width}
-                        containerHeight={renderedSize.height}
-                        onDoubleClick={() => handleDeviceClick(device)}
-                        disabled={!editMode}
-                      />
-                      );
-                    })}
-                </DndContext>
-              </AspectRatioBox>
+                {/* Devices to be added */}
+                <div className={styles.deviceSection}>
+                  <h3 className={styles.sectionTitle}>Selected for Floor Plan</h3>
+                  <div className={styles.deviceList}>
+                    {toAdd.length === 0 ? (
+                      <div className={styles.emptyState}>
+                        No devices selected
+                      </div>
+                    ) : (
+                      toAdd.map((device) => (
+                        <div key={device.id} className={styles.selectedDevice}>
+                          <span>{device.name}</span>
+                          <button
+                            className={styles.removeButton}
+                            onClick={() => handleRemoveFromFloorPlan(device)}
+                            title="Remove"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  <div className={styles.overlayActions}>
+                    <Button
+                      onClick={handleSave}
+                      variant="primary"
+                      disabled={toAdd.length === 0}
+                    >
+                      Add to Floor Plan
+                    </Button>
+                    <Button
+                      onClick={() => setShowOverlay(false)}
+                      variant="secondary"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-        </div>
-        </div>
 
-        {/* Device Info Modal */}
-        <Modal open={!!modalDevice} onClose={() => setModalDevice(null)}>
-          {modalDevice && (
-            <>
-              <h3>Device Info</h3>
-              <div>
-                <b>Name:</b> {modalDevice.name}
+          {/* Floorplan List */}
+          <div className={styles.FloorList}>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {floorplans?.map((plan) => (
+                <li
+                  key={plan.id}
+                  onClick={() => setSelected(plan)}
+                  className={`${styles.List} ${selected?.id === plan.id ? styles.Selected : styles.Unselected}`}
+                >
+                  {plan.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Floorplan Image with Drag-and-Drop */}
+          <div className={styles.FloorPlan}>
+            {selected && (
+              <div
+                ref={containerRef}
+                style={{ width: '100%', boxShadow: '0 2px 8px #0003' }}
+              >
+                <AspectRatioBox
+                  originalWidth={containerSize.width}
+                  originalHeight={containerSize.height}
+                  backgroundImage={SERVER_URL + selected.image_url}
+                >
+                  <DndContext onDragEnd={handleDragEnd}>
+                    {devices
+                      ?.filter((device) => device.floorplan_id === selected?.id)
+                      ?.map((device) => {
+                        const type = deviceTypes?.find(
+                          (t) => t.id === device.device_type_id
+                        );
+                        const icon = type
+                          ? SERVER_URL + type.icon_url
+                          : '/icons/default.png';
+                        return (
+                          <DraggableBox
+                            key={device.id}
+                            id={String(device.id)}
+                            iconURL={icon}
+                            label={String(device.id)}
+                            position={
+                              devicePositions[device.id] || {
+                                x: device.x_percent,
+                                y: device.y_percent,
+                              }
+                            }
+                            containerWidth={renderedSize.width}
+                            containerHeight={renderedSize.height}
+                            disabled={!editMode}
+                          />
+                        );
+                      })}
+                  </DndContext>
+                </AspectRatioBox>
               </div>
+            )}
+          </div>
+          <div className={styles.Description}>
+            {selected && (
               <div>
-                <b>ID:</b> {modalDevice.id}
+                <h3>Description</h3>
+                <p>{selected.description}</p>
               </div>
-            </>
-          )}
-        </Modal>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

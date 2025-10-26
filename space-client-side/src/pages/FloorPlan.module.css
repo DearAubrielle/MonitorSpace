@@ -5,6 +5,56 @@
   text-align: center;
 }
 
+.floorplanContainer {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e8f4f8 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.floorplanWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.headerSection {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 0.5rem;
+}
+
+.pageSubtitle {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.actionGroup {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 h1 {
   margin-bottom: 10px;
 }
@@ -14,12 +64,13 @@ p {
 }
 
 .Wrapper {
-  max-width: 100% ;
   display: grid;
-  grid-template-areas: 
-  "list floorplan"
-  "list .";
+  grid-template-areas:
+    'list floorplan'
+    'list .'
+    'description description';
   grid-template-columns: 2fr 8fr;
+  grid-template-rows: auto auto 1fr;
   gap: 1rem;
   height: inherit;
   position: relative;
@@ -32,16 +83,16 @@ p {
   box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
   padding: 0.8rem;
   overflow-y: auto;
-  border: var(--default-boarder);
-  height: 100%;
+  border: var(--default-border-soft);
   min-width: 100px;
   height: inherit;
+  max-height: auto;
 }
 
 .FloorPlan {
   grid-area: floorplan;
   padding: 1rem;
-  border: var(--default-boarder);
+  border: var(--default-border-soft);
   background-color: #f8f8f8;
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
@@ -49,7 +100,7 @@ p {
   align-items: center;
   justify-content: center;
   position: relative;
-
+  height: auto;
 }
 
 .List {
@@ -60,6 +111,15 @@ p {
   transition: background-color 0.2s;
 }
 
+.Description {
+  grid-area: description;
+  padding: 1rem 2rem 1rem 2rem;;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
+  border: var(--default-border-soft);
+  min-height: 100px;
+}
 .Selected {
   background-color: #dbeafe;
   font-weight: bold;
@@ -77,52 +137,162 @@ p {
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 10;
   min-width: 180px;
   padding: 0.5rem 1rem;
   user-select: none;
 }
 
-.DropdownTitle {
-  margin: 0 0 0.5rem 0;
-}
-
-.DropdownList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.DropdownItemButton {
-  width: 100%;
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 0.25rem 0;
-  cursor: pointer;
-  user-select: none;
-}
-
-
-.popup-overlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  justify-content: center;
-  align-items: center;
-}
-
-.popup-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  width: 300px;
-  text-align: center;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-}
 .mainWrap {
   margin: auto 1%;
+}
+
+.deviceOverlay {
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 800px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e9ecef;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.overlayContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.deviceSection {
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.deviceSection:first-child {
+  border-right: 1px solid #e9ecef;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.deviceList {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.deviceItem {
+  background: #f8f9fa;
+  color: #3b82f6;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.deviceItem:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
+.deviceItemDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.selectedDevice {
+  background: #e7f3ff;
+  color: #1e40af;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 500;
+  border: 1px solid #3b82f6;
+}
+
+.removeButton {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.removeButton:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.overlayActions {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 968px) {
+  .Wrapper {
+    grid-template-areas:
+      'list'
+      'floorplan'
+      'description';
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin: 0 0.5rem;
+  }
+  
+  .FloorList {
+    max-height: 200px;
+  }
+  
+  .FloorPlan {
+    min-height: 300px;
+  }
+  
+  .overlayContent {
+    grid-template-columns: 1fr;
+  }
+  
+  .deviceSection:first-child {
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .floorplanWrapper {
+    padding: 1rem;
+  }
+  
+  .pageTitle {
+    font-size: 1.75rem;
+  }
+  
+  .actionBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .actionGroup {
+    justify-content: center;
+  }
 }

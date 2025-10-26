@@ -6,9 +6,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<string, React.CSSProperties> = {
   primary: {
-    background: '#ffffffff',
-    color: '#285885ff',
-    border: '1px solid #b5cbecff',
+    background: '#273b66ff',
+    color: '#ffffff',
+    border: '1px solid #749cdbff',
     borderRadius: 6,
     padding: '7px 20px',
     margin: '5px',
@@ -16,12 +16,13 @@ const variantStyles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   secondary: {
-    background: '#fff',
-    color: '#888',
-    border: '1px solid #ccc',
+    background: '#ffffffff',
+    color: '#285885ff',
+    border: '1px solid #b5cbecff',
     borderRadius: 6,
     padding: '7px 20px',
-    fontWeight: 400,
+    margin: '5px',
+    fontWeight: 600,
     cursor: 'pointer',
   },
   danger: {

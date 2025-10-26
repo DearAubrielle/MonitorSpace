@@ -19,6 +19,18 @@ const demoCameras = [
     streamUrl: 'http://192.168.100.101/videostream.cgi?user=admin&pwd=888888',
     details: 'Outdoor camera for parking lot surveillance.',
   },
+  {
+    id: '4',
+    name: 'Parking Lot',
+    streamUrl: 'http://192.168.100.101/videostream.cgi?user=admin&pwd=888888',
+    details: 'Outdoor camera for parking lot surveillance.',
+  },
+  {
+    id: '5',
+    name: 'Parking Lot',
+    streamUrl: 'http://192.168.100.101/videostream.cgi?user=admin&pwd=888888',
+    details: 'Outdoor camera for parking lot surveillance.',
+  },
 ];
 
 export default function MonitorPage() {

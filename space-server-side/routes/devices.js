@@ -12,6 +12,6 @@ router.get('/gettypes', devicesController.getAllDeviceTypes);
 router.post('/postd', devicesController.createDevice);
 // PUT update device location
 router.put('/putdlo/:id', devicesController.putDevicesLocation);
-
-
+// PUT update device details
+router.put('/edit/:id', devicesController.saveEditDevice);
 module.exports = router;

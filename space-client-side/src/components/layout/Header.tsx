@@ -7,7 +7,7 @@ export default function Header(){
   const { user } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('username');
     navigate('/login');
   };
@@ -17,9 +17,9 @@ export default function Header(){
       <header>
         <div className={styles.logo}>SpaceMonitor</div>
         <ul>
-          <li><b>{user?.username}</b></li>
+          <li><b>{user?.username || 'Guest'}</b></li>
           <li>
-            <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#4c94e0ff', cursor: 'pointer' }}>
+            <button onClick={handleLogout}>
               Logout
             </button>
           </li>

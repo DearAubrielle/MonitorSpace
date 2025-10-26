@@ -37,7 +37,7 @@ const AspectRatioBox: React.FC<AspectRatioBoxProps> = ({
     width: "100%",
     height: "100%",
     backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-    backgroundSize: "contain", // or 'cover' if you want it filled
+    backgroundSize: "contain",
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
     ...backgroundStyle

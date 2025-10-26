@@ -1,0 +1,204 @@
+.monitorContainer {
+    padding: 2rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.cameraGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    justify-content: center;
+}
+
+.cameraCard {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.cameraCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.cameraCardSelected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.cameraHeader {
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.cameraTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.cameraStatus {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.statusDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.statusDot.online {
+    background-color: #22c55e;
+    animation: pulse 2s infinite;
+}
+
+.statusDot.offline {
+    background-color: #ef4444;
+}
+
+.statusText {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.cameraPreview {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: #f8f9fa;
+    overflow: hidden;
+}
+
+.cameraImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.cameraCard:hover .cameraImage {
+    transform: scale(1.02);
+}
+
+.errorPlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6c757d;
+    background: #f8f9fa;
+}
+
+.errorIcon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.errorPlaceholder p {
+    margin: 0;
+    font-weight: 500;
+}
+
+.cameraActions {
+    padding: 1rem 1.5rem;
+}
+
+.detailsButton {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #3b82f6;
+    background: transparent;
+    color: #3b82f6;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.detailsButton:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.detailsButtonActive {
+    background: #3b82f6;
+    color: white;
+}
+
+.cameraDetails {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border-top: 1px solid #f1f3f4;
+    background: #f8f9fa;
+    animation: slideDown 0.3s ease;
+}
+
+.cameraDetails h4 {
+    margin: 1rem 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.cameraDetails p {
+    margin: 0;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cameraGrid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .monitorContainer {
+        padding: 1rem 0.5rem;
+    }
+    
+    .cameraHeader {
+        padding: 1rem;
+    }
+    
+    .cameraActions {
+        padding: 1rem;
+    }
+    
+    .cameraDetails {
+        padding: 0 1rem 1rem 1rem;
+    }
+}
