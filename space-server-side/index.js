@@ -44,6 +44,14 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    cors: 'enabled'
+  });
+});
 
 // Mount routes
 app.use("/api/users", usersRoutes);
@@ -68,7 +76,7 @@ function broadcast(data) {
 
 
 // --- Send all device latest values every 2s ---
-setInterval(async () => {
+const broadcastInterval = setInterval(async () => {
   try {
     const [rows] = await db.query(
       "SELECT id, latest_value FROM devices"
@@ -76,17 +84,61 @@ setInterval(async () => {
     broadcast(rows); // send all devices in one packet
     //console.log("Broadcasted device values");
   } catch (err) {
-    console.error("DB error:", err);
+    console.error("❌ Database error during broadcast:", err.message);
+    // Don't stop the interval, just log the error
   }
 }, 2000);
 
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🔄 Received SIGTERM, shutting down gracefully');
+  clearInterval(broadcastInterval);
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 Received SIGINT, shutting down gracefully');
+  clearInterval(broadcastInterval);
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
+
+// Check required environment variables
+const requiredEnvVars = ['ACCESS_SECRET', 'REFRESH_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars);
+  console.error('Please create a .env file or set these environment variables');
+  console.error('Example .env content:');
+  console.error('ACCESS_SECRET=your_access_secret_here');
+  console.error('REFRESH_SECRET=your_refresh_secret_here');
+  console.error('DB_HOST=localhost');
+  console.error('DB_NAME=spacemonitor');
+  console.error('DB_USER=root');
+  console.error('DB_PASSWORD=');
+  process.exit(1);
+}
 
 // Start server
 server.listen(port, () => {
-  console.log(`Server Smart web IoT management started `);
+  console.log(`✅ Server Smart web IoT management started on port ${port}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔐 JWT secrets configured: ${process.env.ACCESS_SECRET ? '✅' : '❌'}`);
+  console.log(`🌐 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  
   // Log database connection info
-  const dbConfig = db.pool ? db.pool.config.connectionConfig : db.config.connectionConfig;
-  console.log(`Database running on ${dbConfig.host}, database: ${dbConfig.database}, user: ${dbConfig.user}`);
-
+  try {
+    const dbConfig = db.pool ? db.pool.config.connectionConfig : db.config.connectionConfig;
+    console.log(`🗄️  Database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database} (${dbConfig.user})`);
+  } catch (dbError) {
+    console.error('❌ Database configuration error:', dbError.message);
+  }
 });
 
