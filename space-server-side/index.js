@@ -20,49 +20,17 @@ const floorplansRoutes = require("./routes/floorplans");
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
-      // Development origins
       'http://localhost:5173',
-      'http://localhost:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3000',
-      // Environment-based origins
-      process.env.CLIENT_URL,
-      // Production URLs
-      'https://monitorspace.onrender.com',
-      'https://monitorspaceflow.onrender.com'
+      process.env.CLIENT_URL
     ].filter(Boolean);
-
-    console.log(`CORS Check - Request Origin: ${origin}`);
-    console.log(`CORS Check - Allowed Origins:`, allowedOrigins);
-
-    // Allow requests with no origin (mobile apps, etc.)
-    if (!origin) {
-      console.log('CORS - No origin header, allowing request');
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log(`CORS - Origin ${origin} is allowed`);
+    
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log(`CORS - Origin ${origin} is NOT allowed`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-    'Access-Control-Request-Method',
-    'Access-Control-Request-Headers'
-  ],
-  exposedHeaders: ['Set-Cookie'],
-  optionsSuccessStatus: 200, // For legacy browser support
-  preflightContinue: false
 };
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -73,31 +41,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 app.use(cookieParser());
-
-// Add CORS debugging
-app.use((req, res, next) => {
-  console.log(`CORS - Origin: ${req.get('Origin')}`);
-  console.log(`CORS - Method: ${req.method}`);
-  next();
-});
-
 app.use(cors(corsOptions));
-
-// Handle preflight OPTIONS requests explicitly
-app.options('*', cors(corsOptions));
-
 app.use(express.json({ limit: "10mb" }));
 
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    origin: req.get('Origin'),
-    corsEnabled: true
-  });
-});
 
 // Mount routes
 app.use("/api/users", usersRoutes);
@@ -137,13 +83,10 @@ setInterval(async () => {
 
 // Start server
 server.listen(port, () => {
-  console.log(`Server Smart web IoT management started on port ${port}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`CLIENT_URL: ${process.env.CLIENT_URL || 'Not set'}`);
-  console.log(`PRODUCTION_CLIENT_URL: ${process.env.PRODUCTION_CLIENT_URL || 'Not set'}`);
-  
+  console.log(`Server Smart web IoT management started `);
   // Log database connection info
   const dbConfig = db.pool ? db.pool.config.connectionConfig : db.config.connectionConfig;
   console.log(`Database running on ${dbConfig.host}, database: ${dbConfig.database}, user: ${dbConfig.user}`);
+
 });
 
