@@ -74,7 +74,7 @@ setInterval(async () => {
       "SELECT id, latest_value FROM devices"
     );
     broadcast(rows); // send all devices in one packet
-    console.log("Broadcasted device values");
+    //console.log("Broadcasted device values");
   } catch (err) {
     console.error("DB error:", err);
   }
@@ -83,7 +83,7 @@ setInterval(async () => {
 
 // Start server
 server.listen(port, () => {
-  console.log(`Server started on port ${port} (HTTP + WebSocket) at http://localhost:${port}`);
+  console.log(`Server Smart web IoT management started `);
   // Log database connection info
   const dbConfig = db.pool ? db.pool.config.connectionConfig : db.config.connectionConfig;
   console.log(`Database running on ${dbConfig.host}, database: ${dbConfig.database}, user: ${dbConfig.user}`);
