@@ -116,6 +116,30 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+// Get single user by ID with role information
+exports.getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [results] = await db.query(`
+      SELECT u.id, u.username, u.email, u.created_at, 
+             r.name as role,
+             r.display_name, r.permissions
+      FROM users u 
+      LEFT JOIN roles r ON u.role_id = r.id
+      WHERE u.id = ?
+    `, [id]);
+    
+    if (results.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    res.json(results[0]);
+  } catch (err) {
+    console.error("Error executing query:", err);
+    res.status(500).json({ message: "Database query error" });
+  }
+};
+
 // Get user profile with role information
 exports.getProfile = async (req, res) => {
   try {
@@ -293,6 +317,7 @@ module.exports = {
   register: exports.register,
   login: exports.login,
   getAllUsers: exports.getAllUsers,
+  getUserById: exports.getUserById,
   getProfile: exports.getProfile,
   refreshToken: exports.refreshToken,
   updateUserRole: exports.updateUserRole,

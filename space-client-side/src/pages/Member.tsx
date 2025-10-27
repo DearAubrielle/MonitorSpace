@@ -108,7 +108,8 @@ export default function Member() {
     return (
       member.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role.toLowerCase().includes(searchTerm.toLowerCase())
+      member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (member.display_name && member.display_name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
@@ -124,6 +125,23 @@ export default function Member() {
       default:
         return styles.roleDefault;
     }
+  };
+
+  // Get role display name
+  const getRoleDisplayName = (roleName: string, memberDisplayName?: string) => {
+    // First try to use the display_name from the member data
+    if (memberDisplayName) {
+      return memberDisplayName;
+    }
+    
+    // Fallback to finding the role in our roles array
+    const role = roles.find(r => r.name === roleName);
+    if (role) {
+      return role.display_name;
+    }
+    
+    // Final fallback to capitalize the role name
+    return roleName.charAt(0).toUpperCase() + roleName.slice(1);
   };
 
   // Get user avatar initials
@@ -211,23 +229,27 @@ export default function Member() {
           // Update selected member with fresh data
           setSelectedMember(updatedMember);
         } else {
-          // Fallback: update with the new role if refetch fails
+          // Fallback: update with the new role and display name if refetch fails
+          const roleDisplayName = roles.find(r => r.name === newRole)?.display_name || 
+                                  newRole.charAt(0).toUpperCase() + newRole.slice(1);
           setMembers(prev => prev.map(member => 
             member.id === selectedMember.id 
-              ? { ...member, role: newRole }
+              ? { ...member, role: newRole, display_name: roleDisplayName }
               : member
           ));
-          setSelectedMember(prev => prev ? { ...prev, role: newRole } : null);
+          setSelectedMember(prev => prev ? { ...prev, role: newRole, display_name: roleDisplayName } : null);
         }
       } catch (refetchError) {
         console.warn('Failed to refetch updated member, using optimistic update:', refetchError);
-        // Fallback: update with the new role
+        // Fallback: update with the new role and display name
+        const roleDisplayName = roles.find(r => r.name === newRole)?.display_name || 
+                                newRole.charAt(0).toUpperCase() + newRole.slice(1);
         setMembers(prev => prev.map(member => 
           member.id === selectedMember.id 
-            ? { ...member, role: newRole }
+            ? { ...member, role: newRole, display_name: roleDisplayName }
             : member
         ));
-        setSelectedMember(prev => prev ? { ...prev, role: newRole } : null);
+        setSelectedMember(prev => prev ? { ...prev, role: newRole, display_name: roleDisplayName } : null);
       }
 
       setUpdateSuccess(responseData.message || 'Role updated successfully!');
@@ -330,7 +352,7 @@ export default function Member() {
                 <div className={styles.roleSection}>
                   <span className={styles.roleLabel}>Role</span>
                   <span className={`${styles.roleBadge} ${getRoleBadgeColor(member.role)}`}>
-                    {member.display_name || member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                    {getRoleDisplayName(member.role, member.display_name)}
                   </span>
                 </div>
                 
@@ -413,7 +435,7 @@ export default function Member() {
                 <div className={styles.detailRow}>
                   <span className={styles.detailLabel}>Role:</span>
                   <span className={styles.detailValue}><span className={`${styles.roleBadge} ${getRoleBadgeColor(selectedMember.role)}`}>
-                    {selectedMember.display_name || selectedMember.role.charAt(0).toUpperCase() + selectedMember.role.slice(1)}
+                    {getRoleDisplayName(selectedMember.role, selectedMember.display_name)}
                   </span></span>
                 </div>
               </div>

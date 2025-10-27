@@ -18,19 +18,20 @@ const floorplansRoutes = require("./routes/floorplans");
 
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:5173',
-      process.env.CLIENT_URL
-    ].filter(Boolean);
-    
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    // Development origins
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+    // Environment-based origins
+    process.env.CLIENT_URL,
+    // Fallback production URL (safe to keep)
+    'https://monitorspace.onrender.com'
+  ].filter(Boolean),
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -41,6 +42,14 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 app.use(cookieParser());
+
+// Add CORS debugging
+app.use((req, res, next) => {
+  console.log(`CORS - Origin: ${req.get('Origin')}`);
+  console.log(`CORS - Method: ${req.method}`);
+  next();
+});
+
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 

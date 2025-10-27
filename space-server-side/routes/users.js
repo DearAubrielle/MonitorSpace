@@ -6,6 +6,9 @@ const { verifyAccessToken, verifyRefreshToken } = require("../middleware/authMid
 // GET all users
 router.get('/getall', userController.getAllUsers);
 
+// GET single user by ID
+router.get('/:id', userController.getUserById);
+
 // Register a new user
 router.post('/register', userController.register);
 
