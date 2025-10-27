@@ -2,9 +2,9 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Oct 26, 2025 at 06:51 PM
--- Server version: 10.4.32-MariaDB
+-- Host: hopper.proxy.rlwy.net:28173
+-- Generation Time: Oct 27, 2025 at 06:07 AM
+-- Server version: 9.4.0
 -- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -28,17 +28,17 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `devices` (
-  `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `device_type_id` int(11) NOT NULL,
-  `floorplan_id` int(11) NOT NULL,
-  `path_topic` varchar(255) DEFAULT NULL,
-  `x_percent` decimal(30,25) DEFAULT 0.5000000000000000000000000,
-  `y_percent` decimal(30,25) DEFAULT 0.5000000000000000000000000,
-  `latest_value` varchar(50) DEFAULT NULL,
+  `id` int NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `device_type_id` int NOT NULL,
+  `floorplan_id` int NOT NULL,
+  `path_topic` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `x_percent` decimal(30,25) DEFAULT '0.5000000000000000000000000',
+  `y_percent` decimal(30,25) DEFAULT '0.5000000000000000000000000',
+  `latest_value` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `last_updated` datetime DEFAULT NULL,
-  `min_alert` varchar(50) NOT NULL,
-  `max_alert` varchar(50) NOT NULL,
+  `min_alert` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `max_alert` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `alert_status` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -62,11 +62,11 @@ INSERT INTO `devices` (`id`, `name`, `device_type_id`, `floorplan_id`, `path_top
 --
 
 CREATE TABLE `device_type` (
-  `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `icon_url` varchar(255) DEFAULT NULL,
-  `has_value` tinyint(1) NOT NULL DEFAULT 1,
-  `unit` varchar(20) DEFAULT NULL
+  `id` int NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `icon_url` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `has_value` tinyint(1) NOT NULL DEFAULT '1',
+  `unit` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -86,10 +86,10 @@ INSERT INTO `device_type` (`id`, `name`, `icon_url`, `has_value`, `unit`) VALUES
 --
 
 CREATE TABLE `floorplan` (
-  `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `image_url` varchar(255) DEFAULT NULL,
-  `description` text DEFAULT NULL
+  `id` int NOT NULL,
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `image_url` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb4_general_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -110,15 +110,15 @@ INSERT INTO `floorplan` (`id`, `name`, `image_url`, `description`) VALUES
 --
 
 CREATE TABLE `roles` (
-  `id` int(11) NOT NULL,
-  `name` varchar(50) NOT NULL,
-  `display_name` varchar(100) NOT NULL,
-  `description` text DEFAULT NULL,
-  `permissions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`permissions`)),
-  `is_active` tinyint(1) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` int NOT NULL,
+  `name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `display_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `description` text COLLATE utf8mb4_general_ci,
+  `permissions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ;
 
 --
 -- Dumping data for table `roles`
@@ -136,13 +136,13 @@ INSERT INTO `roles` (`id`, `name`, `display_name`, `description`, `permissions`,
 --
 
 CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `role_id` int(11) DEFAULT 1
+  `id` int NOT NULL,
+  `username` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `role_id` int DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -152,8 +152,8 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `created_at`, `updated_at`, `role_id`) VALUES
 (1, 'IamUser', 'theusername@gmail.com', '$2b$10$g8r/.2SmYJQyzhcqLGOCAuFC4pXa46IPKYZBw5eFjmAJ65t9y4Xru', '2025-08-08 05:37:16', '2025-10-22 06:35:00', 1),
 (2, 'IamAdmin', 'theadmin@gmail.com', '$2b$10$krFw695ySlQW9gB0BPYdO.Vmr6qJVEyjq6Im9H2enpogieC.RVlDy', '2025-10-10 08:05:00', '2025-10-22 00:07:53', 3),
-(3, 'testuser_1761087507246', 'testuser_1761087507246@test.com', '$2b$10$AVrE46YHfodtZKLrfitoaeLynSY.P6hc/V4GWQRFnx0LG1CuSKaSi', '2025-10-21 22:58:27', '2025-10-22 00:44:08', 2),
-(4, 'testuser_1761087615957', 'testuser_1761087615957@test.com', '$2b$10$Vp/PXD6RlPce5RfbphItVuAYcKCVMNC6B0SHN5g9AgyEMdkTgDJpq', '2025-10-21 23:00:16', '2025-10-22 06:26:05', 2);
+(3, 'testuser_1761087507246', 'testuser_1761087507246@test.com', '$2b$10$AVrE46YHfodtZKLrfitoaeLynSY.P6hc/V4GWQRFnx0LG1CuSKaSi', '2025-10-21 22:58:27', '2025-10-27 02:39:14', 1),
+(4, 'testuser_1761087615957', 'testuser_1761087615957@test.com', '$2b$10$Vp/PXD6RlPce5RfbphItVuAYcKCVMNC6B0SHN5g9AgyEMdkTgDJpq', '2025-10-21 23:00:16', '2025-10-27 02:39:09', 3);
 
 --
 -- Indexes for dumped tables
@@ -204,31 +204,31 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `devices`
 --
 ALTER TABLE `devices`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT for table `device_type`
 --
 ALTER TABLE `device_type`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `floorplan`
 --
 ALTER TABLE `floorplan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
