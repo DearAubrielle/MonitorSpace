@@ -1,4 +1,4 @@
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, useEffect, useRef, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
 import api from "../api/axios";
 import { AuthContext, AuthContextType, DecodedToken} from "./AuthContext";
@@ -13,22 +13,124 @@ interface AuthProviderProps {
 // --- Provider Component ---
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("accessToken"));
+  const [token, setToken] = useState<string | null>(() => {
+    const storedToken = localStorage.getItem("accessToken");
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(storedToken);
+        // Check if token is expired
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          localStorage.removeItem("accessToken");
+          return null;
+        }
+        return storedToken;
+      } catch {
+        localStorage.removeItem("accessToken");
+        return null;
+      }
+    }
+    return null;
+  });
+
   const [role, setRole] = useState<string | null>(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      const decoded = jwtDecode<DecodedToken>(token);
-      return decoded.role;
+    const storedToken = localStorage.getItem("accessToken");
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(storedToken);
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          return null;
+        }
+        return decoded.role;
+      } catch {
+        return null;
+      }
     }
     return null;
   });
+
   const [user, setUser] = useState<DecodedToken | null>(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      return jwtDecode<DecodedToken>(token);
+    const storedToken = localStorage.getItem("accessToken");
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(storedToken);
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          return null;
+        }
+        return decoded;
+      } catch {
+        return null;
+      }
     }
     return null;
   });
+
+  const logoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Logout function
+  const logout = useCallback(async (): Promise<void> => {
+    try {
+      // Call logout endpoint to clear refresh token on server
+      await api.post("/api/users/logout");
+    } catch (error) {
+      console.warn("Failed to logout on server:", error);
+    } finally {
+      // Clear client-side data regardless of server response
+      setToken(null);
+      setRole(null);
+      setUser(null);
+      localStorage.removeItem("accessToken");
+      
+      // Clear logout timeout
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+        logoutTimeoutRef.current = null;
+      }
+      
+      console.log("User logged out successfully");
+    }
+  }, []);
+
+  // Check token expiration and set auto-logout
+  const scheduleLogout = useCallback((token: string) => {
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      if (decoded.exp) {
+        const expirationTime = decoded.exp * 1000; // Convert to milliseconds
+        const currentTime = Date.now();
+        const timeUntilExpiration = expirationTime - currentTime;
+
+        // Clear existing timeout
+        if (logoutTimeoutRef.current) {
+          clearTimeout(logoutTimeoutRef.current);
+        }
+
+        // Schedule logout before token expires (5 minutes early)
+        const logoutTime = Math.max(0, timeUntilExpiration - 5 * 60 * 1000);
+        
+        logoutTimeoutRef.current = setTimeout(() => {
+          console.log("Token expired, logging out...");
+          logout();
+        }, logoutTime);
+
+        console.log(`Token expires in ${Math.floor(timeUntilExpiration / 1000 / 60)} minutes`);
+      }
+    } catch (error) {
+      console.error("Error scheduling logout:", error);
+    }
+  }, [logout]);
+
+  // Check for token expiration on mount
+  useEffect(() => {
+    if (token) {
+      scheduleLogout(token);
+    }
+
+    return () => {
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+      }
+    };
+  }, [token, scheduleLogout]);
 
   async function login(username: string, password: string): Promise<void> {
     try {
@@ -38,6 +140,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem("accessToken", accessToken); // Persist token securely
 
       const decoded = jwtDecode<DecodedToken>(accessToken);
+      
+      // Schedule auto-logout
+      scheduleLogout(accessToken);
       
       // Fetch user profile with permissions
       try {
@@ -69,6 +174,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const decoded = jwtDecode<DecodedToken>(accessToken);
     
+    // Schedule auto-logout for refresh token
+    scheduleLogout(accessToken);
+    
     // Fetch user profile with permissions
     try {
       const profileRes = await api.get("/api/users/profile", {
@@ -85,12 +193,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setRole(decoded.role);
       setUser(decoded);
     }
-  }
-
-  function logout(): void {
-    setToken(null);
-    setRole(null);
-    setUser(null);
   }
 
   const authContextValue: AuthContextType = {
