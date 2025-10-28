@@ -3,10 +3,12 @@
 ## Project Abstract
 
 ### Overview
-Many organizations prioritize the security of their data centers, as the potential loss of information could result in millions of dollars in damages. To prevent any abnormal situations from occurring, MonitorSpace utilizes a combination of IoT technologies and software programming to secure and monitor data center environments in real-time.
+Many organizations prioritize the security of their data centers, as the potential loss of information could result in millions of dollars in damages. To prevent abnormal situations and security breaches, MonitorSpace utilizes a combination of IoT technologies and software programming to secure and monitor data center environments in real-time.
 
 ### Objectives
-The primary objective of this project is to enhance data center security measures and provide comprehensive monitoring capabilities through a web-based application integrated with Grafana visualization. The system employs IoT sensors to continuously monitor critical parameters including temperature, lighting conditions, door access, and energy levels in switchboard cabinets. Real-time notifications are delivered via email and the Line messaging application to alert relevant personnel of any anomalies or critical conditions that require immediate attention.
+The primary objective of this project is to enhance data center security measures and provide comprehensive monitoring capabilities through a web-based application integrated with Grafana visualization. The system employs IoT sensors to continuously monitor critical parameters including temperature, lighting conditions, door access, and energy levels in switchboard cabinets. 
+
+Real-time notifications are delivered via email and the Line messaging application to alert relevant personnel of any anomalies or critical conditions that require immediate attention. This project aims to improve data center security by utilizing IoT sensors to detect and display information on websites, thereby increasing accuracy and frequency beyond what human inspectors could achieve.
 
 ### System Architecture
 MonitorSpace is built on a modern, scalable architecture consisting of:
@@ -81,13 +83,13 @@ A comprehensive role-based access control system ensures that users only have ac
 
 ### Benefits and Impact
 
-1. **Enhanced Security**: Continuous 24/7 monitoring with immediate alerting capabilities far exceeds manual inspection intervals
-2. **Improved Accuracy**: IoT sensors provide precise, consistent measurements eliminating human error
-3. **Increased Response Time**: Real-time notifications enable rapid response to critical situations
-4. **Data-Driven Decisions**: Historical data analysis helps identify trends and optimize operations
-5. **Scalability**: Modular architecture allows easy addition of new sensors and monitoring locations
-6. **Cost Efficiency**: Automated monitoring reduces the need for constant manual inspection
-7. **Safety Enhancement**: AI-powered fall detection improves personnel safety in the data center
+1. **Enhanced Security**: Continuous 24/7 monitoring with immediate alerting capabilities far exceeds manual inspection intervals.
+2. **Improved Accuracy**: IoT sensors provide precise, consistent measurements eliminating human error.
+3. **Increased Response Time**: Real-time notifications enable rapid response to critical situations.
+4. **Data-Driven Decisions**: Historical data analysis helps identify trends and optimize operations.
+5. **Scalability**: Modular architecture allows easy addition of new sensors and monitoring locations.
+6. **Cost Efficiency**: Automated monitoring reduces the need for constant manual inspection.
+7. **Safety Enhancement**: AI-powered fall detection improves personnel safety in the data center.
 
 ### Technology Stack
 
