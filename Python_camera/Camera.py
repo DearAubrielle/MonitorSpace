@@ -2,24 +2,33 @@ import cv2
 import time
 import math
 import cvzone
+import os
+from dotenv import load_dotenv
 from ultralytics import YOLO
 import mysql.connector
 from linebot.v3.messaging import MessagingApi, PushMessageRequest, TextMessage
 from linebot.v3.messaging.configuration import Configuration
 from linebot.v3.messaging.api_client import ApiClient
 
-hostname ="localhost"
-username ="root"
-password =""
-database ="spacemonitor"
-port = "3306"
+# โหลดค่า .env
+load_dotenv()
 
-CHANNEL_ACCESS_TOKEN = 'KwOqh2ygwm/ZEELgTi8wcHx1ZTOnjkddJA1rzjBKRan7OezkRaJtstVGsgTYgtjD2KijQCS6aGsea7ivdDyQ+GX2uvE+pjqubAyokDi3VtPyN3KgFTmIFySsPMDiiKOmshW43V8evvJHx/ZWAw/j2wdB04t89/1O/w1cDnyilFU='
-USER_ID = 'C51151f2b2a353530e69ab5c43c3fb026'
+# === ENV CONFIG ===
+hostname = os.getenv("DB_HOST")
+username = os.getenv("DB_USER")
+password = os.getenv("DB_PASS")
+database = os.getenv("DB_NAME")
+port = int(os.getenv("DB_PORT", 3306))
 
-# โหลดชื่อคลาส
-model = YOLO('yolov8s.pt')
-with open("classes.txt") as f:
+CHANNEL_ACCESS_TOKEN = os.getenv("LINE_TOKEN")
+USER_ID = os.getenv("LINE_USER_ID")
+
+MODEL_PATH = os.getenv("MODEL_PATH", "yolov8s.pt")
+CLASSES_PATH = os.getenv("CLASSES_PATH", "classes.txt")
+
+# โหลดโมเดล YOLO
+model = YOLO(MODEL_PATH)
+with open(CLASSES_PATH) as f:
     classnames = f.read().splitlines()
 
 def send_line_message(msg):
@@ -30,31 +39,38 @@ def send_line_message(msg):
         )
 
 def get_camera_list():
-    conn = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
+    conn = mysql.connector.connect(
+        host=hostname,
+        database=database,
+        user=username,
+        password=password,
+        port=port
+    )
     cursor = conn.cursor(dictionary=True)
-    # cursor.execute("SELECT * FROM cameras WHERE status='active'")
-    # cursor.execute("SELECT * FROM devices JOIN floorplan ON devices.floorplan_id = floorplan.id WHERE device_type_id = 2 ")
-    cursor.execute("SELECT devices.id AS device_id,devices.name AS device_name,devices.latest_value,floorplan.name AS floor_name FROM devices JOIN floorplan ON devices.floorplan_id = floorplan.id WHERE devices.device_type_id = 2")
+    cursor.execute("""
+        SELECT devices.id AS device_id, devices.name AS device_name,
+               devices.latest_value, floorplan.name AS floor_name
+        FROM devices
+        JOIN floorplan ON devices.floorplan_id = floorplan.id
+        WHERE devices.device_type_id = 2
+    """)
     cameras = cursor.fetchall()
     conn.close()
     return cameras
 
-# ตัวแปรสำหรับควบคุมแจ้งเตือน
+# ตัวแปรควบคุมแจ้งเตือน
 alert_cooldown = 10
-last_alert_time_map = {}  # แยกตาม camera id
-
+last_alert_time_map = {}
 FALL_ASPECT_RATIO = 1.2
 
-# 🔁 loop ตลอดเวลา
+# 🔁 loop หลัก
 while True:
     cameras = get_camera_list()
-    # ✅ ถ้ายังไม่มีกล้องเลย
     if not cameras:
         print("⚠️ ยังไม่มีกล้องที่ Active ในระบบ... รอ 5 วินาที")
         time.sleep(5)
-        continue  # วนใหม่
+        continue
 
-    # ✅ ถ้ามีกล้อง ให้วนเช็คทีละตัว
     for cam in cameras:
         cam_id = cam['device_id']
         cam_name = cam['device_name']
@@ -71,7 +87,6 @@ while True:
             cap.release()
             continue
 
-        # === ตรวจจับการล้ม (เหมือนเดิม) ===
         results = model(frame)
         for r in results:
             for box in r.boxes:
@@ -80,12 +95,10 @@ while True:
                 if classnames[cls] == "person" and conf > 0.7:
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     aspect_ratio = (x2 - x1) / (y2 - y1 + 1)
-
                     if aspect_ratio > FALL_ASPECT_RATIO:
                         now = time.time()
                         if cam_id not in last_alert_time_map:
                             last_alert_time_map[cam_id] = 0
-
                         if now - last_alert_time_map[cam_id] > alert_cooldown:
                             send_line_message(f"🚨 [กล้อง: {cam_name}] ตรวจพบการล้ม!\nอยู่ที่ {cam_address}")
                             last_alert_time_map[cam_id] = now
