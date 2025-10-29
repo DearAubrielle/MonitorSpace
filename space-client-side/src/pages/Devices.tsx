@@ -104,9 +104,9 @@ const Devices = () => {
 
     // Validate camera URL if provided
     if (isCamera && form.path_topic.trim()) {
-      const urlPattern = /^(https?:\/\/|rtsp:\/\/|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
+      const urlPattern = /^(https?:\/\/|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
       if (!urlPattern.test(form.path_topic.trim())) {
-        setError('Camera path must be a valid URL or IP address (e.g., rtsp://camera.local)');
+        setError('Camera path must be a valid HTTP/HTTPS URL or IP address (e.g., http://camera.local)');
         return;
       }
     }
@@ -421,7 +421,7 @@ const Devices = () => {
                         value={form.path_topic}
                         onChange={handleFormChange}
                         className={styles.editValue}
-                        placeholder="e.g., http://192.168.1.100:8080 or rtsp://camera.local"
+                        placeholder="e.g., http://192.168.1.100:8080 or https://camera.local"
                       />
                       <small style={{ color: '#666', fontSize: '0.85em' }}>
                         Valid formats: HTTP/HTTPS URLs or IP addresses

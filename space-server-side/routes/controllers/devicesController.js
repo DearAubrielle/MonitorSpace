@@ -130,7 +130,7 @@ exports.createDevice = async (req, res) => {
       try {
         const axios = require('axios');
         const response = await axios.post(
-          'http://localhost:5000/add_topic',
+          `${process.env.PYTHON_SERVER_HOST}/add_topic`,
           new URLSearchParams({ topic: generatedPathTopic }),
           {
             headers: {
