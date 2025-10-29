@@ -502,6 +502,9 @@ export default function FloorplanPage() {
                             containerWidth={renderedSize.width}
                             containerHeight={renderedSize.height}
                             disabled={!editMode}
+                            deviceName={device.name}
+                            value={device.latest_value}
+                            unit={type?.unit}
                           />
                         );
                       })}

@@ -1,14 +1,12 @@
 import stylesD from './dashboard.module.css';
 import stylesF from './FloorPlan.module.css';
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import AspectRatioBox from '../components/AspectRatioBox';
 import MonitorPage from './MonitorPage';
 import { PercentPosition } from '../components/DraggableBox';
 import DraggableBox from '@/components/DraggableBox';
-import DeviceInfoModal from '../components/DeviceInfoModal';
 import { useWebSocket } from '../hooks/useWebSocket';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-import type { Device } from '../types/Device';
 import { useFloorplan } from '../context/useFlooplan';
 function FloorPlan() {
   const { floorplans, selected, setSelected, devices, deviceTypes } =
@@ -19,22 +17,12 @@ function FloorPlan() {
     height: 500,
   });
 
-  const [modalDevice, setModalDevice] = useState<Device | null>(null);
-
   // Use WebSocket hook for device values
   const { deviceValues, connectionStatus } = useWebSocket({
     url: 'ws://localhost:8080/',
     reconnectAttempts: 5,
     reconnectInterval: 3000,
   });
-
-  const handleDeviceClick = useCallback((device: Device) => {
-    setModalDevice(device);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setModalDevice(null);
-  }, []);
 
   // When selected floorplan changes, load its image and set container size
   useEffect(() => {
@@ -97,20 +85,86 @@ function FloorPlan() {
     }
   };
 
+  // Check if a floorplan has any devices with alerts
+  const hasFloorplanAlerts = (floorplanId: number) => {
+    const floorplanDevices = devices?.filter((device) => 
+      Number(device.floorplan_id) === Number(floorplanId)
+    );
+    
+    return floorplanDevices?.some((device) => {
+      const rawValue = deviceValues[device.id.toString()] ?? device.latest_value;
+      const numValue = typeof rawValue === 'number' 
+        ? rawValue 
+        : typeof rawValue === 'string' 
+          ? parseFloat(rawValue) 
+          : null;
+      
+      return numValue !== null &&
+        !isNaN(numValue) &&
+        ((device.min_alert !== undefined && numValue < device.min_alert) ||
+         (device.max_alert !== undefined && numValue > device.max_alert));
+    }) ?? false;
+  };
+
+  // Count alerts for a floorplan
+  const getFloorplanAlertCount = (floorplanId: number) => {
+    const floorplanDevices = devices?.filter((device) => 
+      Number(device.floorplan_id) === Number(floorplanId)
+    );
+    
+    return floorplanDevices?.filter((device) => {
+      const rawValue = deviceValues[device.id.toString()] ?? device.latest_value;
+      const numValue = typeof rawValue === 'number' 
+        ? rawValue 
+        : typeof rawValue === 'string' 
+          ? parseFloat(rawValue) 
+          : null;
+      
+      return numValue !== null &&
+        !isNaN(numValue) &&
+        ((device.min_alert !== undefined && numValue < device.min_alert) ||
+         (device.max_alert !== undefined && numValue > device.max_alert));
+    })?.length ?? 0;
+  };
+
   return (
     <div className={stylesF.Wrapper}>
       <div className={stylesF.FloorList}>
         <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#212529' }}>Floor Plans</h3>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {floorplans?.map((plan) => (
-            <li
-              key={plan.id}
-              onClick={() => setSelected(plan)}
-              className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
-            >
-              {plan.name}
-            </li>
-          ))}
+          {floorplans?.map((plan) => {
+            const hasAlerts = hasFloorplanAlerts(plan.id);
+            const alertCount = getFloorplanAlertCount(plan.id);
+            
+            return (
+              <li
+                key={plan.id}
+                onClick={() => setSelected(plan)}
+                className={`
+                  ${stylesF.List} 
+                  ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}
+                  ${hasAlerts ? stylesF.alertListItem : ''}
+                `}
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  width: '100%'
+                }}>
+                  <span className={hasAlerts ? stylesF.alertText : ''}>
+                    {hasAlerts && <span style={{ marginRight: '6px' }}>⚠️</span>}
+                    {plan.name}
+                  </span>
+                  {hasAlerts && (
+                    <div className={stylesF.alertBadge}>
+                      {alertCount}
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
@@ -177,9 +231,12 @@ function FloorPlan() {
                       }
                       containerWidth={renderedSize.width}
                       containerHeight={renderedSize.height}
-                      onClick={() => handleDeviceClick(device)}
                       disabled={true} // Disable dragging for now
                       alert={alert}
+                      deviceName={device.name}
+                      value={deviceValues[device.id.toString()] ?? device.latest_value}
+                      unit={type?.unit}
+                      useBuiltInModal={true} // Use built-in modal with single-click
                     />
                   );
                 })}
@@ -207,13 +264,6 @@ function FloorPlan() {
           </div>
         )}
       </div>
-      
-      <DeviceInfoModal
-        device={modalDevice}
-        deviceTypes={deviceTypes}
-        deviceValues={deviceValues}
-        onClose={closeModal}
-      />
     </div>
   );
 }

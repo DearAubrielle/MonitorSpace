@@ -251,6 +251,53 @@ p {
   gap: 0.75rem;
 }
 
+/* Alert animations and styles */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.alertPulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Alert list item styles */
+.alertListItem {
+  border-left: 4px solid #dc2626 !important;
+  background-color: rgba(220, 38, 38, 0.05) !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2) !important;
+}
+
+.alertListItem.Selected {
+  background-color: rgba(220, 38, 38, 0.1) !important;
+}
+
+.alertBadge {
+  background-color: #dc2626;
+  color: white;
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 8px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.alertText {
+  color: #dc2626;
+  font-weight: bold;
+}
+
 @media (max-width: 968px) {
   .Wrapper {
     grid-template-areas:
