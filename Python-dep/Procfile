@@ -1,0 +1,2 @@
+web: gunicorn MQTT_Add_sub:app
+worker: python Camera.py
