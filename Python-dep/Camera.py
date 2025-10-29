@@ -1,17 +1,17 @@
-from flask import Flask, render_template, request
-import paho.mqtt.client as mqtt
-import mysql.connector
+import cv2
 import time
+import math
+import cvzone
 import os
 from dotenv import load_dotenv
+from ultralytics import YOLO
+import mysql.connector
 from linebot.v3.messaging import MessagingApi, PushMessageRequest, TextMessage
 from linebot.v3.messaging.configuration import Configuration
 from linebot.v3.messaging.api_client import ApiClient
 
 # โหลดค่า .env
 load_dotenv()
-
-app = Flask(__name__)
 
 # === ENV CONFIG ===
 hostname = os.getenv("DB_HOST")
@@ -23,101 +23,86 @@ port = int(os.getenv("DB_PORT", 3306))
 CHANNEL_ACCESS_TOKEN = os.getenv("LINE_TOKEN")
 USER_ID = os.getenv("LINE_USER_ID")
 
-MQTT_HOST = os.getenv("MQTT_HOST")
-MQTT_PORT = int(os.getenv("MQTT_PORT", 8883))
-MQTT_USER = os.getenv("MQTT_USER")
-MQTT_PASS = os.getenv("MQTT_PASS")
+MODEL_PATH = os.getenv("MODEL_PATH", "yolov8s.pt")
+CLASSES_PATH = os.getenv("CLASSES_PATH", "classes.txt")
 
-def send_line_message(message_text):
+# โหลดโมเดล YOLO
+model = YOLO(MODEL_PATH)
+with open(CLASSES_PATH) as f:
+    classnames = f.read().splitlines()
+
+def send_line_message(msg):
     configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
     with ApiClient(configuration) as api_client:
-        messaging_api = MessagingApi(api_client)
-        messaging_api.push_message(
-            PushMessageRequest(
-                to=USER_ID,
-                messages=[TextMessage(text=message_text)]
-            )
+        MessagingApi(api_client).push_message(
+            PushMessageRequest(to=USER_ID, messages=[TextMessage(text=msg)])
         )
-        print("✅ แจ้งเตือนผ่าน LINE แล้ว")
 
-def on_connect(client, userdata, flags, rc, properties=None):
-    print("CONNACK received with code %s." % rc)
+def get_camera_list():
+    conn = mysql.connector.connect(
+        host=hostname,
+        database=database,
+        user=username,
+        password=password,
+        port=port
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT devices.id AS device_id, devices.name AS device_name,
+               devices.latest_value, floorplan.name AS floor_name
+        FROM devices
+        JOIN floorplan ON devices.floorplan_id = floorplan.id
+        WHERE devices.device_type_id = 2
+    """)
+    cameras = cursor.fetchall()
+    conn.close()
+    return cameras
 
-def on_publish(client, userdata, mid, properties=None):
-    print("mid: " + str(mid))
+# ตัวแปรควบคุมแจ้งเตือน
+alert_cooldown = 10
+last_alert_time_map = {}
+FALL_ASPECT_RATIO = 1.2
 
-def on_subscribe(client, userdata, mid, granted_qos, properties=None):
-    print("Subscribed: " + str(mid) + " " + str(granted_qos))
+# 🔁 loop หลัก
+while True:
+    cameras = get_camera_list()
+    if not cameras:
+        print("⚠️ ยังไม่มีกล้องที่ Active ในระบบ... รอ 5 วินาที")
+        time.sleep(5)
+        continue
 
-def on_message(client, userdata, msg):
-    print(msg.topic + " " + str(msg.qos) + " " + msg.payload.decode("utf-8"))
-    try:
-        Topic = msg.topic.split('/')
-        mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
-        mycursor = mydb.cursor()
+    for cam in cameras:
+        cam_id = cam['device_id']
+        cam_name = cam['device_name']
+        cam_url = cam['latest_value']
+        cam_address = cam['floor_name']
+        print(f"🎥 Switching to {cam_name}")
 
-        sql = "UPDATE devices SET latest_value = %s WHERE path_topic = %s"
-        val = (msg.payload.decode("utf-8"), msg.topic)
-        mycursor.execute(sql, val)
+        cap = cv2.VideoCapture(int(cam_url) if cam_url.isdigit() else cam_url)
+        time.sleep(1)
 
-        val = (Topic[1],)
-        mycursor.execute("SELECT latest_value, min_alert, max_alert, name FROM devices WHERE id = %s", val)
-        sensor_info = mycursor.fetchall()
+        success, frame = cap.read()
+        if not success:
+            print(f"⚠️ กล้อง {cam_name} เปิดไม่สำเร็จ")
+            cap.release()
+            continue
 
-        mycursor.execute("""
-            SELECT d.id AS device_id, d.name AS device_name, f.name AS floorplan_name
-            FROM devices d
-            JOIN floorplan f ON d.floorplan_id = f.id
-            WHERE d.id = %s
-        """, val)
-        floorplan_name = mycursor.fetchall()
+        results = model(frame)
+        for r in results:
+            for box in r.boxes:
+                cls = int(box.cls[0])
+                conf = float(box.conf[0])
+                if classnames[cls] == "person" and conf > 0.7:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    aspect_ratio = (x2 - x1) / (y2 - y1 + 1)
+                    if aspect_ratio > FALL_ASPECT_RATIO:
+                        now = time.time()
+                        if cam_id not in last_alert_time_map:
+                            last_alert_time_map[cam_id] = 0
+                        if now - last_alert_time_map[cam_id] > alert_cooldown:
+                            send_line_message(f"🚨 [กล้อง: {cam_name}] ตรวจพบการล้ม!\nอยู่ที่ {cam_address}")
+                            last_alert_time_map[cam_id] = now
+                            print(f"🟥 ล้มที่กล้อง {cam_name}")
 
-        if Topic[0] == "HumiditySensor":
-            if float(sensor_info[0][0]) > float(sensor_info[0][2]) or float(sensor_info[0][0]) < float(sensor_info[0][1]):
-                send_line_message(f"💧 ความชื้นเกิน {sensor_info[0][2]} ที่ {floorplan_name[0][2]}")
-        elif Topic[0] == "TemperatureSensor":
-            if float(sensor_info[0][0]) > float(sensor_info[0][2]) or float(sensor_info[0][0]) < float(sensor_info[0][1]):
-                send_line_message(f"🌡️ อุณหภูมิสูงเกิน {sensor_info[0][2]} °C ที่ {floorplan_name[0][2]}")
-        elif Topic[0] == "GasSensor":
-            if float(sensor_info[0][0]) > float(sensor_info[0][2]):
-                send_line_message(f"🔥 ตรวจจับแก๊สอันตรายที่ {sensor_info[0][3]} ({floorplan_name[0][2]})")
-
-        mydb.commit()
-        mydb.close()
-
-    except Exception as e:
-        print("Error:", e)
-
-# === MQTT Setup ===
-client = mqtt.Client(client_id="", userdata=None, protocol=mqtt.MQTTv5)
-client.on_connect = on_connect
-client.on_publish = on_publish
-client.on_subscribe = on_subscribe
-client.on_message = on_message
-client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
-client.username_pw_set(MQTT_USER, MQTT_PASS)
-client.connect(MQTT_HOST, MQTT_PORT)
-
-# === Subscribe topics ===
-mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
-mycursor = mydb.cursor()
-mycursor.execute("SELECT path_topic FROM devices")
-topics = mycursor.fetchall()
-for topic in topics:
-    if topic[0]:
-        client.subscribe(topic[0], qos=1)
-        print("Subscribed to topic:", topic[0])
-client.loop_start()
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/add_topic', methods=['POST'])
-def add_topic():
-    topic = request.form['topic']
-    client.subscribe(topic, qos=0)
-    return "Subscribed to topic: " + request.form['topic']
-
-if __name__ == "__main__":
-    app.run(debug=True)
+        cap.release()
+        time.sleep(1)
