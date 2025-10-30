@@ -1,123 +1,122 @@
-from flask import Flask, render_template, request
-import paho.mqtt.client as mqtt
-import mysql.connector
-import time
 import os
-from dotenv import load_dotenv
+import time
+import mysql.connector
+from flask import Flask, request, jsonify
+from paho.mqtt import client as mqtt
 from linebot.v3.messaging import MessagingApi, PushMessageRequest, TextMessage
 from linebot.v3.messaging.configuration import Configuration
 from linebot.v3.messaging.api_client import ApiClient
+from dotenv import load_dotenv
 
-# โหลดค่า .env
+# โหลด environment variables
 load_dotenv()
 
-app = Flask(__name__)
+# === LINE CONFIG ===
+CHANNEL_ACCESS_TOKEN = os.getenv('LINE_TOKEN')
+USER_ID = os.getenv('LINE_USER_ID')
 
-# === ENV CONFIG ===
-hostname = os.getenv("DB_HOST")
-username = os.getenv("DB_USER")
-password = os.getenv("DB_PASS")
-database = os.getenv("DB_NAME")
-port = int(os.getenv("DB_PORT", 3306))
+# === MQTT CONFIG ===
+MQTT_HOST = os.getenv('MQTT_HOST')
+MQTT_PORT = int(os.getenv('MQTT_PORT', 8883))
+MQTT_USER = os.getenv('MQTT_USER')
+MQTT_PASS = os.getenv('MQTT_PASS')
 
-CHANNEL_ACCESS_TOKEN = os.getenv("LINE_TOKEN")
-USER_ID = os.getenv("LINE_USER_ID")
+# === DATABASE CONFIG ===
+DB_HOST = os.getenv('DB_HOST')
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+DB_NAME = os.getenv('DB_NAME')
+DB_PORT = int(os.getenv('DB_PORT', 3306))
 
-MQTT_HOST = os.getenv("MQTT_HOST")
-MQTT_PORT = int(os.getenv("MQTT_PORT", 8883))
-MQTT_USER = os.getenv("MQTT_USER")
-MQTT_PASS = os.getenv("MQTT_PASS")
-
+# === LINE SETUP ===
 def send_line_message(message_text):
-    configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
-    with ApiClient(configuration) as api_client:
-        messaging_api = MessagingApi(api_client)
-        messaging_api.push_message(
-            PushMessageRequest(
-                to=USER_ID,
-                messages=[TextMessage(text=message_text)]
+    try:
+        configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
+        with ApiClient(configuration) as api_client:
+            messaging_api = MessagingApi(api_client)
+            messaging_api.push_message(
+                PushMessageRequest(
+                    to=USER_ID,
+                    messages=[TextMessage(text=message_text)]
+                )
             )
-        )
-        print("✅ แจ้งเตือนผ่าน LINE แล้ว")
+    except Exception as e:
+        print(f"LINE Error: {e}")
 
+# === DATABASE CONNECTION ===
+def get_connection():
+    return mysql.connector.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_NAME,
+        port=DB_PORT
+    )
+
+# === MQTT SETUP ===
 def on_connect(client, userdata, flags, rc, properties=None):
     print("CONNACK received with code %s." % rc)
-
-def on_publish(client, userdata, mid, properties=None):
-    print("mid: " + str(mid))
-
-def on_subscribe(client, userdata, mid, granted_qos, properties=None):
-    print("Subscribed: " + str(mid) + " " + str(granted_qos))
+    try:
+        db = get_connection()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT MQTT_Topic FROM devices WHERE MQTT_Topic IS NOT NULL")
+        topics = cursor.fetchall()
+        for row in topics:
+            topic = row["MQTT_Topic"]
+            if topic:
+                client.subscribe(topic)
+                print(f"Subscribed to topic: {topic}")
+        cursor.close()
+        db.close()
+    except Exception as e:
+        print(f"Database Error on connect: {e}")
 
 def on_message(client, userdata, msg):
-    print(msg.topic + " " + str(msg.qos) + " " + msg.payload.decode("utf-8"))
+    print(f"📩 Message from {msg.topic}: {msg.payload.decode()}")
     try:
-        Topic = msg.topic.split('/')
-        mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
-        mycursor = mydb.cursor()
-
-        sql = "UPDATE devices SET latest_value = %s WHERE path_topic = %s"
-        val = (msg.payload.decode("utf-8"), msg.topic)
-        mycursor.execute(sql, val)
-
-        val = (Topic[1],)
-        mycursor.execute("SELECT latest_value, min_alert, max_alert, name FROM devices WHERE id = %s", val)
-        sensor_info = mycursor.fetchall()
-
-        mycursor.execute("""
-            SELECT d.id AS device_id, d.name AS device_name, f.name AS floorplan_name
-            FROM devices d
-            JOIN floorplan f ON d.floorplan_id = f.id
-            WHERE d.id = %s
-        """, val)
-        floorplan_name = mycursor.fetchall()
-
-        if Topic[0] == "HumiditySensor":
-            if float(sensor_info[0][0]) > float(sensor_info[0][2]) or float(sensor_info[0][0]) < float(sensor_info[0][1]):
-                send_line_message(f"ความชื้นเกิน {sensor_info[0][2]} ที่ {floorplan_name[0][2]}")
-        elif Topic[0] == "TemperatureSensor":
-            if float(sensor_info[0][0]) > float(sensor_info[0][2]) or float(sensor_info[0][0]) < float(sensor_info[0][1]):
-                send_line_message(f"อุณหภูมิสูงเกิน {sensor_info[0][2]} °C ที่ {floorplan_name[0][2]}")
-        elif Topic[0] == "GasSensor":
-            if float(sensor_info[0][0]) > float(sensor_info[0][2]):
-                send_line_message(f"ตรวจจับแก๊สอันตรายที่ {sensor_info[0][3]} ({floorplan_name[0][2]})")
-
-        mydb.commit()
-        mydb.close()
-
+        db = get_connection()
+        cursor = db.cursor()
+        sql = "UPDATE devices SET latest_value = %s WHERE MQTT_Topic = %s"
+        cursor.execute(sql, (msg.payload.decode(), msg.topic))
+        db.commit()
+        cursor.close()
+        db.close()
     except Exception as e:
-        print("Error:", e)
+        print(f"Database update error: {e}")
 
-# === MQTT Setup ===
+# === MQTT CLIENT ===
 client = mqtt.Client(client_id="", userdata=None, protocol=mqtt.MQTTv5)
-client.on_connect = on_connect
-client.on_publish = on_publish
-client.on_subscribe = on_subscribe
-client.on_message = on_message
-client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
 client.username_pw_set(MQTT_USER, MQTT_PASS)
+client.on_connect = on_connect
+client.on_message = on_message
+client.loop_start()
 client.connect(MQTT_HOST, MQTT_PORT)
 
-# === Subscribe topics ===
-mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
-mycursor = mydb.cursor()
-mycursor.execute("SELECT path_topic FROM devices")
-topics = mycursor.fetchall()
-for topic in topics:
-    if topic[0]:
-        client.subscribe(topic[0], qos=1)
-        print("Subscribed to topic:", topic[0])
-client.loop_start()
+# === FLASK APP ===
+app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return jsonify({"status": "API running", "message": "MQTT + Flask OK"})
 
 @app.route('/add_topic', methods=['POST'])
 def add_topic():
-    topic = request.form['topic']
-    client.subscribe(topic, qos=0)
-    return "Subscribed to topic: " + request.form['topic']
+    topic = request.json.get('topic')
+    if not topic:
+        return jsonify({"error": "Missing topic"}), 400
+    client.subscribe(topic)
+    print(f"Subscribed to topic: {topic}")
+    return jsonify({"message": f"Subscribed to topic: {topic}"})
 
-if __name__ == "__main__":
-    app.run(debug=True)
+@app.route('/send_line', methods=['POST'])
+def send_line():
+    msg = request.json.get('message')
+    if not msg:
+        return jsonify({"error": "Missing message"}), 400
+    send_line_message(msg)
+    return jsonify({"message": "Line message sent successfully"})
+
+# === RUN APP (Render-friendly) ===
+if __name__ == '__main__':
+    port = int(os.getenv("PORT", 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)

@@ -48,11 +48,15 @@ def get_camera_list():
     )
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT devices.id AS device_id, devices.name AS device_name,
-               devices.latest_value, floorplan.name AS floor_name
-        FROM devices
-        JOIN floorplan ON devices.floorplan_id = floorplan.id
-        WHERE devices.device_type_id = 2
+    SELECT 
+    devices.id AS device_id,
+    devices.name AS device_name,
+    devices.latest_value,
+    floorplan.name AS floor_name
+    FROM devices
+    JOIN floorplan ON devices.floorplan_id = floorplan.id
+    JOIN device_type ON devices.device_type_id = device_type.id
+    WHERE device_type.name = 'Camera';
     """)
     cameras = cursor.fetchall()
     conn.close()
