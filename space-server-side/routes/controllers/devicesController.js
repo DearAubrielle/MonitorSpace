@@ -76,11 +76,11 @@ exports.createDevice = async (req, res) => {
 
     // Validate based on device type
     if (isCamera) {
-      // For cameras, path_topic is optional but if provided, validate it's a valid RTSP URL
+      // For cameras, path_topic is optional but if provided, validate it's a valid HTTP/HTTPS URL
       if (path_topic && path_topic.trim() !== '') {
-        const urlPattern = /^rtsp:\/\//;
+        const urlPattern = /^https?:\/\//;
         if (!urlPattern.test(path_topic.trim())) {
-          return res.status(400).json({ message: 'Camera path must be a valid RTSP URL' });
+          return res.status(400).json({ message: 'Camera path must be a valid HTTP or HTTPS URL' });
         }
       }
 
