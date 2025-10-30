@@ -2,7 +2,8 @@ Flask==3.1.1
 mysql-connector-python==9.4.0
 paho-mqtt==2.1.0
 line-bot-sdk==3.17.1
-opencv-python==4.11.0.86
+opencv-python-headless==4.9.0.80
 cvzone==1.6.1
 ultralytics==8.3.154
 python-dotenv==1.1.1
+gunicorn==23.0.0
