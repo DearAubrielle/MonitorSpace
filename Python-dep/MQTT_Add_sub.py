@@ -79,7 +79,8 @@ def on_message(client, userdata, msg):
             print(f"⚠️ ข้อมูลจาก {sensor_info[0][3]} ไม่ใช่ตัวเลข: {sensor_info[0][0]}")
             mydb.close()
             return
-
+        print("LINE_TOKEN:", CHANNEL_ACCESS_TOKEN)
+        print("LINE_USER_ID:", USER_ID)
         if Topic[0] == "HumiditySensor":
             if value > float(sensor_info[0][2]) or value < float(sensor_info[0][1]):
                 send_line_message(f"ความชื้นเกิน {sensor_info[0][2]} ที่ {floorplan_name[0][2]}")
