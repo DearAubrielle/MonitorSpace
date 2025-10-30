@@ -19,7 +19,7 @@ hostname = os.getenv("DB_HOST")
 username = os.getenv("DB_USER")
 password = os.getenv("DB_PASS")
 database = os.getenv("DB_NAME")
-port = int(os.getenv("DB_PORT", 3306))
+port = int(os.getenv("DB_PORT", 28173))
 
 CHANNEL_ACCESS_TOKEN = os.getenv("LINE_TOKEN")
 USER_ID = os.getenv("LINE_USER_ID")
