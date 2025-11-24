@@ -1,5 +1,5 @@
-import { useState } from "react";
-import styles from "./FloorplanCreateDialog.module.css";
+import { useState } from 'react';
+import styles from './FloorplanCreateDialog.module.css';
 
 interface FloorplanCreateDialogProps {
   open: boolean;
@@ -14,8 +14,8 @@ export default function FloorplanCreateDialog({
   onSubmit,
   ImageUpload,
 }: FloorplanCreateDialogProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<{ name?: string; image?: string }>({});
 
@@ -23,15 +23,15 @@ export default function FloorplanCreateDialog({
 
   const validateForm = () => {
     const newErrors: { name?: string; image?: string } = {};
-    
+
     if (!name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = 'Name is required';
     }
-    
+
     if (!imageFile) {
-      newErrors.image = "Image is required";
+      newErrors.image = 'Image is required';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -40,18 +40,18 @@ export default function FloorplanCreateDialog({
     if (!validateForm()) {
       return;
     }
-    
+
     onSubmit({ name, description, imageFile });
-    setName("");
-    setDescription("");
+    setName('');
+    setDescription('');
     setImageFile(null);
     setErrors({});
   };
 
   const handleCancel = () => {
     onOpenChange(false);
-    setName("");
-    setDescription("");
+    setName('');
+    setDescription('');
     setImageFile(null);
     setErrors({});
   };
@@ -70,9 +70,7 @@ export default function FloorplanCreateDialog({
       <div className={styles.modal}>
         <div className={styles.header}>
           <h2 className={styles.title}>Create Floorplan</h2>
-          <p className={styles.description}>
-            Add a new floorplan with details and an image. Image is required.
-          </p>
+          <p className={styles.description}>Add a new floorplan with details and an image. Image is required.</p>
         </div>
 
         <div className={styles.content}>
@@ -88,15 +86,13 @@ export default function FloorplanCreateDialog({
               onChange={(e) => {
                 setName(e.target.value);
                 if (errors.name && e.target.value.trim()) {
-                  setErrors(prev => ({ ...prev, name: undefined }));
+                  setErrors((prev) => ({ ...prev, name: undefined }));
                 }
               }}
               placeholder="Enter floorplan name"
               required
             />
-            {errors.name && (
-              <p className={styles.errorText}>{errors.name}</p>
-            )}
+            {errors.name && <p className={styles.errorText}>{errors.name}</p>}
           </div>
 
           <div className={styles.formGroup}>
@@ -115,26 +111,21 @@ export default function FloorplanCreateDialog({
           <div className={styles.formGroup}>
             <label className={styles.label}>Floorplan Image *</label>
             <div className={errors.image ? styles.imageUploadError : ''}>
-              <ImageUpload 
+              <ImageUpload
                 onImageUpload={(file) => {
                   setImageFile(file);
                   if (errors.image) {
-                    setErrors(prev => ({ ...prev, image: undefined }));
+                    setErrors((prev) => ({ ...prev, image: undefined }));
                   }
-                }} 
+                }}
               />
             </div>
-            {errors.image && (
-              <p className={styles.errorText}>{errors.image}</p>
-            )}
+            {errors.image && <p className={styles.errorText}>{errors.image}</p>}
           </div>
         </div>
 
         <div className={styles.footer}>
-          <button
-            className={`${styles.button} ${styles.buttonSecondary}`}
-            onClick={handleCancel}
-          >
+          <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={handleCancel}>
             Cancel
           </button>
           <button
@@ -143,7 +134,7 @@ export default function FloorplanCreateDialog({
             disabled={!isFormValid}
             style={{
               opacity: isFormValid ? 1 : 0.5,
-              cursor: isFormValid ? 'pointer' : 'not-allowed'
+              cursor: isFormValid ? 'pointer' : 'not-allowed',
             }}
           >
             Create

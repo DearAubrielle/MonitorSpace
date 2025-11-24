@@ -102,17 +102,17 @@
   .modalContent {
     padding: 1rem;
   }
-  
+
   .infoRow {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
   }
-  
+
   .value {
     text-align: left;
   }
-  
+
   .label {
     min-width: auto;
     font-size: 0.875rem;

@@ -2,7 +2,6 @@ import { NavLink } from 'react-router';
 import { useAuth } from '@/context/useAuth';
 import styles from './Sidebar.module.css';
 
-
 export default function Sidebar() {
   const { user } = useAuth();
 
@@ -17,7 +16,7 @@ export default function Sidebar() {
   // Filter navigation links based on user role
   const getNavLinksForRole = () => {
     if (!user) return [];
-    
+
     if (user.role === 'user') {
       // Regular users only see Dashboard
       return [{ to: '/dashboard', label: 'Dashboard' }];
@@ -25,7 +24,7 @@ export default function Sidebar() {
       // Admins see all pages
       return allNavLinks;
     }
-    
+
     // Default fallback - show only dashboard
     return [{ to: '/dashboard', label: 'Dashboard' }];
   };
@@ -37,12 +36,7 @@ export default function Sidebar() {
         <ul>
           {navLinks.map((link, index) => (
             <li key={index}>
-              <NavLink
-                to={link.to}
-                className={({ isActive }) =>
-                  isActive ? styles.activeLink : undefined
-                }
-              >
+              <NavLink to={link.to} className={({ isActive }) => (isActive ? styles.activeLink : undefined)}>
                 {link.label}
               </NavLink>
             </li>
@@ -51,4 +45,4 @@ export default function Sidebar() {
       </aside>
     </div>
   );
-};
+}

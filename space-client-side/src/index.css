@@ -15,7 +15,6 @@
   --z-index-main-header: 700;
   --sticky-header-without-actions-height: calc(var(--top-nav-height) + 1px);
   --sticky-header-with-actions-height: calc(
-    var(--sticky-header-without-actions-height) +
-      var(--article-actions-container-height) + 1px
+    var(--sticky-header-without-actions-height) + var(--article-actions-container-height) + 1px
   );
 }

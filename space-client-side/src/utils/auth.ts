@@ -1,5 +1,5 @@
 // src/services/authService.ts
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from 'jwt-decode';
 
 interface TokenPayload {
   id: string;
@@ -9,15 +9,15 @@ interface TokenPayload {
 }
 
 export function getToken() {
-  return localStorage.getItem("token");
+  return localStorage.getItem('token');
 }
 
 export function setToken(token: string) {
-  localStorage.setItem("token", token);
+  localStorage.setItem('token', token);
 }
 
 export function clearToken() {
-  localStorage.removeItem("token");
+  localStorage.removeItem('token');
 }
 
 export function decodeToken(): TokenPayload | null {

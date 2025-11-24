@@ -9,12 +9,12 @@ interface ProtectedComponentProps {
   fallback?: React.ReactNode;
 }
 
-export const ProtectedComponent = ({ 
-  children, 
-  permission, 
-  permissions, 
+export const ProtectedComponent = ({
+  children,
+  permission,
+  permissions,
   requireAll = false,
-  fallback = null 
+  fallback = null,
 }: ProtectedComponentProps) => {
   const { user } = useAuth();
   const userPermissions = user?.permissions as Permission[];
@@ -28,10 +28,10 @@ export const ProtectedComponent = ({
 
   // Multiple permissions check
   if (permissions) {
-    const hasAccess = requireAll 
-      ? permissions.every(p => hasPermission(userPermissions, p))
+    const hasAccess = requireAll
+      ? permissions.every((p) => hasPermission(userPermissions, p))
       : hasAnyPermission(userPermissions, permissions);
-    
+
     if (!hasAccess) {
       return <>{fallback}</>;
     }
@@ -47,13 +47,25 @@ export const AdminOnly = ({ children, fallback = null }: { children: React.React
   </ProtectedComponent>
 );
 
-export const ManagerOrAdmin = ({ children, fallback = null }: { children: React.ReactNode; fallback?: React.ReactNode }) => (
+export const ManagerOrAdmin = ({
+  children,
+  fallback = null,
+}: {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) => (
   <ProtectedComponent permissions={['manage_members', 'system_settings']} fallback={fallback}>
     {children}
   </ProtectedComponent>
 );
 
-export const DeviceManager = ({ children, fallback = null }: { children: React.ReactNode; fallback?: React.ReactNode }) => (
+export const DeviceManager = ({
+  children,
+  fallback = null,
+}: {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) => (
   <ProtectedComponent permission="manage_devices" fallback={fallback}>
     {children}
   </ProtectedComponent>

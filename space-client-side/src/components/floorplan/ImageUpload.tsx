@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
-export default function ImageUpload({ 
-  onImageUpload, 
-  currentImage 
-}: { 
+export default function ImageUpload({
+  onImageUpload,
+  currentImage,
+}: {
   onImageUpload: (file: File) => void;
   currentImage?: string;
 }) {
@@ -18,7 +18,7 @@ export default function ImageUpload({
 
   const handleImageChange = (file: File) => {
     onImageUpload(file);
-    
+
     // Create preview URL for images
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -30,49 +30,53 @@ export default function ImageUpload({
   };
 
   return (
-    <label style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: preview ? 'auto' : '120px',
-      border: '2px dashed #d1d5db',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      background: '#f9fafb',
-      transition: 'all 0.2s',
-      padding: preview ? '12px' : '0'
-    }}>
+    <label
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: preview ? 'auto' : '120px',
+        border: '2px dashed #d1d5db',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        background: '#f9fafb',
+        transition: 'all 0.2s',
+        padding: preview ? '12px' : '0',
+      }}
+    >
       {preview ? (
-        <div style={{ 
-          width: '100%', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center' 
-        }}>
-          <img 
-            src={preview} 
-            alt="Preview" 
-            style={{ 
-              maxWidth: '100%', 
-              maxHeight: '200px', 
+        <div
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <img
+            src={preview}
+            alt="Preview"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '200px',
               borderRadius: '4px',
-              marginBottom: '8px'
-            }} 
+              marginBottom: '8px',
+            }}
           />
-          <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
-            Click to change image
-          </p>
+          <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>Click to change image</p>
         </div>
       ) : (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <svg
             style={{ width: '32px', height: '32px', color: '#6b7280', marginBottom: '8px' }}
             fill="none"
@@ -105,4 +109,4 @@ export default function ImageUpload({
       />
     </label>
   );
-};
+}

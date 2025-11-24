@@ -16,11 +16,9 @@ export const PermissionExamples = ({ user }: PermissionExamplesProps) => {
   return (
     <div>
       <h2>Permission-Based UI Examples</h2>
-      
+
       {/* Example 1: Simple permission check */}
-      {hasPermission(user.permissions, 'manage_devices') && (
-        <button>Add New Device</button>
-      )}
+      {hasPermission(user.permissions, 'manage_devices') && <button>Add New Device</button>}
 
       {/* Example 2: Multiple permission options */}
       {hasAnyPermission(user.permissions, ['manage_members', 'view_members']) && (
@@ -50,12 +48,8 @@ export const PermissionExamples = ({ user }: PermissionExamplesProps) => {
         {hasPermission(user.permissions, 'view_dashboard') && (
           <div>
             <p>✅ Can view dashboard</p>
-            {hasPermission(user.permissions, 'manage_devices') && (
-              <p>✅ Can manage devices</p>
-            )}
-            {hasPermission(user.permissions, 'manage_members') && (
-              <p>✅ Can manage team members</p>
-            )}
+            {hasPermission(user.permissions, 'manage_devices') && <p>✅ Can manage devices</p>}
+            {hasPermission(user.permissions, 'manage_members') && <p>✅ Can manage team members</p>}
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
-import { createContext } from "react";
-import { Permission } from "../utils/permissions";
+import { createContext } from 'react';
+import { Permission } from '../utils/permissions';
 
 // --- Define Types ---
 export interface DecodedToken {
@@ -10,7 +10,6 @@ export interface DecodedToken {
   iat?: number;
   [key: string]: unknown; // in case your token contains other fields
 }
-
 
 export interface AuthContextType {
   token: string | null;

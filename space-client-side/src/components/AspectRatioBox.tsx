@@ -17,37 +17,35 @@ const AspectRatioBox: React.FC<AspectRatioBoxProps> = ({
   maxHeight,
   children,
   style = {},
-  backgroundStyle = {}
+  backgroundStyle = {},
 }) => {
   const aspectRatio = originalHeight / originalWidth;
 
   const containerStyle: React.CSSProperties = {
-    position: "relative",
-    width: "100%",
+    position: 'relative',
+    width: '100%',
     paddingBottom: `${aspectRatio * 100}%`, // maintains ratio in responsive design important for aspect ratio
     maxWidth,
     maxHeight,
-    ...style
+    ...style,
   };
 
   const contentStyle: React.CSSProperties = {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-    backgroundSize: "contain",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "center",
-    ...backgroundStyle
+    backgroundSize: 'contain',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    ...backgroundStyle,
   };
 
   return (
     <div style={containerStyle}>
-      <div style={contentStyle}>
-        {children}
-      </div>
+      <div style={contentStyle}>{children}</div>
     </div>
   );
 };

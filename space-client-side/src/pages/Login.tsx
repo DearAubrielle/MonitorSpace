@@ -41,14 +41,9 @@ export default function Login() {
           }}
         >
           <h2 style={{ textAlign: 'center' }}>Login</h2>
-          {error && (
-            <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>
-          )}
+          {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
           <div style={{ marginBottom: '15px' }}>
-            <label
-              htmlFor="username"
-              style={{ display: 'block', marginBottom: '5px' }}
-            >
+            <label htmlFor="username" style={{ display: 'block', marginBottom: '5px' }}>
               Username
             </label>
             <input
@@ -66,10 +61,7 @@ export default function Login() {
             />
           </div>
           <div style={{ marginBottom: '15px' }}>
-            <label
-              htmlFor="password"
-              style={{ display: 'block', marginBottom: '5px' }}
-            >
+            <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
               Password
             </label>
             <input

@@ -41,20 +41,13 @@ export default function MonitorPage() {
 
         // Filter devices to only include cameras with RTSP paths
         const cameraDevices = devices.filter(
-          (device) =>
-            device.device_type_id === cameraType.id &&
-            device.path_topic &&
-            device.path_topic.trim() !== ''
+          (device) => device.device_type_id === cameraType.id && device.path_topic && device.path_topic.trim() !== ''
         );
 
         // Transform devices to camera format
         const transformedCameras: Camera[] = cameraDevices.map((device) => {
-          const floorplan = floorplans?.find(
-            (fp) => fp.id === device.floorplan_id
-          );
-          const floorplanName = floorplan
-            ? floorplan.name
-            : `Unknown (ID: ${device.floorplan_id})`;
+          const floorplan = floorplans?.find((fp) => fp.id === device.floorplan_id);
+          const floorplanName = floorplan ? floorplan.name : `Unknown (ID: ${device.floorplan_id})`;
 
           return {
             id: device.id.toString(),
@@ -96,10 +89,7 @@ export default function MonitorPage() {
   if (cameras.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>
-          No camera devices found. Please add cameras with RTSP URLs in the
-          devices section.
-        </p>
+        <p>No camera devices found. Please add cameras with HTTP URLs in the devices section.</p>
       </div>
     );
   }

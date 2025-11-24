@@ -58,11 +58,7 @@ export default function Floorplan({
               }
               containerWidth={renderedSize.width}
               containerHeight={renderedSize.height}
-              onDoubleClick={
-                onDeviceDoubleClick
-                  ? () => onDeviceDoubleClick(device)
-                  : undefined
-              }
+              onDoubleClick={onDeviceDoubleClick ? () => onDeviceDoubleClick(device) : undefined}
               disabled={!editMode}
               deviceName={device.name}
               value={device.latest_value}
