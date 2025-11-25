@@ -1,23 +1,21 @@
 body {
-    margin: 0;
-    overflow-x: clip;
+  margin: 0;
+  overflow-x: hidden;
 }
 
-
-*, :after, :before {
-    box-sizing: border-box;
+*,
+:after,
+:before {
+  box-sizing: border-box;
 }
 
 main {
-    grid-area: main;
-    flex: 1;
-    overflow-x: clip;
+  grid-area: main;
 }
 .mainWrapper {
-    position: relative;
-    display: grid;
-    margin: 0;
-    grid-template-areas: "sidebar main";
-    grid-template-columns: var(--sidebar-width) 1fr;
-    height: auto;
+  display: grid;
+  margin: 0;
+  grid-template-areas: 'sidebar main';
+  grid-template-columns: var(--sidebar-width) 1fr;
+  height: 100%;
 }
