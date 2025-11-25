@@ -1,21 +1,24 @@
 import stylesD from './dashboard.module.css';
 import stylesF from './FloorPlan.module.css';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import AspectRatioBox from '../components/AspectRatioBox';
 import MonitorPage from './MonitorPage';
 import { PercentPosition } from '../components/DraggableBox';
 import DraggableBox from '@/components/DraggableBox';
+import DeviceInfoModal from '../components/DeviceInfoModal';
 import { useWebSocket } from '../hooks/useWebSocket';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+import type { Device } from '../types/Device';
 import { useFloorplan } from '../context/useFlooplan';
 function FloorPlan() {
-  const { floorplans, selected, setSelected, devices, deviceTypes } =
-    useFloorplan();
+  const { floorplans, selected, setSelected, devices, deviceTypes } = useFloorplan();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({
     width: 500,
     height: 500,
   });
+
+  const [modalDevice, setModalDevice] = useState<Device | null>(null);
 
   // Use WebSocket hook for device values
   const { deviceValues, connectionStatus } = useWebSocket({
@@ -24,9 +27,17 @@ function FloorPlan() {
     reconnectInterval: 3000,
   });
 
+  const handleDeviceClick = useCallback((device: Device) => {
+    setModalDevice(device);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalDevice(null);
+  }, []);
+
   // When selected floorplan changes, load its image and set container size
   useEffect(() => {
-    if (selected) {
+    if (selected && selected.image_url) {
       const img = new window.Image();
       img.onload = () => {
         setContainerSize({
@@ -34,7 +45,8 @@ function FloorPlan() {
           height: img.naturalHeight,
         });
       };
-      img.src = SERVER_URL + selected.image_url;
+      // Handle both Cloudinary URLs (start with http) and local URLs
+      img.src = selected.image_url.startsWith('http') ? selected.image_url : SERVER_URL + selected.image_url;
     }
   }, [selected]);
 
@@ -55,9 +67,7 @@ function FloorPlan() {
   }, [containerSize.width, containerSize.height]);
 
   // Store device positions separately for drag state
-  const [devicePositions, setDevicePositions] = useState<
-    Record<string, PercentPosition>
-  >({});
+  const [devicePositions, setDevicePositions] = useState<Record<string, PercentPosition>>({});
 
   // Update devicePositions when devices or selected floorplan changes
   useEffect(() => {
@@ -85,97 +95,27 @@ function FloorPlan() {
     }
   };
 
-  // Check if a floorplan has any devices with alerts
-  const hasFloorplanAlerts = (floorplanId: number) => {
-    const floorplanDevices = devices?.filter((device) => 
-      Number(device.floorplan_id) === Number(floorplanId)
-    );
-    
-    return floorplanDevices?.some((device) => {
-      const rawValue = deviceValues[device.id.toString()] ?? device.latest_value;
-      const numValue = typeof rawValue === 'number' 
-        ? rawValue 
-        : typeof rawValue === 'string' 
-          ? parseFloat(rawValue) 
-          : null;
-      
-      return numValue !== null &&
-        !isNaN(numValue) &&
-        ((device.min_alert !== undefined && numValue < device.min_alert) ||
-         (device.max_alert !== undefined && numValue > device.max_alert));
-    }) ?? false;
-  };
-
-  // Count alerts for a floorplan
-  const getFloorplanAlertCount = (floorplanId: number) => {
-    const floorplanDevices = devices?.filter((device) => 
-      Number(device.floorplan_id) === Number(floorplanId)
-    );
-    
-    return floorplanDevices?.filter((device) => {
-      const rawValue = deviceValues[device.id.toString()] ?? device.latest_value;
-      const numValue = typeof rawValue === 'number' 
-        ? rawValue 
-        : typeof rawValue === 'string' 
-          ? parseFloat(rawValue) 
-          : null;
-      
-      return numValue !== null &&
-        !isNaN(numValue) &&
-        ((device.min_alert !== undefined && numValue < device.min_alert) ||
-         (device.max_alert !== undefined && numValue > device.max_alert));
-    })?.length ?? 0;
-  };
-
   return (
     <div className={stylesF.Wrapper}>
       <div className={stylesF.FloorList}>
         <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#212529' }}>Floor Plans</h3>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {floorplans?.map((plan) => {
-            const hasAlerts = hasFloorplanAlerts(plan.id);
-            const alertCount = getFloorplanAlertCount(plan.id);
-            
-            return (
-              <li
-                key={plan.id}
-                onClick={() => setSelected(plan)}
-                className={`
-                  ${stylesF.List} 
-                  ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}
-                  ${hasAlerts ? stylesF.alertListItem : ''}
-                `}
-              >
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  width: '100%'
-                }}>
-                  <span className={hasAlerts ? stylesF.alertText : ''}>
-                    {hasAlerts && <span style={{ marginRight: '6px' }}>⚠️</span>}
-                    {plan.name}
-                  </span>
-                  {hasAlerts && (
-                    <div className={stylesF.alertBadge}>
-                      {alertCount}
-                    </div>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {floorplans?.map((plan) => (
+            <li
+              key={plan.id}
+              onClick={() => setSelected(plan)}
+              className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
+            >
+              {plan.name}
+            </li>
+          ))}
         </ul>
       </div>
 
       <div className={stylesF.FloorPlan}>
         {/* Connection Status Indicator */}
-        <div
-          className={`${stylesD.connectionStatus} ${stylesD[connectionStatus]}`}
-        >
-          <div
-            className={`${stylesD.statusDot} ${stylesD[connectionStatus]}`}
-          ></div>
+        <div className={`${stylesD.connectionStatus} ${stylesD[connectionStatus]}`}>
+          <div className={`${stylesD.statusDot} ${stylesD[connectionStatus]}`}></div>
           {getConnectionStatusText()}
         </div>
         {selected ? (
@@ -183,26 +123,21 @@ function FloorPlan() {
             <AspectRatioBox
               originalWidth={containerSize.width}
               originalHeight={containerSize.height}
-              backgroundImage={SERVER_URL + selected.image_url}
+              backgroundImage={
+                selected.image_url && selected.image_url.startsWith('http')
+                  ? selected.image_url
+                  : SERVER_URL + selected.image_url
+              }
               maxWidth="100%"
             >
               {devices
-                ?.filter(
-                  (device) =>
-                    Number(device.floorplan_id) === Number(selected?.id)
-                )
+                ?.filter((device) => Number(device.floorplan_id) === Number(selected?.id))
                 ?.map((device) => {
-                  const type = deviceTypes?.find(
-                    (t) => t.id === device.device_type_id
-                  );
-                  const icon = type
-                    ? SERVER_URL + type.icon_url
-                    : '/icons/default.png';
+                  const type = deviceTypes?.find((t) => t.id === device.device_type_id);
+                  const icon = type ? SERVER_URL + type.icon_url : '/icons/default.png';
 
                   // Determine alert state with better type checking
-                  const rawValue =
-                    deviceValues[device.id.toString()] ??
-                    device.latest_value;
+                  const rawValue = deviceValues[device.id.toString()] ?? device.latest_value;
                   const numValue =
                     typeof rawValue === 'number'
                       ? rawValue
@@ -212,10 +147,8 @@ function FloorPlan() {
                   const alert =
                     numValue !== null &&
                     !isNaN(numValue) &&
-                    ((device.min_alert !== undefined &&
-                      numValue < device.min_alert) ||
-                      (device.max_alert !== undefined &&
-                        numValue > device.max_alert));
+                    ((device.min_alert !== undefined && numValue < device.min_alert) ||
+                      (device.max_alert !== undefined && numValue > device.max_alert));
 
                   return (
                     <DraggableBox
@@ -231,12 +164,9 @@ function FloorPlan() {
                       }
                       containerWidth={renderedSize.width}
                       containerHeight={renderedSize.height}
+                      onClick={() => handleDeviceClick(device)}
                       disabled={true} // Disable dragging for now
                       alert={alert}
-                      deviceName={device.name}
-                      value={deviceValues[device.id.toString()] ?? device.latest_value}
-                      unit={type?.unit}
-                      useBuiltInModal={true} // Use built-in modal with single-click
                     />
                   );
                 })}
@@ -250,7 +180,7 @@ function FloorPlan() {
           </div>
         )}
       </div>
-      
+
       <div className={stylesF.Description}>
         {selected ? (
           <div>
@@ -264,13 +194,18 @@ function FloorPlan() {
           </div>
         )}
       </div>
+
+      <DeviceInfoModal
+        device={modalDevice}
+        deviceTypes={deviceTypes}
+        deviceValues={deviceValues}
+        onClose={closeModal}
+      />
     </div>
   );
 }
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'Floorplan' | 'Camera'>(
-    'Floorplan'
-  );
+  const [activeTab, setActiveTab] = useState<'Floorplan' | 'Camera'>('Floorplan');
 
   const handleTabChange = (tab: 'Floorplan' | 'Camera') => {
     setActiveTab(tab);
@@ -284,18 +219,14 @@ export default function Dashboard() {
           <div className={stylesD.tabNavigation}>
             <button
               onClick={() => handleTabChange('Floorplan')}
-              className={`${stylesD.tabButton} ${
-                activeTab === 'Floorplan' ? stylesD.tabButtonActive : ''
-              }`}
+              className={`${stylesD.tabButton} ${activeTab === 'Floorplan' ? stylesD.tabButtonActive : ''}`}
               aria-selected={activeTab === 'Floorplan'}
             >
               Floorplan
             </button>
             <button
               onClick={() => handleTabChange('Camera')}
-              className={`${stylesD.tabButton} ${
-                activeTab === 'Camera' ? stylesD.tabButtonActive : ''
-              }`}
+              className={`${stylesD.tabButton} ${activeTab === 'Camera' ? stylesD.tabButtonActive : ''}`}
               aria-selected={activeTab === 'Camera'}
             >
               Camera
@@ -304,11 +235,11 @@ export default function Dashboard() {
 
           {/* Header Section */}
           <div className={stylesD.headerSection}>
-            <h3 className={stylesD.pageTitle}>{
-              activeTab === 'Floorplan' ? 'Floorplan' : 'Camera'
-            }</h3>
+            <h3 className={stylesD.pageTitle}>{activeTab === 'Floorplan' ? 'Floorplan' : 'Camera'}</h3>
             <p className={stylesD.pageSubtitle}>
-              {activeTab === 'Floorplan' ? 'Monitor your Devices in real-time on Floorplan' : 'Monitor your camera feeds in real-time'}
+              {activeTab === 'Floorplan'
+                ? 'Monitor your Devices in real-time on Floorplan'
+                : 'Monitor your camera feeds in real-time'}
             </p>
           </div>
 

@@ -10,6 +10,7 @@ export interface Device {
   last_updated: string;
   min_alert?: number;
   max_alert?: number;
+  alert: boolean;
 }
 
 export interface DeviceType {

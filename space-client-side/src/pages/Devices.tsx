@@ -9,9 +9,8 @@ const Devices = () => {
   const { floorplans, devices, deviceTypes, setDevices } = useFloorplan();
   const [showModal, setShowModal] = useState(false);
   const [showEditDevice, setShowEditDevice] = useState<Device | null>(null);
-  const [showDeviceDetails, setShowDeviceDetails] = useState<Device | null>(
-    null
-  );
+  const [showDeviceDetails, setShowDeviceDetails] = useState<Device | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<Device | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   // const selectedDeviceType = deviceTypes.find(dt => dt.id.toString() === form.devicetype); // Moved inline where needed
@@ -65,9 +64,7 @@ const Devices = () => {
     });
   };
 
-  const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -97,9 +94,7 @@ const Devices = () => {
     }
 
     // Get device type for validation
-    const selectedType = deviceTypes?.find(
-      (dt) => dt.id.toString() === form.device_type_id
-    );
+    const selectedType = deviceTypes?.find((dt) => dt.id.toString() === form.device_type_id);
     const isCamera = selectedType && selectedType.name === 'Camera';
 
     // Validate camera URL if provided
@@ -152,13 +147,13 @@ const Devices = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      
+
       let data = null;
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         data = await res.json();
       }
-      
+
       if (res.status === 201) {
         setSuccess(data?.message || 'Device added successfully!');
         // Refresh device list from backend
@@ -179,17 +174,14 @@ const Devices = () => {
     // populate the edit form with the current device values (coerce numbers to strings)
     setEditDeviceForm({
       name: device.name ?? '',
-      floorplan_id:
-        device.floorplan_id != null ? String(device.floorplan_id) : '',
+      floorplan_id: device.floorplan_id != null ? String(device.floorplan_id) : '',
       path_topic: device.path_topic ?? '',
       min_alert: device.min_alert != null ? String(device.min_alert) : '',
       max_alert: device.max_alert != null ? String(device.max_alert) : '',
     });
     console.log('Edit device with ID:', device.id);
   };
-  const handleEditFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setEditDeviceForm({ ...editDeviceForm, [e.target.name]: e.target.value });
   };
   const handleSubmitEditDevice = async () => {
@@ -200,9 +192,7 @@ const Devices = () => {
 
     try {
       // Get device type to determine what fields to send
-      const deviceType = deviceTypes?.find(
-        (t) => String(t.id) === String(showEditDevice.device_type_id)
-      );
+      const deviceType = deviceTypes?.find((t) => String(t.id) === String(showEditDevice.device_type_id));
       const isCamera = deviceType && deviceType.name === 'Camera';
 
       // Prepare payload based on device type
@@ -232,14 +222,11 @@ const Devices = () => {
         payload.max_alert = maxAlert;
       }
 
-      const res = await fetch(
-        `${SERVER_URL}/api/devices/edit/${showEditDevice.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch(`${SERVER_URL}/api/devices/edit/${showEditDevice.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
       let data = null;
       const contentType = res.headers.get('content-type');
@@ -248,7 +235,6 @@ const Devices = () => {
       }
 
       if (res.status === 200) {
-        
         fetch(`${SERVER_URL}/api/devices/getd`)
           .then((res) => res.json())
           .then((data) => {
@@ -261,13 +247,59 @@ const Devices = () => {
         setSuccess('Device updated successfully!');
         // Refresh device list from backend
       } else {
-        setError(
-          data && data.message ? data.message : 'Failed to update device'
-        );
+        setError(data && data.message ? data.message : 'Failed to update device');
       }
     } catch (err) {
       console.error('Error updating device:', err);
       setError('Network error');
+    }
+  };
+
+  const handleDeleteDevice = (device: Device) => {
+    setShowDeleteConfirm(device);
+    console.log('Delete device with ID:', device.id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/devices/delete/${showDeleteConfirm.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      let data = null;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+
+      if (res.status === 200) {
+        setSuccess('Device deleted successfully!');
+        // Refresh device list from backend
+        fetch(`${SERVER_URL}/api/devices/getd`)
+          .then((res) => res.json())
+          .then((data) => setDevices(data));
+
+        // Close any open modals if the deleted device was being viewed/edited
+        if (showDeviceDetails && showDeviceDetails.id === showDeleteConfirm.id) {
+          setShowDeviceDetails(null);
+        }
+        if (showEditDevice && showEditDevice.id === showDeleteConfirm.id) {
+          setShowEditDevice(null);
+        }
+
+        setShowDeleteConfirm(null);
+      } else {
+        setError(data?.message || 'Failed to delete device');
+      }
+    } catch (err) {
+      console.error('Error deleting device:', err);
+      setError('Network error. Please check your connection and try again.');
     }
   };
 
@@ -277,9 +309,7 @@ const Devices = () => {
         {/* Header Section */}
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>Device Management</h1>
-          <p className={styles.pageSubtitle}>
-            Monitor and configure your connected devices
-          </p>
+          <p className={styles.pageSubtitle}>Monitor and configure your connected devices</p>
         </div>
 
         {/* Action Bar */}
@@ -291,18 +321,20 @@ const Devices = () => {
             </div>
             <div className={styles.stat}>
               <span className={styles.statNumber}>
-                {devices?.filter(d => deviceTypes?.find(t => t.id === d.device_type_id)?.name !== 'Camera').length || 0}
+                {devices?.filter((d) => deviceTypes?.find((t) => t.id === d.device_type_id)?.name !== 'Camera')
+                  .length || 0}
               </span>
               <span className={styles.statLabel}>Sensors</span>
             </div>
             <div className={styles.stat}>
               <span className={styles.statNumber}>
-                {devices?.filter(d => deviceTypes?.find(t => t.id === d.device_type_id)?.name === 'Camera').length || 0}
+                {devices?.filter((d) => deviceTypes?.find((t) => t.id === d.device_type_id)?.name === 'Camera')
+                  .length || 0}
               </span>
               <span className={styles.statLabel}>Cameras</span>
             </div>
           </div>
-          
+
           <Button onClick={handleAddDevice} variant="primary">
             Add New Device
           </Button>
@@ -310,461 +342,451 @@ const Devices = () => {
 
         {/* Device Grid */}
         <div className={styles.deviceGrid}>
-        {devices?.map((device) => (
-          <div key={device.id} className={styles.deviceCard}>
-            <div className={styles.Wrapper}>
-              <div className={styles.left}>
-                <h3 className={styles.deviceName}>{device.name}</h3>
-                <p className={styles.deviceType}>
-                  {deviceTypes?.find(
-                    (t) => String(t.id) === String(device.device_type_id)
-                  )?.name ?? device.device_type_id}
-                </p>
+          {devices?.map((device) => (
+            <div key={device.id} className={styles.deviceCard}>
+              <div className={styles.Wrapper}>
+                <div className={styles.left}>
+                  <h3 className={styles.deviceName}>{device.name}</h3>
+                  <p className={styles.deviceType}>
+                    {deviceTypes?.find((t) => String(t.id) === String(device.device_type_id))?.name ??
+                      device.device_type_id}
+                  </p>
+                </div>
+                <div className={styles.right}></div>
               </div>
-              <div className={styles.right}></div>
+              <div className={styles.deviceActions}>
+                <button className={styles.actionButton} onClick={() => handleViewDevice(device)}>
+                  View
+                </button>
+                <button className={styles.actionButton} onClick={() => handleShowEditDevice(device)}>
+                  Edit
+                </button>
+                <button
+                  className={`${styles.actionButton} ${styles.deleteButton}`}
+                  onClick={() => handleDeleteDevice(device)}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className={styles.deviceActions}>
-              <button
-                className={styles.actionButton}
-                onClick={() => handleViewDevice(device)}
-              >
-                View
-              </button>
-              <button
-                className={styles.actionButton}
-                onClick={() => handleShowEditDevice(device)}
-              >
-                Edit
-              </button>
+          ))}
+        </div>
+
+        {showModal && (
+          <div className={styles.overlay}>
+            <div className={styles.modal}>
+              <h2 className={styles.headerDetail}>Add New Device</h2>
+
+              {error && (
+                <div
+                  style={{
+                    color: 'red',
+                    marginBottom: '10px',
+                    padding: '8px',
+                    backgroundColor: '#ffebee',
+                    borderRadius: '4px',
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <label className={styles.label}>
+                  Device Name:
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleFormChange}
+                    required
+                    className={styles.editValue}
+                    placeholder="Enter device name (2-100 characters)"
+                    maxLength={100}
+                  />
+                  <small style={{ color: '#666', fontSize: '0.85em' }}>
+                    Must be unique within the selected floorplan
+                  </small>
+                </label>
+
+                <label className={styles.label}>
+                  Device Type:
+                  <select
+                    name="device_type_id"
+                    value={form.device_type_id}
+                    onChange={handleFormChange}
+                    className={styles.editValue}
+                    required
+                  >
+                    <option value="">Select device type...</option>
+                    {deviceTypes?.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name} {type.unit && `(${type.unit})`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className={styles.label}>
+                  Floorplan:
+                  <select
+                    name="floorplan_id"
+                    value={form.floorplan_id}
+                    onChange={handleFormChange}
+                    className={styles.editValue}
+                    required
+                  >
+                    <option value="">Select floorplan...</option>
+                    {floorplans?.map((fp) => (
+                      <option key={fp.id} value={fp.id}>
+                        {fp.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {(() => {
+                  const selectedType = deviceTypes?.find((dt) => dt.id.toString() === form.device_type_id);
+                  if (selectedType && selectedType.name === 'Camera') {
+                    return (
+                      <label className={styles.label}>
+                        Camera URL (Optional):
+                        <input
+                          name="path_topic"
+                          value={form.path_topic}
+                          onChange={handleFormChange}
+                          className={styles.editValue}
+                          placeholder="e.g., http://192.168.1.100:8080 or https://camera.local"
+                        />
+                        <small style={{ color: '#666', fontSize: '0.85em' }}>
+                          Valid formats: HTTP/HTTPS URLs or IP addresses
+                        </small>
+                      </label>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {(() => {
+                  const selectedType = deviceTypes?.find((dt) => dt.id.toString() === form.device_type_id);
+                  const isCamera = selectedType && selectedType.name === 'Camera';
+                  const unit = selectedType?.unit || '';
+
+                  if (!isCamera && selectedType) {
+                    return (
+                      <>
+                        <label className={styles.label}>
+                          Min Alert Value{unit && ` (${unit})`}:
+                          <input
+                            name="min_alert"
+                            value={form.min_alert}
+                            onChange={handleFormChange}
+                            type="number"
+                            step="any"
+                            className={styles.editValue}
+                            placeholder={`Enter minimum threshold${unit ? ` in ${unit}` : ''}`}
+                            required
+                          />
+                        </label>
+
+                        <label className={styles.label}>
+                          Max Alert Value{unit && ` (${unit})`}:
+                          <input
+                            name="max_alert"
+                            value={form.max_alert}
+                            onChange={handleFormChange}
+                            type="number"
+                            step="any"
+                            className={styles.editValue}
+                            placeholder={`Enter maximum threshold${unit ? ` in ${unit}` : ''}`}
+                            required
+                          />
+                        </label>
+                        <small style={{ color: '#666', fontSize: '0.85em' }}>
+                          Device will alert when values are outside this range
+                        </small>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
+
+                <div className={styles.footer}>
+                  <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={!form.name.trim() || !form.device_type_id || !form.floorplan_id}
+                  >
+                    Add Device
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
-        ))}
-      </div>
+        )}
 
-      {showModal && (
-        <div className={styles.overlay}>
-          <div className={styles.modal}>
-            <h2 className={styles.headerDetail}>Add New Device</h2>
+        {showDeviceDetails && (
+          <div className={styles.overlay}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <h2 className={styles.headerDetail}>Device Information</h2>
 
-            {error && (
-              <div style={{ color: 'red', marginBottom: '10px', padding: '8px', backgroundColor: '#ffebee', borderRadius: '4px' }}>
-                {error}
-              </div>
-            )}
+              <div className={styles.detailsGrid}>
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Name:</span>
+                  <span className={styles.value}>{showDeviceDetails?.name}</span>
+                </div>
 
-            <form
-              onSubmit={handleFormSubmit}
-              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-            >
-              <label className={styles.label}>
-                Device Name:
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleFormChange}
-                  required
-                  className={styles.editValue}
-                  placeholder="Enter device name (2-100 characters)"
-                  maxLength={100}
-                />
-                <small style={{ color: '#666', fontSize: '0.85em' }}>
-                  Must be unique within the selected floorplan
-                </small>
-              </label>
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Type:</span>
+                  <span className={styles.value}>
+                    {deviceTypes?.find((t) => String(t.id) === String(showDeviceDetails?.device_type_id))?.name ??
+                      showDeviceDetails?.device_type_id}
+                  </span>
+                </div>
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Floorplan:</span>
+                  <span className={styles.value}>
+                    {floorplans?.find((f) => String(f.id) === String(showDeviceDetails?.floorplan_id))?.name ??
+                      showDeviceDetails?.floorplan_id}
+                  </span>
+                </div>
 
-              <label className={styles.label}>
-                Device Type:
-                <select
-                  name="device_type_id"
-                  value={form.device_type_id}
-                  onChange={handleFormChange}
-                  className={styles.editValue}
-                  required
-                >
-                  <option value="">Select device type...</option>
-                  {deviceTypes?.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name} {type.unit && `(${type.unit})`}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className={styles.label}>
-                Floorplan:
-                <select
-                  name="floorplan_id"
-                  value={form.floorplan_id}
-                  onChange={handleFormChange}
-                  className={styles.editValue}
-                  required
-                >
-                  <option value="">Select floorplan...</option>
-                  {floorplans?.map((fp) => (
-                    <option key={fp.id} value={fp.id}>
-                      {fp.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {(() => {
-                const selectedType = deviceTypes?.find(
-                  (dt) => dt.id.toString() === form.device_type_id
-                );
-                if (selectedType && selectedType.name === 'Camera') {
-                  return (
-                    <label className={styles.label}>
-                      Camera URL (Optional):
-                      <input
-                        name="path_topic"
-                        value={form.path_topic}
-                        onChange={handleFormChange}
-                        className={styles.editValue}
-                        placeholder="e.g., http://192.168.1.100:8080 or https://camera.local"
-                      />
-                      <small style={{ color: '#666', fontSize: '0.85em' }}>
-                        Valid formats: HTTP/HTTPS URLs or IP addresses
-                      </small>
-                    </label>
+                {(() => {
+                  const deviceType = deviceTypes?.find(
+                    (t) => String(t.id) === String(showDeviceDetails?.device_type_id)
                   );
-                }
-                return null;
-              })()}
+                  const isCamera = deviceType && deviceType.name === 'Camera';
 
-              {(() => {
-                const selectedType = deviceTypes?.find(
-                  (dt) => dt.id.toString() === form.device_type_id
-                );
-                const isCamera = selectedType && selectedType.name === 'Camera';
-                const unit = selectedType?.unit || '';
-
-                if (!isCamera && selectedType) {
                   return (
                     <>
-                      <label className={styles.label}>
-                        Min Alert Value{unit && ` (${unit})`}:
-                        <input
-                          name="min_alert"
-                          value={form.min_alert}
-                          onChange={handleFormChange}
-                          type="number"
-                          step="any"
-                          className={styles.editValue}
-                          placeholder={`Enter minimum threshold${unit ? ` in ${unit}` : ''}`}
-                          required
-                        />
-                      </label>
+                      <div className={styles.detailRow}>
+                        <span className={styles.label}>{isCamera ? 'Camera URL:' : 'Path Topic:'}</span>
+                        <span className={styles.value}>{showDeviceDetails?.path_topic}</span>
+                      </div>
 
-                      <label className={styles.label}>
-                        Max Alert Value{unit && ` (${unit})`}:
-                        <input
-                          name="max_alert"
-                          value={form.max_alert}
-                          onChange={handleFormChange}
-                          type="number"
-                          step="any"
-                          className={styles.editValue}
-                          placeholder={`Enter maximum threshold${unit ? ` in ${unit}` : ''}`}
-                          required
-                        />
-                      </label>
-                      <small style={{ color: '#666', fontSize: '0.85em' }}>
-                        Device will alert when values are outside this range
-                      </small>
+                      {!isCamera && (
+                        <>
+                          <div className={styles.detailRow}>
+                            <span className={styles.label}>Min Alert:</span>
+                            <span className={styles.value}>{showDeviceDetails?.min_alert}</span>
+                            <b>
+                              {(() => {
+                                const type = deviceTypes?.find((t) => t.id === showDeviceDetails.device_type_id);
+                                return type && type.unit ? ` ${type.unit}` : '';
+                              })()}
+                            </b>
+                          </div>
+
+                          <div className={styles.detailRow}>
+                            <span className={styles.label}>Max Alert:</span>
+                            <span className={styles.value}>{showDeviceDetails?.max_alert}</span>
+                            <b>
+                              {(() => {
+                                const type = deviceTypes?.find((t) => t.id === showDeviceDetails.device_type_id);
+                                return type && type.unit ? ` ${type.unit}` : '';
+                              })()}
+                            </b>
+                          </div>
+                        </>
+                      )}
                     </>
                   );
-                }
-                return null;
-              })()}
+                })()}
+              </div>
+
+              <div className={styles.footer} style={{ borderTop: 'none' }}>
+                <Button variant="secondary" onClick={() => setShowDeviceDetails(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEditDevice && (
+          <div className={styles.overlay}>
+            <div className={styles.modal}>
+              <h2 className={styles.headerDetail}>Edit Device</h2>
+
+              {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmitEditDevice();
+                }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+              >
+                <label className={styles.label}>
+                  Name:
+                  <input
+                    name="name"
+                    value={editDeviceForm.name}
+                    onChange={handleEditFormChange}
+                    required
+                    className={`${styles.editValue}`}
+                    placeholder="Device name"
+                  />
+                </label>
+
+                <label className={styles.label}>
+                  Device Type:
+                  <input
+                    value={
+                      deviceTypes?.find((t) => String(t.id) === String(showEditDevice?.device_type_id))?.name ??
+                      showEditDevice?.device_type_id
+                    }
+                    readOnly
+                    disabled
+                    className={`${styles.editValue}`}
+                    style={{ backgroundColor: '#f8fcffff', color: '#383131ff' }}
+                    placeholder="Device type (cannot be changed)"
+                  />
+                </label>
+
+                <label className={styles.label}>
+                  Floorplan:
+                  <select
+                    name="floorplan_id"
+                    value={editDeviceForm.floorplan_id}
+                    onChange={handleEditFormChange}
+                    className={`${styles.editValue}`}
+                    required
+                  >
+                    {floorplans?.map((fp) => (
+                      <option key={fp.id} value={fp.id}>
+                        {fp.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {(() => {
+                  const deviceType = deviceTypes?.find((t) => String(t.id) === String(showEditDevice?.device_type_id));
+                  const isCamera = deviceType && deviceType.name === 'Camera';
+                  return (
+                    <>
+                      {!isCamera && (
+                        <>
+                          <label>
+                            Min Alert:
+                            <b>
+                              {(() => {
+                                const type = deviceTypes?.find((t) => t.id === showEditDevice.device_type_id);
+                                return type && type.unit ? ` ${type.unit}` : '';
+                              })()}
+                            </b>
+                            <input
+                              name="min_alert"
+                              value={editDeviceForm.min_alert}
+                              onChange={handleEditFormChange}
+                              type="number"
+                              className={`${styles.editValue}`}
+                              placeholder="Enter min alert value"
+                              required
+                            />
+                          </label>
+
+                          <label>
+                            Max Alert:
+                            <b>
+                              {(() => {
+                                const type = deviceTypes?.find((t) => t.id === showEditDevice.device_type_id);
+                                return type && type.unit ? ` ${type.unit}` : '';
+                              })()}
+                            </b>
+                            <input
+                              name="max_alert"
+                              value={editDeviceForm.max_alert}
+                              onChange={handleEditFormChange}
+                              type="number"
+                              className={`${styles.editValue}`}
+                              placeholder="Enter max alert value"
+                              required
+                            />
+                          </label>
+                        </>
+                      )}
+                      {isCamera && (
+                        <label>
+                          Camera
+                          <input
+                            name="path_topic"
+                            value={''}
+                            onChange={handleEditFormChange}
+                            className={`${styles.editValue}`}
+                            placeholder="Enter New path topic Here"
+                          />
+                        </label>
+                      )}
+                    </>
+                  );
+                })()}
+              </form>
 
               <div className={styles.footer}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleCloseModal}
+                <Button variant="secondary" onClick={() => setShowEditDevice(null)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" onClick={handleSubmitEditDevice}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDeleteConfirm && (
+          <div className={`${styles.overlay} ${styles.deleteOverlay}`}>
+            <div className={`${styles.modal} ${styles.deleteModal}`} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.deleteIcon}>⚠️</div>
+              <h3 className={styles.deleteTitle}>Delete Device</h3>
+              <p className={styles.deleteMessage}>Are you sure you want to delete "{showDeleteConfirm.name}"?</p>
+              <p className={styles.deleteWarning}>This action cannot be undone.</p>
+
+              {error && (
+                <div
+                  style={{
+                    color: 'red',
+                    marginBottom: '10px',
+                    padding: '8px',
+                    backgroundColor: '#ffebee',
+                    borderRadius: '4px',
+                  }}
                 >
+                  {error}
+                </div>
+              )}
+
+              <div className={styles.footer}>
+                <Button variant="secondary" onClick={() => setShowDeleteConfirm(null)}>
                   Cancel
                 </Button>
                 <Button
-                  type="submit"
                   variant="primary"
-                  disabled={!form.name.trim() || !form.device_type_id || !form.floorplan_id}
+                  onClick={handleConfirmDelete}
+                  style={{ backgroundColor: '#dc3545', borderColor: '#dc3545' }}
                 >
-                  Add Device
+                  Delete Device
                 </Button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showDeviceDetails && (
-        <div className={styles.overlay}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.headerDetail}>Device Information</h2>
-
-            <div className={styles.detailsGrid}>
-              <div className={styles.detailRow}>
-                <span className={styles.label}>Name:</span>
-                <span className={styles.value}>{showDeviceDetails?.name}</span>
-              </div>
-
-              <div className={styles.detailRow}>
-                <span className={styles.label}>Type:</span>
-                <span className={styles.value}>
-                  {deviceTypes?.find(
-                    (t) =>
-                      String(t.id) === String(showDeviceDetails?.device_type_id)
-                  )?.name ?? showDeviceDetails?.device_type_id}
-                </span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.label}>Floorplan:</span>
-                <span className={styles.value}>
-                  {floorplans?.find(
-                    (f) =>
-                      String(f.id) === String(showDeviceDetails?.floorplan_id)
-                  )?.name ?? showDeviceDetails?.floorplan_id}
-                </span>
-              </div>
-
-              {(() => {
-                const deviceType = deviceTypes?.find(
-                  (t) =>
-                    String(t.id) === String(showDeviceDetails?.device_type_id)
-                );
-                const isCamera = deviceType && deviceType.name === 'Camera';
-
-                return (
-                  <>
-                    <div className={styles.detailRow}>
-                      <span className={styles.label}>
-                        {isCamera ? 'Camera URL:' : 'Path Topic:'}
-                      </span>
-                      <span className={styles.value}>
-                        {showDeviceDetails?.path_topic}
-                      </span>
-                    </div>
-
-                    {!isCamera && (
-                      <>
-                        <div className={styles.detailRow}>
-                          <span className={styles.label}>Min Alert:</span>
-                          <span className={styles.value}>
-                            {showDeviceDetails?.min_alert}
-                          </span>
-                          <b>
-                            {(() => {
-                              const type = deviceTypes?.find(
-                                (t) => t.id === showDeviceDetails.device_type_id
-                              );
-                              return type && type.unit ? ` ${type.unit}` : '';
-                            })()}
-                          </b>
-                        </div>
-
-                        <div className={styles.detailRow}>
-                          <span className={styles.label}>Max Alert:</span>
-                          <span className={styles.value}>
-                            {showDeviceDetails?.max_alert}
-                          </span>
-                          <b>
-                            {(() => {
-                              const type = deviceTypes?.find(
-                                (t) => t.id === showDeviceDetails.device_type_id
-                              );
-                              return type && type.unit ? ` ${type.unit}` : '';
-                            })()}
-                          </b>
-                        </div>
-                      </>
-                    )}
-                  </>
-                );
-              })()}
             </div>
+          </div>
+        )}
 
-            <div className={styles.footer} style={{ borderTop: 'none' }}>
-              <Button
-                variant="secondary"
-                onClick={() => setShowDeviceDetails(null)}
-              >
+        {success && (
+          <div className={`${styles.overlay} ${styles.successOverlay}`} onClick={() => setSuccess('')}>
+            <div className={`${styles.modal} ${styles.successModal}`} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.successIcon}>✓</div>
+              <h3 className={styles.successTitle}>Success!</h3>
+              <p className={styles.successMessage}>{success}</p>
+              <Button variant="primary" onClick={() => setSuccess('')}>
                 Close
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {showEditDevice && (
-        <div className={styles.overlay}>
-          <div className={styles.modal}>
-            <h2 className={styles.headerDetail}>Edit Device</h2>
-
-            {error && (
-              <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>
-            )}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmitEditDevice();
-              }}
-              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-            >
-              <label className={styles.label}>
-                Name:
-                <input
-                  name="name"
-                  value={editDeviceForm.name}
-                  onChange={handleEditFormChange}
-                  required
-                  className={`${styles.editValue}`}
-                  placeholder="Device name"
-                />
-              </label>
-
-              <label className={styles.label}>
-                Device Type:
-                <input
-                  value={
-                    deviceTypes?.find(
-                      (t) =>
-                        String(t.id) === String(showEditDevice?.device_type_id)
-                    )?.name ?? showEditDevice?.device_type_id
-                  }
-                  readOnly
-                  disabled
-                  className={`${styles.editValue}`}
-                  style={{ backgroundColor: '#f8fcffff', color: '#383131ff' }}
-                  placeholder="Device type (cannot be changed)"
-                />
-              </label>
-
-              <label className={styles.label}>
-                Floorplan:
-                <select
-                  name="floorplan_id"
-                  value={editDeviceForm.floorplan_id}
-                  onChange={handleEditFormChange}
-                  className={`${styles.editValue}`}
-                  required
-                >
-                  {floorplans?.map((fp) => (
-                    <option key={fp.id} value={fp.id}>
-                      {fp.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {(() => {
-                const deviceType = deviceTypes?.find(
-                  (t) => String(t.id) === String(showEditDevice?.device_type_id)
-                );
-                const isCamera = deviceType && deviceType.name === 'Camera';
-                return (
-                  <>
-                    {!isCamera && (
-                      <>
-                        <label>
-                          Min Alert:
-                          <b>
-                            {(() => {
-                              const type = deviceTypes?.find(
-                                (t) => t.id === showEditDevice.device_type_id
-                              );
-                              return type && type.unit ? ` ${type.unit}` : '';
-                            })()}
-                          </b>
-                          <input
-                            name="min_alert"
-                            value={editDeviceForm.min_alert}
-                            onChange={handleEditFormChange}
-                            type="number"
-                            className={`${styles.editValue}`}
-                            placeholder="Enter min alert value"
-                            required
-                          />
-                        </label>
-
-                        <label>
-                          Max Alert:
-                          <b>
-                            {(() => {
-                              const type = deviceTypes?.find(
-                                (t) => t.id === showEditDevice.device_type_id
-                              );
-                              return type && type.unit ? ` ${type.unit}` : '';
-                            })()}
-                          </b>
-                          <input
-                            name="max_alert"
-                            value={editDeviceForm.max_alert}
-                            onChange={handleEditFormChange}
-                            type="number"
-                            className={`${styles.editValue}`}
-                            placeholder="Enter max alert value"
-                            required
-                          />
-                        </label>
-                      </>
-                    )}
-                    {isCamera && (
-                      <label>
-                        Camera
-                        <input
-                          name="path_topic"
-                          value={""}
-                          onChange={handleEditFormChange}
-                          className={`${styles.editValue}`}
-                          placeholder="Enter New path topic Here"
-                        />
-                      </label>
-                    )}
-                  </>
-                );
-              })()}
-            </form>
-
-            <div className={styles.footer}>
-              <Button
-                variant="secondary"
-                onClick={() => setShowEditDevice(null)}
-              >
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleSubmitEditDevice}>
-                Save
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      {success && (
-        <div className={`${styles.overlay} ${styles.successOverlay}`} onClick={() => setSuccess('')}>
-          <div
-            className={`${styles.modal} ${styles.successModal}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.successIcon}>
-              ✓
-            </div>
-            <h3 className={styles.successTitle}>
-              Success!
-            </h3>
-            <p className={styles.successMessage}>
-              {success}
-            </p>
-            <Button
-              variant="primary"
-              onClick={() => setSuccess('')}
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
