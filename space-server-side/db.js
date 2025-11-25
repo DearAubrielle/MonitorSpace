@@ -32,29 +32,31 @@ const createPoolConfig = () => {
     connectionConfig = {
       ...parsedConfig,
       charset: 'utf8mb4',
-      timezone: '+00:00',
+      timezone: '+00:07',
     };
   } else {
     // Fallback to individual environment variables or defaults
     console.log('Using individual environment variables for database connection');
     connectionConfig = {
-      host: process.env.DB_HOST || "localhost",
+      host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT) || 3306,
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "",
       database: process.env.DB_NAME || "spacemonitor",
       charset: 'utf8mb4',
-      timezone: '+00:00',
+      timezone: '+00:07',
     };
   }
   
   // Return complete pool configuration
   return {
     ...connectionConfig,
-    // Pool-specific options only (using only guaranteed valid options)
+    // Pool-specific options optimized for 1GB RAM constraint
     waitForConnections: true,
-    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 10,
-    queueLimit: 0,
+    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 25, // Conservative limit for 1GB RAM
+    queueLimit: 50, // Limit queued requests to prevent memory issues
+    idleTimeout: 180000, // 3 minutes idle timeout for faster cleanup
+    maxIdle: 5, // Reduced idle connections for memory efficiency
   };
 };
 
@@ -70,18 +72,59 @@ pool.getConnection((err, connection) => {
   }
 });
 
-// Monitor connection count (optional) - simplified for MySQL2 compatibility
+// Handle pool errors
+pool.on('connection', (connection) => {
+  console.log('New database connection established as id ' + connection.threadId);
+});
+
+pool.on('error', (err) => {
+  console.error('Database pool error:', err);
+  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.log('Database connection was closed.');
+  }
+  if (err.code === 'ER_CON_COUNT_ERROR') {
+    console.log('Database has too many connections.');
+  }
+  if (err.code === 'ECONNREFUSED') {
+    console.log('Database connection was refused.');
+  }
+});
+
+// Monitor connection health with basic stats
 function logConnectionStats() {
-  console.log('📊 Database Pool Status: Active and monitoring connections');
-  // Note: MySQL2 doesn't expose internal pool statistics
-  // Connection monitoring is handled internally by the MySQL2 pool
-  return { status: 'active', message: 'Pool monitoring active' };
+  try {
+    // Get basic pool info
+    const poolConfig = pool.config;
+    console.log('📊 Database Pool Status:', {
+      connectionLimit: poolConfig.connectionLimit,
+      host: poolConfig.host,
+      database: poolConfig.database,
+      status: 'active'
+    });
+    return { status: 'active', message: 'Pool monitoring active' };
+  } catch (error) {
+    console.error('Error getting pool stats:', error);
+    return { status: 'error', message: error.message };
+  }
 }
 
-// Log connection stats occasionally (simplified for MySQL2)
+// Periodic connection health check
+function startConnectionMonitoring() {
+  setInterval(async () => {
+    try {
+      await poolPromise.execute('SELECT 1');
+      // console.log('✅ Database health check passed');
+    } catch (error) {
+      console.error('❌ Database health check failed:', error.message);
+    }
+  }, 30000); // Check every 30 seconds
+}
+
+// Log connection stats occasionally and start monitoring
 if (process.env.DB_MONITOR_CONNECTIONS === 'true') {
   console.log('🔍 Database connection monitoring enabled');
-  // MySQL2 handles connection pooling internally - no need for manual monitoring
+  logConnectionStats();
+  startConnectionMonitoring();
 }
 
 // Export the pool promise
