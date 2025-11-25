@@ -2,24 +2,17 @@ const db = require("../../db");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const cloudinary = require('cloudinary').v2;
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, "../../private_uploads/images/floorplans");
-    
-    // Create directory if it doesn't exist
-    fs.mkdirSync(uploadPath, { recursive: true });
-    
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const fileExtension = path.extname(file.originalname);
-    cb(null, 'floorplan-' + uniqueSuffix + fileExtension);
-  }
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Configure multer for file uploads (memory storage for cloud upload)
+const storage = multer.memoryStorage(); // Store in memory instead of disk
 
 const upload = multer({ 
   storage: storage,
@@ -61,30 +54,44 @@ exports.createFloorplan = [
     }
     
     try {
-      // Store relative path for database
-      const image_url = `/private_uploads/images/floorplans/${req.file.filename}`;
+      // Upload image to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          {
+            folder: 'floorplans', // Organize images in a folder
+            resource_type: 'image',
+            quality: 'auto:good', // Automatic quality optimization
+            fetch_format: 'auto', // Automatic format optimization
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        ).end(req.file.buffer);
+      });
+
+      // Store Cloudinary URL in database
+      const image_url = uploadResult.secure_url;
+      const cloudinary_public_id = uploadResult.public_id;
       
       const [result] = await db.query(
-        "INSERT INTO floorplan (name, description, image_url) VALUES (?, ?, ?)",
-        [name, description || null, image_url]
+        "INSERT INTO floorplan (name, description, image_url, cloudinary_public_id) VALUES (?, ?, ?, ?)",
+        [name, description || null, image_url, cloudinary_public_id]
       );
       
       const newFloorplan = {
         id: result.insertId, 
         name, 
         description: description || null,
-        image_url 
+        image_url,
+        cloudinary_public_id
       };
       
       res.status(201).json(newFloorplan);
     } catch (err) {
       console.error("Error executing query:", err);
       
-      // If database operation fails, delete uploaded file
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      
+      // If there's an error, we don't need to delete files since they're in cloud
       res.status(500).json({ message: "Database query error" });
     }
   }
@@ -105,52 +112,104 @@ exports.editFloorplan = [
       // Get existing floorplan to check if it exists and get current image
       const [existing] = await db.query("SELECT * FROM floorplan WHERE id = ?", [id]);
       if (existing.length === 0) {
-        // If new image was uploaded but floorplan doesn't exist, delete the uploaded file
-        if (req.file && fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
         return res.status(404).json({ message: 'Floorplan not found' });
       }
       
       const currentFloorplan = existing[0];
       let image_url = currentFloorplan.image_url; // Keep current image by default
+      let cloudinary_public_id = currentFloorplan.cloudinary_public_id;
       
-      // If new image was uploaded, use it and delete old image
+      // If new image was uploaded, use it and delete old image from Cloudinary
       if (req.file) {
-        image_url = `/private_uploads/images/floorplans/${req.file.filename}`;
+        // Upload new image to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              folder: 'floorplans',
+              resource_type: 'image',
+              quality: 'auto:good',
+              fetch_format: 'auto',
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(req.file.buffer);
+        });
+
+        image_url = uploadResult.secure_url;
+        cloudinary_public_id = uploadResult.public_id;
         
-        // Delete old image file if it exists
-        if (currentFloorplan.image_url) {
-          const oldImagePath = path.join(__dirname, "../..", currentFloorplan.image_url);
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
+        // Delete old image from Cloudinary if it exists
+        if (currentFloorplan.cloudinary_public_id) {
+          try {
+            await cloudinary.uploader.destroy(currentFloorplan.cloudinary_public_id);
+          } catch (deleteError) {
+            console.warn('Failed to delete old image from Cloudinary:', deleteError);
+            // Continue with update even if deletion fails
           }
         }
       }
       
       // Update floorplan in database
       await db.query(
-        "UPDATE floorplan SET name = ?, description = ?, image_url = ? WHERE id = ?",
-        [name, description || null, image_url, id]
+        "UPDATE floorplan SET name = ?, description = ?, image_url = ?, cloudinary_public_id = ? WHERE id = ?",
+        [name, description || null, image_url, cloudinary_public_id, id]
       );
       
       const updatedFloorplan = {
         id: parseInt(id),
         name,
         description: description || null,
-        image_url
+        image_url,
+        cloudinary_public_id
       };
       
       res.json(updatedFloorplan);
     } catch (err) {
       console.error("Error executing query:", err);
-      
-      // If database operation fails, delete uploaded file
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      
       res.status(500).json({ message: "Database query error" });
     }
   }
 ];
+
+exports.deleteFloorplan = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Get existing floorplan to check if it exists and get image info
+    const [existing] = await db.query("SELECT * FROM floorplan WHERE id = ?", [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ message: 'Floorplan not found' });
+    }
+    
+    const currentFloorplan = existing[0];
+    
+    // Check if there are devices assigned to this floorplan
+    const [devices] = await db.query("SELECT COUNT(*) as device_count FROM devices WHERE floorplan_id = ?", [id]);
+    if (devices[0].device_count > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete floorplan. ${devices[0].device_count} device(s) are still assigned to this floorplan. Please remove or reassign the devices first.` 
+      });
+    }
+    
+    // Delete floorplan from database
+    await db.query("DELETE FROM floorplan WHERE id = ?", [id]);
+    
+    // Delete associated image from Cloudinary if it exists
+    if (currentFloorplan.cloudinary_public_id) {
+      try {
+        await cloudinary.uploader.destroy(currentFloorplan.cloudinary_public_id);
+        console.log(`Deleted image from Cloudinary: ${currentFloorplan.cloudinary_public_id}`);
+      } catch (deleteError) {
+        console.warn('Failed to delete image from Cloudinary:', deleteError);
+        // Continue with success response even if Cloudinary deletion fails
+      }
+    }
+    
+    res.status(200).json({ message: 'Floorplan deleted successfully' });
+  } catch (err) {
+    console.error("Error deleting floorplan:", err);
+    res.status(500).json({ message: "Database delete error" });
+  }
+};
