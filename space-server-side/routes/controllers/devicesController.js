@@ -23,15 +23,58 @@ exports.getAllDeviceTypes = async (req, res) => {
 exports.putDevicesTofloorplan = async (req, res) => {
   const { id } = req.params;
   const { floorplan_id } = req.body;
+  
   try {
-    await db.query(
-      'UPDATE devices SET floorplan_id = ? WHERE id = ?',
-      [floorplan_id, id]
-    );
+    // Check if we're trying to unassign the device (floorplan_id is 0, null, or undefined)
+    if (floorplan_id === 0 || floorplan_id === null || floorplan_id === undefined) {
+      // First, check if an "Unassigned" floorplan exists
+      const [unassignedFloorplan] = await db.query(
+        "SELECT id FROM floorplan WHERE name = 'Unassigned' OR name = 'unassigned'"
+      );
+      
+      let unassignedId;
+      if (unassignedFloorplan.length === 0) {
+        // Create the "Unassigned" floorplan if it doesn't exist
+        const [result] = await db.query(
+          "INSERT INTO floorplan (name, description, image_url) VALUES (?, ?, ?)",
+          ['Unassigned', 'Temporary holding area for unassigned devices', null]
+        );
+        unassignedId = result.insertId;
+        console.log(`Created "Unassigned" floorplan with ID: ${unassignedId}`);
+      } else {
+        unassignedId = unassignedFloorplan[0].id;
+      }
+      
+      // Update the device to use the "Unassigned" floorplan
+      await db.query(
+        'UPDATE devices SET floorplan_id = ? WHERE id = ?',
+        [unassignedId, id]
+      );
+    } else {
+      // Validate that the floorplan exists
+      const [floorplan] = await db.query(
+        "SELECT id FROM floorplan WHERE id = ?",
+        [floorplan_id]
+      );
+      
+      if (floorplan.length === 0) {
+        return res.status(400).json({ message: 'Floorplan not found' });
+      }
+      
+      // Normal assignment to a valid floorplan
+      await db.query(
+        'UPDATE devices SET floorplan_id = ? WHERE id = ?',
+        [floorplan_id, id]
+      );
+    }
+    
     res.sendStatus(200);
   } catch (err) {
     console.error("Error updating device location:", err);
-    res.status(500).send("Database update error");
+    res.status(500).json({ 
+      message: "Database update error",
+      error: err.message 
+    });
   }
 }
 exports.createDevice = async (req, res) => {
@@ -234,5 +277,25 @@ exports.saveEditDevice = async (req, res) => {
   } catch (err) {
     console.error("Error updating device:", err);
     res.status(500).json({ message: "Database update error" });
+  }
+}
+
+exports.deleteDevice = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Check if device exists
+    const [device] = await db.query('SELECT * FROM devices WHERE id = ?', [id]);
+    if (device.length === 0) {
+      return res.status(404).json({ message: 'Device not found' });
+    }
+
+    // Delete the device
+    await db.query('DELETE FROM devices WHERE id = ?', [id]);
+    
+    res.status(200).json({ message: 'Device deleted successfully' });
+  } catch (err) {
+    console.error("Error deleting device:", err);
+    res.status(500).json({ message: "Database delete error" });
   }
 }
