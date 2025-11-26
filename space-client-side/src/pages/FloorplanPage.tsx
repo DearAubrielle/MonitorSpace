@@ -440,7 +440,7 @@ export default function FloorplanPage() {
           floorplan={selected}
           serverUrl={SERVER_URL}
         />
-        <div className={styles.Wrapper} style={{ position: 'relative' }}>
+        <div className={styles.Wrapper}>
           {/* Overlay Add Device Panel */}
           {showOverlay && (
             <div className={styles.deviceOverlay}>
