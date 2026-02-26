@@ -174,9 +174,9 @@ exports.createDevice = async (req, res) => {
             }
           }
         );
-        console.log("✅ Topic sent to MQTT service:", response.data);
+        console.log("Topic sent to MQTT service:", response.data);
       } catch (mqttError) {
-        console.error("❌ Failed to send topic to MQTT service:", mqttError.message);
+        console.error("Failed to send topic to MQTT service:", mqttError.message);
         // Don't fail the device creation if MQTT service is unavailable
       }
 
