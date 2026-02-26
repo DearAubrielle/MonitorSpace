@@ -1,6 +1,6 @@
 
 .floorplanContainer {
-  min-height: 100vh;
+  min-height: 2000px;
   background: linear-gradient(180deg, #f8f9fa 0%, #e8f4f8 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }

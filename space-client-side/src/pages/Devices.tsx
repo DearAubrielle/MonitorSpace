@@ -97,14 +97,6 @@ const Devices = () => {
     const selectedType = deviceTypes?.find((dt) => dt.id.toString() === form.device_type_id);
     const isCamera = selectedType && selectedType.name === 'Camera';
 
-    // Validate camera URL if provided
-    if (isCamera && form.path_topic.trim()) {
-      const urlPattern = /^(https?:\/\/|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
-      if (!urlPattern.test(form.path_topic.trim())) {
-        setError('Camera path must be a valid HTTP/HTTPS URL or IP address (e.g., http://camera.local)');
-        return;
-      }
-    }
 
     // Validate alert values for non-camera devices
     if (!isCamera) {

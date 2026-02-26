@@ -89,11 +89,11 @@ const broadcastInterval = setInterval(async () => {
     //console.log("Broadcasted device values");
   } catch (err) {
     broadcastErrors++;
-    console.error(`❌ Database error during broadcast (${broadcastErrors}/${maxBroadcastErrors}):`, err.message);
+    console.error(`Database error during broadcast (${broadcastErrors}/${maxBroadcastErrors}):`, err.message);
     
     // If too many consecutive errors, stop broadcasting temporarily
     if (broadcastErrors >= maxBroadcastErrors) {
-      console.error('🚨 Too many broadcast errors, pausing for 30 seconds...');
+      console.error('Too many broadcast errors, pausing for 30 seconds...');
       clearInterval(broadcastInterval);
       
       // Restart broadcasting after 30 seconds
@@ -106,7 +106,7 @@ const broadcastInterval = setInterval(async () => {
 }, 5000); // Increased from 2000ms to 5000ms
 
 function startBroadcasting() {
-  console.log('🔄 Restarting device broadcasting...');
+  console.log('Restarting device broadcasting...');
   return setInterval(async () => {
     try {
       const [rows] = await db.query(
@@ -116,10 +116,10 @@ function startBroadcasting() {
       broadcastErrors = 0;
     } catch (err) {
       broadcastErrors++;
-      console.error(`❌ Database error during broadcast (${broadcastErrors}/${maxBroadcastErrors}):`, err.message);
+      console.error(`Database error during broadcast (${broadcastErrors}/${maxBroadcastErrors}):`, err.message);
       
       if (broadcastErrors >= maxBroadcastErrors) {
-        console.error('🚨 Too many broadcast errors, pausing for 30 seconds...');
+        console.error('Too many broadcast errors, pausing for 30 seconds...');
         clearInterval(broadcastInterval);
         setTimeout(() => {
           broadcastErrors = 0;
@@ -132,19 +132,19 @@ function startBroadcasting() {
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🔄 Received SIGTERM, shutting down gracefully');
+  console.log('Received SIGTERM, shutting down gracefully');
   clearInterval(broadcastInterval);
   server.close(() => {
-    console.log('✅ Server closed');
+    console.log('Server closed');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('🔄 Received SIGINT, shutting down gracefully');
+  console.log('Received SIGINT, shutting down gracefully');
   clearInterval(broadcastInterval);
   server.close(() => {
-    console.log('✅ Server closed');
+    console.log('Server closed');
     process.exit(0);
   });
 });
@@ -155,7 +155,7 @@ const requiredEnvVars = ['ACCESS_SECRET', 'REFRESH_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingEnvVars);
+  console.error('Missing required environment variables:', missingEnvVars);
   console.error('Please create a .env file or set these environment variables');
   console.error('Example .env content:');
   console.error('ACCESS_SECRET=your_access_secret_here');
@@ -169,17 +169,17 @@ if (missingEnvVars.length > 0) {
 
 // Start server
 server.listen(port, () => {
-  console.log(`✅ Server Smart web IoT management started on port ${port}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔐 JWT secrets configured: ${process.env.ACCESS_SECRET ? '✅' : '❌'}`);
-  console.log(`🌐 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  console.log(`Server Smart web IoT management started on port ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`JWT secrets configured: ${process.env.ACCESS_SECRET ? '✅' : '❌'}`);
+  console.log(`Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
   
   // Log database connection info
   try {
     const dbConfig = db.pool ? db.pool.config.connectionConfig : db.config.connectionConfig;
-    console.log(`🗄️  Database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database} (${dbConfig.user})`);
+    console.log(`Database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database} (${dbConfig.user})`);
   } catch (dbError) {
-    console.error('❌ Database configuration error:', dbError.message);
+    console.error('Database configuration error:', dbError.message);
   }
 });
 

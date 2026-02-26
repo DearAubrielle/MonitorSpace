@@ -119,13 +119,6 @@ exports.createDevice = async (req, res) => {
 
     // Validate based on device type
     if (isCamera) {
-      // For cameras, path_topic is optional but if provided, validate it's a valid HTTP/HTTPS URL
-      if (path_topic && path_topic.trim() !== '') {
-        const urlPattern = /^https?:\/\//;
-        if (!urlPattern.test(path_topic.trim())) {
-          return res.status(400).json({ message: 'Camera path must be a valid HTTP or HTTPS URL' });
-        }
-      }
 
       // Insert camera device (no alert values)
       const [result] = await db.query(

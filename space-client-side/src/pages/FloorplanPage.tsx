@@ -37,9 +37,30 @@ export default function FloorplanPage() {
     if (selected && selected.image_url) {
       const img = new window.Image();
       img.onload = () => {
+        // Validate that dimensions are valid numbers
+        const width = img.naturalWidth;
+        const height = img.naturalHeight;
+        
+        if (width > 0 && height > 0 && isFinite(width) && isFinite(height)) {
+          setContainerSize({
+            width: width,
+            height: height,
+          });
+        } else {
+          // Fallback to default size if dimensions are invalid
+          console.warn('Invalid image dimensions, using defaults');
+          setContainerSize({
+            width: 800,
+            height: 600,
+          });
+        }
+      };
+      img.onerror = () => {
+        console.error('Failed to load image:', selected.image_url);
+        // Fallback to default size on error
         setContainerSize({
-          width: img.naturalWidth,
-          height: img.naturalHeight,
+          width: 800,
+          height: 600,
         });
       };
       // Handle both Cloudinary URLs (start with http) and local URLs
