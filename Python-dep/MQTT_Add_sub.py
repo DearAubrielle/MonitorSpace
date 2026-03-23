@@ -93,21 +93,21 @@ def on_message(client, userdata, msg):
                 if device_alert:
                     if device_type == "Gas":
                         if value and max_alert and value > max_alert:
-                            send_line_message(f"⚠️ ตรวจจับแก๊สเกินค่าปลอดภัยที่ {floor} ({data[1]})")
-                        elif value and min_alert and value < min_alert:
-                            send_line_message(f"⚠️ ตรวจจับแก๊สต่ำค่าปลอดภัยที่ {floor} ({data[1]})")
+                            send_line_message(f"ตรวจจับค่าแก๊ส {data[1]} : {value} ppm เกินกว่าค่าปลอดภัยที่ {floor}")
+                        # elif value and min_alert and value < min_alert:
+                        #     send_line_message(f"ตรวจจับค่าแก๊ส {value} ppm ที่ {floor} ({data[1]})")
 
                     elif device_type == "Temperature":
                         if value and max_alert and value > max_alert:
-                            send_line_message(f"🌡️ อุณหภูมิสูงเกิน {max_alert} °C ที่ {floor} ({data[1]})")
+                            send_line_message(f"ตรวจจับอุณหภูมิ {data[1]} : {value} °C สูงเกินกว่าค่าปลอดภัยที่ {floor}")
                         elif value and min_alert and value < min_alert:
-                            send_line_message(f"🌡️ อุณหภูมิต่ำกว่า {min_alert} °C ที่ {floor} ({data[1]})")
+                            send_line_message(f"ตรวจจับอุณหภูมิ {data[1]} : {value} °C ต่ำกว่าค่าปลอดภัยที่ {floor}")
 
                     elif device_type == "Humidity":
                         if value and max_alert and value > max_alert:
-                            send_line_message(f"💧 ความชื้นเกิน {max_alert}% ที่ {floor} ({data[1]})")
+                            send_line_message(f"ตรวจจับความชื้น {data[1]} : {value} % สูงเกินกว่าค่าปลอดภัยที่ {floor}")
                         elif value and min_alert and value < min_alert:
-                            send_line_message(f"💧 ความชื้นต่ำกว่า {min_alert}% ที่ {floor} ({data[1]})")
+                            send_line_message(f"ตรวจจับความชื้น {data[1]} : {value} % ต่ำกว่าค่าปลอดภัยที่ {floor}")
 
         db.close()
     except Exception as e:
