@@ -1,219 +1,219 @@
 .start-container {
-    min-height: 100vh;
-    background: linear-gradient(180deg, #f8f9fa 0%, #e8f4f8 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e8f4f8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .hero-section {
-    width: 100%;
-    max-width: 1200px;
-    padding: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  padding: 2rem;
 }
 
 .content-wrapper {
-    text-align: center;
-    color: #212529;
+  text-align: center;
+  color: #212529;
 }
 
 .logo-section {
-    margin-bottom: 3rem;
+  margin-bottom: 3rem;
 }
 
 .logo {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 2rem;
-    font-weight: bold;
-    color: #495057;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #495057;
 }
 
 .logo-icon {
-    font-size: 2.5rem;
-    color: #3b82f6;
+  font-size: 2.5rem;
+  color: #3b82f6;
 }
 
 .logo-text {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #1e40af;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1e40af;
 }
 
 .hero-content {
-    margin-bottom: 3rem;
+  margin-bottom: 3rem;
 }
 
 .hero-title {
-    font-size: 3.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    line-height: 1.2;
-    color: #212529;
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+  color: #212529;
 }
 
 .hero-subtitle {
-    display: block;
-    font-size: 2.5rem;
-    font-weight: 300;
-    color: #3b82f6;
-    margin-top: 0.5rem;
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: #3b82f6;
+  margin-top: 0.5rem;
 }
 
 .hero-description {
-    font-size: 1.25rem;
-    max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.6;
-    color: #495057;
+  font-size: 1.25rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  color: #495057;
 }
 
 .action-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 4rem;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 4rem;
+  flex-wrap: wrap;
 }
 
 .btn {
-    padding: 1rem 2rem;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1.1rem;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-    display: inline-block;
-    min-width: 150px;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  display: inline-block;
+  min-width: 150px;
 }
 
 .btn-primary {
-    background: #3b82f6;
-    color: white;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-    background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  background: #2563eb;
 }
 
 .btn-secondary {
-    background: transparent;
-    color: #3b82f6;
-    border: 2px solid #3b82f6;
+  background: transparent;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
 }
 
 .btn-secondary:hover {
-    background: #eff6ff;
-    border-color: #2563eb;
-    color: #1e40af;
-    transform: translateY(-2px);
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1e40af;
+  transform: translateY(-2px);
 }
 
 .features-preview {
-    display: flex;
-    justify-content: center;
-    gap: 3rem;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  flex-wrap: wrap;
 }
 
 .feature-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    color: #495057;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #495057;
 }
 
 .feature-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #3b82f6;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #3b82f6;
 }
 
 .feature-item span {
-    font-size: 1rem;
-    font-weight: 500;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .hero-title {
-        font-size: 2.5rem;
-    }
-    
-    .hero-subtitle {
-        font-size: 1.8rem;
-    }
-    
-    .hero-description {
-        font-size: 1.1rem;
-        padding: 0 1rem;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .features-preview {
-        gap: 2rem;
-    }
-    
-    .content-wrapper {
-        padding: 1rem;
-    }
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.8rem;
+  }
+
+  .hero-description {
+    font-size: 1.1rem;
+    padding: 0 1rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .features-preview {
+    gap: 2rem;
+  }
+
+  .content-wrapper {
+    padding: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
-    .hero-title {
-        font-size: 2rem;
-    }
-    
-    .hero-subtitle {
-        font-size: 1.5rem;
-    }
-    
-    .features-preview {
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-    
-    .logo {
-        font-size: 1.5rem;
-    }
-    
-    .logo-icon {
-        font-size: 2rem;
-    }
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.5rem;
+  }
+
+  .features-preview {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+  }
+
+  .logo-icon {
+    font-size: 2rem;
+  }
 }
 
 /* Animation for smooth entrance */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-content,
 .action-buttons,
 .features-preview {
-    animation: fadeInUp 0.8s ease-out;
+  animation: fadeInUp 0.8s ease-out;
 }
 
 .action-buttons {
-    animation-delay: 0.2s;
+  animation-delay: 0.2s;
 }
 
 .features-preview {
-    animation-delay: 0.4s;
+  animation-delay: 0.4s;
 }

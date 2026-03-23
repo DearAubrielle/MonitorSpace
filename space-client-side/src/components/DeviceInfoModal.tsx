@@ -15,8 +15,7 @@ function formatValue(value: unknown): { formatted: string; isValid: boolean } {
     return { formatted: 'N/A', isValid: false };
   }
 
-  const numValue =
-    typeof value === 'number' ? value : parseFloat(String(value));
+  const numValue = typeof value === 'number' ? value : parseFloat(String(value));
 
   if (isNaN(numValue)) {
     return { formatted: String(value) || 'N/A', isValid: false };
@@ -25,12 +24,7 @@ function formatValue(value: unknown): { formatted: string; isValid: boolean } {
   return { formatted: numValue.toFixed(2), isValid: true };
 }
 
-export default function DeviceInfoModal({
-  device,
-  deviceTypes,
-  deviceValues,
-  onClose,
-}: DeviceInfoModalProps) {
+export default function DeviceInfoModal({ device, deviceTypes, deviceValues, onClose }: DeviceInfoModalProps) {
   if (!device) return null;
 
   const deviceType = deviceTypes?.find((t) => t.id === device.device_type_id);
@@ -42,9 +36,7 @@ export default function DeviceInfoModal({
   const isCamera = deviceType?.name === 'Camera';
 
   // Determine alert status - only if we have a valid number and it's not a camera
-  const currentNumValue = currentValueInfo.isValid
-    ? parseFloat(currentValueInfo.formatted)
-    : null;
+  const currentNumValue = currentValueInfo.isValid ? parseFloat(currentValueInfo.formatted) : null;
   const isAlert =
     !isCamera &&
     currentNumValue !== null &&
@@ -56,11 +48,7 @@ export default function DeviceInfoModal({
       <div className={styles.modalContent}>
         <div className={styles.header}>
           <h3 className={styles.title}>{device.name}</h3>
-          <button
-            className={styles.closeButton}
-            onClick={onClose}
-            aria-label="Close modal"
-          >
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
             ×
           </button>
         </div>
@@ -68,9 +56,7 @@ export default function DeviceInfoModal({
           {!isCamera && (
             <div className={styles.infoRow}>
               <span className={styles.label}>Value:</span>
-              <span
-                className={`${styles.value} ${isAlert ? styles.alertValue : ''}`}
-              >
+              <span className={`${styles.value} ${isAlert ? styles.alertValue : ''}`}>
                 {currentValueInfo.formatted}
                 {currentValueInfo.isValid ? unit : ''}
                 {isAlert && <span className={styles.alertBadge}>!</span>}
@@ -103,18 +89,14 @@ export default function DeviceInfoModal({
 
           <div className={styles.infoRow}>
             <span className={styles.label}>Type:</span>
-            <span className={styles.value}>
-              {deviceType?.name || 'Unknown'}
-            </span>
+            <span className={styles.value}>{deviceType?.name || 'Unknown'}</span>
           </div>
 
           {isCamera && device.path_topic && (
             <div className={styles.infoRow}>
               <span className={styles.label}>Camera URL:</span>
               <span className={styles.value} title={device.path_topic}>
-                {device.path_topic.length > 40
-                  ? `${device.path_topic.substring(0, 40)}...`
-                  : device.path_topic}
+                {device.path_topic.length > 40 ? `${device.path_topic.substring(0, 40)}...` : device.path_topic}
               </span>
             </div>
           )}
@@ -125,9 +107,7 @@ export default function DeviceInfoModal({
               <span className={styles.value}>
                 {(() => {
                   const minAlertInfo = formatValue(device.min_alert);
-                  return (
-                    minAlertInfo.formatted + (minAlertInfo.isValid ? unit : '')
-                  );
+                  return minAlertInfo.formatted + (minAlertInfo.isValid ? unit : '');
                 })()}
               </span>
             </div>
@@ -139,9 +119,7 @@ export default function DeviceInfoModal({
               <span className={styles.value}>
                 {(() => {
                   const maxAlertInfo = formatValue(device.max_alert);
-                  return (
-                    maxAlertInfo.formatted + (maxAlertInfo.isValid ? unit : '')
-                  );
+                  return maxAlertInfo.formatted + (maxAlertInfo.isValid ? unit : '');
                 })()}
               </span>
             </div>

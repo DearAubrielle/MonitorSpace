@@ -1,11 +1,11 @@
-import { createContext } from "react";
-import { Floorplan } from "../types/Floorplan";
-import { Device , DeviceType } from "../types/Device";
+import { createContext } from 'react';
+import { Floorplan } from '../types/Floorplan';
+import { Device, DeviceType } from '../types/Device';
 
 export interface FloorplanContextType {
   floorplans: Floorplan[] | null;
   selected: Floorplan | null;
-  setSelected: (f: Floorplan) => void;
+  setSelected: (f: Floorplan | null) => void;
   devices: Device[] | null;
   setDevices: React.Dispatch<React.SetStateAction<Device[] | null>>;
   deviceTypes: DeviceType[] | null;
@@ -15,4 +15,3 @@ export interface FloorplanContextType {
 }
 
 export const FloorplanContext = createContext<FloorplanContextType | undefined>(undefined);
-  

@@ -24,10 +24,7 @@ export function handleDragEndFactory(options: HandleDragEndOptions) {
 
     const boxSize = Math.max(
       MIN_BOX_SIZE,
-      Math.min(
-        Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT,
-        MAX_BOX_SIZE
-      )
+      Math.min(Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT, MAX_BOX_SIZE)
     );
 
     const current = options.devicePositions[id];
@@ -42,10 +39,8 @@ export function handleDragEndFactory(options: HandleDragEndOptions) {
     newX = Math.max(0, Math.min(newX, containerWidth - boxSize));
     newY = Math.max(0, Math.min(newY, containerHeight - boxSize));
 
-    const percentX =
-      containerWidth - boxSize === 0 ? 0 : newX / (containerWidth - boxSize);
-    const percentY =
-      containerHeight - boxSize === 0 ? 0 : newY / (containerHeight - boxSize);
+    const percentX = containerWidth - boxSize === 0 ? 0 : newX / (containerWidth - boxSize);
+    const percentY = containerHeight - boxSize === 0 ? 0 : newY / (containerHeight - boxSize);
 
     options.setDevicePositions((prev) => ({
       ...prev,

@@ -1,5 +1,3 @@
-
-
 interface ModalProps {
   open: boolean;
   children: React.ReactNode;
@@ -82,9 +80,7 @@ export default function Modal({ open, children, style, position }: ModalProps) {
 
   return (
     <div style={overlayStyles}>
-      <div style={{ ...defaultModalStyle, ...style }}>
-        {children}
-      </div>
+      <div style={{ ...defaultModalStyle, ...style }}>{children}</div>
     </div>
   );
-};
+}

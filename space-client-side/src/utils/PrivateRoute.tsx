@@ -1,6 +1,6 @@
-import { ReactNode} from "react";
-import { Navigate } from "react-router";
-import { useAuth } from "../context/useAuth";
+import { ReactNode } from 'react';
+import { Navigate } from 'react-router';
+import { useAuth } from '../context/useAuth';
 
 interface PrivateRouteProps {
   children: ReactNode;
@@ -16,4 +16,4 @@ export default function PrivateRoute({ children, allowedRoles }: PrivateRoutePro
   if (allowedRoles && !allowedRoles.includes(role!)) return <Navigate to="/unauthorized" replace />;
 
   return <>{children}</>;
-};
+}

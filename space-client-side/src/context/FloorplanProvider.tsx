@@ -59,9 +59,5 @@ export function FloorplanProvider({ children }: FloorplanProviderProps) {
     refreshFloorplans,
   };
 
-  return (
-    <FloorplanContext.Provider value={contextValue}>
-      {children}
-    </FloorplanContext.Provider>
-  );
+  return <FloorplanContext.Provider value={contextValue}>{children}</FloorplanContext.Provider>;
 }

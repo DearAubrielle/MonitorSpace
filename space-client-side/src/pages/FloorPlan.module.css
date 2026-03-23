@@ -1,12 +1,6 @@
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
 
 .floorplanContainer {
-  min-height: 100vh;
+  min-height: 2000px;
   background: linear-gradient(180deg, #f8f9fa 0%, #e8f4f8 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
@@ -72,8 +66,8 @@ p {
   grid-template-columns: 2fr 8fr;
   grid-template-rows: auto auto 1fr;
   gap: 1rem;
-  height: inherit;
   position: relative;
+  max-height: 2300px;
 }
 
 .FloorList {
@@ -85,8 +79,7 @@ p {
   overflow-y: auto;
   border: var(--default-border-soft);
   min-width: 100px;
-  height: inherit;
-  max-height: auto;
+  max-height: 800px;
 }
 
 .FloorPlan {
@@ -113,7 +106,7 @@ p {
 
 .Description {
   grid-area: description;
-  padding: 1rem 2rem 1rem 2rem;;
+  padding: 1rem 2rem 1rem 2rem;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
@@ -128,6 +121,18 @@ p {
 .Unselected {
   background-color: #f9f9f9;
   font-weight: normal;
+}
+
+.UnassignedFloorplan {
+  border-left: 4px solid #f59e0b !important;
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  font-style: italic;
+}
+
+.UnassignedFloorplan.Selected {
+  background-color: #fcd34d !important;
+  color: #78350f !important;
 }
 
 .Dropdown {
@@ -253,7 +258,8 @@ p {
 
 /* Alert animations and styles */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -298,6 +304,274 @@ p {
   font-weight: bold;
 }
 
+/* Modal styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.deleteModal {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #dc2626;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.successModal {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #10b981;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  min-width: 300px;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modalIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.deleteModal .modalIcon {
+  color: #dc2626;
+}
+
+.successModal .modalIcon {
+  color: #10b981;
+}
+
+.modalHeader h3 {
+  color: #374151;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.deleteModal .modalHeader h3 {
+  color: #dc2626;
+}
+
+.successModal .modalHeader h3 {
+  color: #065f46;
+}
+
+.modalHeader p {
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.warningText {
+  color: #991b1b !important;
+  font-size: 0.875rem !important;
+  font-style: italic;
+  opacity: 0.9;
+  margin-bottom: 1rem !important;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #dc2626;
+  font-weight: 500;
+  animation: errorShake 0.5s ease-in-out;
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+.errorIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* Assigned devices warning styles */
+.assignedDevicesWarning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.assignedDevicesWarning h4 {
+  color: #856404;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.assignedDevicesWarning p {
+  color: #856404;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.devicesList {
+  background-color: #fff;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.devicesList li {
+  padding: 0.25rem 0;
+  color: #374151;
+  font-weight: 500;
+}
+
+.removeDevicesText {
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Unassigned devices view styles */
+.unassignedView {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 8px;
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.unassignedHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.unassignedHeader h3 {
+  color: #92400e;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.unassignedHeader p {
+  color: #78350f;
+  margin: 0;
+}
+
+.unassignedDeviceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.unassignedDevice {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.unassignedDevice:hover {
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.deviceIcon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.deviceInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.deviceName {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.deviceType {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.deviceValue {
+  color: #059669;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.emptyUnassigned {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  color: #78350f;
+  font-style: italic;
+}
+
 @media (max-width: 968px) {
   .Wrapper {
     grid-template-areas:
@@ -308,38 +582,56 @@ p {
     gap: 1.5rem;
     margin: 0 0.5rem;
   }
-  
+
   .FloorList {
     max-height: 200px;
   }
-  
+
   .FloorPlan {
     min-height: 300px;
   }
-  
+
   .overlayContent {
     grid-template-columns: 1fr;
   }
-  
+
   .deviceSection:first-child {
     border-right: none;
     border-bottom: 1px solid #e9ecef;
   }
-  
+
   .floorplanWrapper {
     padding: 1rem;
   }
-  
+
   .pageTitle {
     font-size: 1.75rem;
   }
-  
+
   .actionBar {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .actionGroup {
     justify-content: center;
+  }
+
+  /* Mobile modal adjustments */
+  .deleteModal,
+  .successModal {
+    min-width: 300px;
+    max-width: 90vw;
+    margin: 1rem;
+  }
+
+  .modalActions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .modalActions button {
+    width: 100%;
+    margin: 0;
   }
 }

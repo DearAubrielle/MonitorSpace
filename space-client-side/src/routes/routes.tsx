@@ -2,7 +2,7 @@ import App from '../App.tsx';
 import { createBrowserRouter } from 'react-router';
 import Login from '../pages/Login.tsx';
 import FloorPlanPage from '../pages/FloorplanPage.tsx';
-import Register from '../pages/Register.tsx'; 
+import Register from '../pages/Register.tsx';
 import Dashboard from '../pages/Dashboard.tsx';
 import Member from '../pages/Member.tsx';
 import Devices from '../pages/Devices.tsx';
@@ -13,35 +13,38 @@ const routes = createBrowserRouter([
   {
     Component: App,
     children: [
-      { path: "/dashboard", 
+      {
+        path: '/dashboard',
         element: (
-          <PrivateRoute allowedRoles={['user','manager', 'admin']}>
+          <PrivateRoute allowedRoles={['user', 'manager', 'admin']}>
             <Dashboard />
           </PrivateRoute>
         ),
       },
-      { path: '/floorplan', 
-         element: (
+      {
+        path: '/floorplan',
+        element: (
           <PrivateRoute allowedRoles={['admin']}>
             <FloorPlanPage />
           </PrivateRoute>
         ),
-       },
-      { path: '/device', 
+      },
+      {
+        path: '/device',
         element: (
           <PrivateRoute allowedRoles={['admin']}>
             <Devices />
           </PrivateRoute>
         ),
       },
-      { path: '/member', 
+      {
+        path: '/member',
         element: (
           <PrivateRoute allowedRoles={['admin']}>
             <Member />
           </PrivateRoute>
         ),
       },
-
     ],
   },
   { path: '/login', Component: Login },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 interface User {
   id: number;
@@ -15,11 +15,11 @@ const Users: React.FC = () => {
     // Fetch users data from the backend
     const fetchUsers = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/users/getall");
+        const response = await fetch('http://localhost:8080/api/users/getall');
         const data = await response.json();
         setUsers(data);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error('Error fetching users:', error);
       }
     };
 
@@ -29,7 +29,7 @@ const Users: React.FC = () => {
   return (
     <div>
       <h1>Users List</h1>
-      <table >
+      <table>
         <thead>
           <tr>
             <th>ID</th>
@@ -52,15 +52,16 @@ const Users: React.FC = () => {
         </tbody>
       </table>
       <div>
-      <h1>Users List</h1>
-      <ul>
-        {users.map((user) => (
-          <li key={user.id}>
-            <strong>ID:</strong> {user.id}, <strong>Username:</strong> {user.username}, <strong>First Name:</strong> {user.fname}, <strong>Last Name:</strong> {user.lname}, <strong>Password:</strong> {user.password}
-          </li>
-        ))}
-      </ul>
-    </div>
+        <h1>Users List</h1>
+        <ul>
+          {users.map((user) => (
+            <li key={user.id}>
+              <strong>ID:</strong> {user.id}, <strong>Username:</strong> {user.username}, <strong>First Name:</strong>{' '}
+              {user.fname}, <strong>Last Name:</strong> {user.lname}, <strong>Password:</strong> {user.password}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

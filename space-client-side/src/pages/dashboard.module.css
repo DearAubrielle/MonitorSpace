@@ -33,9 +33,9 @@
   max-width: 100%;
   display: grid;
   margin: 0 2rem;
-  grid-template-areas: 
-    "list floorplan"
-    "list .";
+  grid-template-areas:
+    'list floorplan'
+    'list .';
   grid-template-columns: minmax(200px, 2fr) 8fr;
   gap: 1.5rem;
   height: inherit;
@@ -45,15 +45,14 @@
 
 @media (max-width: 768px) {
   .Wrapper {
-    grid-template-areas: 
-      "list"
-      "floorplan";
+    grid-template-areas:
+      'list'
+      'floorplan';
     grid-template-columns: 1fr;
     margin: 0 1rem;
     gap: 1rem;
   }
 }
-
 
 .camera {
   margin: auto 6%;
@@ -68,7 +67,6 @@
   min-width: 100px;
   display: grid;
   justify-content: left;
-
 }
 
 .buttonGroup {
@@ -78,7 +76,6 @@
   align-items: center;
   justify-content: center;
 }
-
 
 .container {
   min-height: 100vh;
@@ -174,23 +171,23 @@
   .secondaryHeader {
     top: var(--header-height, 80px);
   }
-  
+
   .tabNavigation {
     padding: 1.5rem 0.5rem;
     gap: 0.5rem;
     flex-wrap: wrap;
   }
-  
+
   .tabButton {
     padding: 0.5rem 1.25rem;
     font-size: 0.875rem;
     min-width: 110px;
   }
-  
+
   .tabIcon {
     font-size: 0.9rem;
   }
-  
+
   .dashboardWrapper {
     padding: 1rem;
   }
@@ -255,7 +252,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

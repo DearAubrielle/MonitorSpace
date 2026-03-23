@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import styles from './Member.module.css';
 import { useAuth } from '../context/useAuth';
@@ -44,10 +43,10 @@ export default function Member() {
         setRolesLoading(true);
         setError(null);
         console.log('Attempting to fetch members from:', `${SERVER_URL}/api/users/getall`);
-        
+
         const membersResponse = await fetch(`${SERVER_URL}/api/users/getall`);
         console.log('Members response status:', membersResponse.status);
-        
+
         if (!membersResponse.ok) {
           const errorText = await membersResponse.text();
           console.error('Members response error:', errorText);
@@ -61,7 +60,7 @@ export default function Member() {
         try {
           console.log('Attempting to fetch roles from:', `${SERVER_URL}/api/users/roles`);
           const rolesResponse = await fetch(`${SERVER_URL}/api/users/roles`);
-          
+
           if (rolesResponse.ok) {
             const rolesData = await rolesResponse.json();
             console.log('Fetched roles:', rolesData);
@@ -72,7 +71,7 @@ export default function Member() {
             setRoles([
               { id: 1, name: 'user', display_name: 'User' },
               { id: 2, name: 'manager', display_name: 'Manager' },
-              { id: 3, name: 'admin', display_name: 'Admin' }
+              { id: 3, name: 'admin', display_name: 'Admin' },
             ]);
           }
         } catch (rolesError) {
@@ -81,7 +80,7 @@ export default function Member() {
           setRoles([
             { id: 1, name: 'user', display_name: 'User' },
             { id: 2, name: 'manager', display_name: 'Manager' },
-            { id: 3, name: 'admin', display_name: 'Admin' }
+            { id: 3, name: 'admin', display_name: 'Admin' },
           ]);
         } finally {
           setRolesLoading(false);
@@ -99,7 +98,7 @@ export default function Member() {
   }, []);
 
   // Filter members based on search term and exclude current user
-  const filteredMembers = members.filter(member => {
+  const filteredMembers = members.filter((member) => {
     // Exclude current user
     if (user && member.id === user.id) {
       return false;
@@ -133,13 +132,13 @@ export default function Member() {
     if (memberDisplayName) {
       return memberDisplayName;
     }
-    
+
     // Fallback to finding the role in our roles array
-    const role = roles.find(r => r.name === roleName);
+    const role = roles.find((r) => r.name === roleName);
     if (role) {
       return role.display_name;
     }
-    
+
     // Final fallback to capitalize the role name
     return roleName.charAt(0).toUpperCase() + roleName.slice(1);
   };
@@ -168,10 +167,10 @@ export default function Member() {
   // Handle role update
   const handleRoleUpdate = async (newRole: string) => {
     if (!selectedMember || newRole === selectedMember.role) return;
-    
+
     // Prevent self-editing
     if (user && selectedMember.id === user.id) {
-      setUpdateError("You cannot modify your own role");
+      setUpdateError('You cannot modify your own role');
       return;
     }
 
@@ -189,13 +188,13 @@ export default function Member() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ role: newRole })
+        body: JSON.stringify({ role: newRole }),
       });
 
       const responseText = await response.text();
-      
+
       if (!response.ok) {
         let errorMessage = 'Failed to update role';
         try {
@@ -221,35 +220,31 @@ export default function Member() {
         if (updatedMemberResponse.ok) {
           const updatedMember = await updatedMemberResponse.json();
           // Update the members list with fresh data
-          setMembers(prev => prev.map(member => 
-            member.id === selectedMember.id 
-              ? updatedMember
-              : member
-          ));
+          setMembers((prev) => prev.map((member) => (member.id === selectedMember.id ? updatedMember : member)));
           // Update selected member with fresh data
           setSelectedMember(updatedMember);
         } else {
           // Fallback: update with the new role and display name if refetch fails
-          const roleDisplayName = roles.find(r => r.name === newRole)?.display_name || 
-                                  newRole.charAt(0).toUpperCase() + newRole.slice(1);
-          setMembers(prev => prev.map(member => 
-            member.id === selectedMember.id 
-              ? { ...member, role: newRole, display_name: roleDisplayName }
-              : member
-          ));
-          setSelectedMember(prev => prev ? { ...prev, role: newRole, display_name: roleDisplayName } : null);
+          const roleDisplayName =
+            roles.find((r) => r.name === newRole)?.display_name || newRole.charAt(0).toUpperCase() + newRole.slice(1);
+          setMembers((prev) =>
+            prev.map((member) =>
+              member.id === selectedMember.id ? { ...member, role: newRole, display_name: roleDisplayName } : member
+            )
+          );
+          setSelectedMember((prev) => (prev ? { ...prev, role: newRole, display_name: roleDisplayName } : null));
         }
       } catch (refetchError) {
         console.warn('Failed to refetch updated member, using optimistic update:', refetchError);
         // Fallback: update with the new role and display name
-        const roleDisplayName = roles.find(r => r.name === newRole)?.display_name || 
-                                newRole.charAt(0).toUpperCase() + newRole.slice(1);
-        setMembers(prev => prev.map(member => 
-          member.id === selectedMember.id 
-            ? { ...member, role: newRole, display_name: roleDisplayName }
-            : member
-        ));
-        setSelectedMember(prev => prev ? { ...prev, role: newRole, display_name: roleDisplayName } : null);
+        const roleDisplayName =
+          roles.find((r) => r.name === newRole)?.display_name || newRole.charAt(0).toUpperCase() + newRole.slice(1);
+        setMembers((prev) =>
+          prev.map((member) =>
+            member.id === selectedMember.id ? { ...member, role: newRole, display_name: roleDisplayName } : member
+          )
+        );
+        setSelectedMember((prev) => (prev ? { ...prev, role: newRole, display_name: roleDisplayName } : null));
       }
 
       setUpdateSuccess(responseData.message || 'Role updated successfully!');
@@ -258,7 +253,6 @@ export default function Member() {
       setTimeout(() => {
         setUpdateSuccess(null);
       }, 3000);
-
     } catch (err) {
       console.error('Role update error:', err);
       setUpdateError(err instanceof Error ? err.message : 'Failed to update role');
@@ -294,11 +288,9 @@ export default function Member() {
       <div className={styles.header}>
         <div className={styles.titleSection}>
           <h1 className={styles.title}>Team Members</h1>
-          <p className={styles.subtitle}>
-            Manage and view all team members in your organization
-          </p>
+          <p className={styles.subtitle}>Manage and view all team members in your organization</p>
         </div>
-        
+
         <div className={styles.stats}>
           <div className={styles.statCard}>
             <span className={styles.statNumber}>{filteredMembers.length}</span>
@@ -306,7 +298,9 @@ export default function Member() {
           </div>
           <div className={styles.statCard}>
             <span className={styles.statNumber}>
-              {user && user.role === 'admin' ? filteredMembers.filter(m => m.role === 'admin').length + 1 : filteredMembers.filter(m => m.role === 'admin').length}
+              {user && user.role === 'admin'
+                ? filteredMembers.filter((m) => m.role === 'admin').length + 1
+                : filteredMembers.filter((m) => m.role === 'admin').length}
             </span>
             <span className={styles.statLabel}>Admins</span>
           </div>
@@ -316,7 +310,11 @@ export default function Member() {
       <div className={styles.controls}>
         <div className={styles.searchBox}>
           <svg className={styles.searchIcon} viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+              clipRule="evenodd"
+            />
           </svg>
           <input
             type="text"
@@ -339,15 +337,13 @@ export default function Member() {
           filteredMembers.map((member) => (
             <div key={member.id} className={styles.memberCard}>
               <div className={styles.cardHeader}>
-                <div className={styles.avatar}>
-                  {getInitials(member.username)}
-                </div>
+                <div className={styles.avatar}>{getInitials(member.username)}</div>
                 <div className={styles.memberInfo}>
                   <h3 className={styles.memberName}>{member.username}</h3>
                   <p className={styles.memberEmail}>{member.email}</p>
                 </div>
               </div>
-              
+
               <div className={styles.cardBody}>
                 <div className={styles.roleSection}>
                   <span className={styles.roleLabel}>Role</span>
@@ -355,27 +351,24 @@ export default function Member() {
                     {getRoleDisplayName(member.role, member.display_name)}
                   </span>
                 </div>
-                
+
                 {member.created_at && (
                   <div className={styles.joinedSection}>
                     <span className={styles.joinedLabel}>Joined</span>
-                    <span className={styles.joinedDate}>
-                      {new Date(member.created_at).toLocaleDateString()}
-                    </span>
+                    <span className={styles.joinedDate}>{new Date(member.created_at).toLocaleDateString()}</span>
                   </div>
                 )}
               </div>
 
-
-
               <div className={styles.cardActions}>
-                <button 
-                  className={styles.actionButton}
-                  onClick={() => handleViewDetails(member)}
-                >
+                <button className={styles.actionButton} onClick={() => handleViewDetails(member)}>
                   <svg className={styles.actionIcon} viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   View Details
                 </button>
@@ -391,19 +384,14 @@ export default function Member() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>Member Details</h2>
-              <button 
-                className={styles.closeButton}
-                onClick={handleCloseModal}
-              >
+              <button className={styles.closeButton} onClick={handleCloseModal}>
                 ×
               </button>
             </div>
 
             <div className={styles.modalBody}>
               <div className={styles.memberProfile}>
-                <div className={styles.profileAvatar}>
-                  {getInitials(selectedMember.username)}
-                </div>
+                <div className={styles.profileAvatar}>{getInitials(selectedMember.username)}</div>
                 <div className={styles.profileInfo}>
                   <h3>{selectedMember.username}</h3>
                   <p>{selectedMember.email}</p>
@@ -427,89 +415,90 @@ export default function Member() {
                       {new Date(selectedMember.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric'
+                        day: 'numeric',
                       })}
                     </span>
                   </div>
                 )}
                 <div className={styles.detailRow}>
                   <span className={styles.detailLabel}>Role:</span>
-                  <span className={styles.detailValue}><span className={`${styles.roleBadge} ${getRoleBadgeColor(selectedMember.role)}`}>
-                    {getRoleDisplayName(selectedMember.role, selectedMember.display_name)}
-                  </span></span>
+                  <span className={styles.detailValue}>
+                    <span className={`${styles.roleBadge} ${getRoleBadgeColor(selectedMember.role)}`}>
+                      {getRoleDisplayName(selectedMember.role, selectedMember.display_name)}
+                    </span>
+                  </span>
                 </div>
               </div>
 
               {/* Only show role management if current user is admin */}
               {user && user.role === 'admin' && (
                 <div>
-                <div className={styles.roleSection}>
-                  <h4>Role Management</h4>
-                  <div className={styles.roleActions}>
-                    <label className={styles.roleLabel}>Change Role:</label>
-                    <div className={styles.roleDropdownContainer}>
-                      <select
-                        className={styles.roleDropdown}
-                        value={selectedMember.role}
-                        onChange={(e) => handleRoleUpdate(e.target.value)}
-                        disabled={isUpdating || rolesLoading}
-                      >
-                        {roles.length === 0 ? (
-                          <option value={selectedMember.role}>
-                            {selectedMember.role.charAt(0).toUpperCase() + selectedMember.role.slice(1)}
-                          </option>
-                        ) : (
-                          roles.map((role) => (
-                            <option key={role.id} value={role.name}>
-                              {role.display_name}
+                  <div className={styles.roleSection}>
+                    <h4>Role Management</h4>
+                    <div className={styles.roleActions}>
+                      <label className={styles.roleLabel}>Change Role:</label>
+                      <div className={styles.roleDropdownContainer}>
+                        <select
+                          className={styles.roleDropdown}
+                          value={selectedMember.role}
+                          onChange={(e) => handleRoleUpdate(e.target.value)}
+                          disabled={isUpdating || rolesLoading}
+                        >
+                          {roles.length === 0 ? (
+                            <option value={selectedMember.role}>
+                              {selectedMember.role.charAt(0).toUpperCase() + selectedMember.role.slice(1)}
                             </option>
-                          ))
-                        )}
-                      </select>
-                      <div className={styles.dropdownIcon}>
-                        {isUpdating ? (
-                          <div className={styles.spinner}></div>
-                        ) : (
-                          <svg viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        )}
+                          ) : (
+                            roles.map((role) => (
+                              <option key={role.id} value={role.name}>
+                                {role.display_name}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <div className={styles.dropdownIcon}>
+                          {isUpdating ? (
+                            <div className={styles.spinner}></div>
+                          ) : (
+                            <svg viewBox="0 0 20 20" fill="currentColor">
+                              <path
+                                fillRule="evenodd"
+                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  <div style={{ minHeight: '20px' }}>
+                    {updateError && (
+                      <div className={styles.errorMessage}>
+                        <strong>Error:</strong> {updateError}
+                      </div>
+                    )}
+
+                    {updateSuccess && (
+                      <div className={styles.successMessage}>
+                        <strong>Success:</strong> {updateSuccess}
+                      </div>
+                    )}
+
+                    {isUpdating && (
+                      <div className={styles.updating}>
+                        <div className={styles.spinner}></div>
+                        <span>Updating role...</span>
+                      </div>
+                    )}
                   </div>
-
-                  <div style={{minHeight : '20px'}}>
-                    
-                  {updateError && (
-                    <div className={styles.errorMessage}>
-                      <strong>Error:</strong> {updateError}
-                    </div>
-                  )}
-
-                  {updateSuccess && (
-                    <div className={styles.successMessage}>
-                      <strong>Success:</strong> {updateSuccess}
-                    </div>
-                  )}
-
-                  {isUpdating && (
-                    <div className={styles.updating}>
-                      <div className={styles.spinner}></div>
-                      <span>Updating role...</span>
-                    </div>
-                  )}
-                  </div>
-
                 </div>
               )}
-          </div>
+            </div>
 
             <div className={styles.modalFooter}>
-              <button 
-                className={styles.closeModalButton}
-                onClick={handleCloseModal}
-              >
+              <button className={styles.closeModalButton} onClick={handleCloseModal}>
                 Close
               </button>
             </div>

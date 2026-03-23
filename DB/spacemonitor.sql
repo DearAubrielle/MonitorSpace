@@ -31,7 +31,7 @@ CREATE TABLE `devices` (
   `id` int NOT NULL,
   `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
   `device_type_id` int NOT NULL,
-  `floorplan_id` int NOT NULL,
+  `floorplan_id` int DEFAULT NULL,
   `path_topic` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `x_percent` decimal(30,25) DEFAULT '0.5000000000000000000000000',
   `y_percent` decimal(30,25) DEFAULT '0.5000000000000000000000000',
