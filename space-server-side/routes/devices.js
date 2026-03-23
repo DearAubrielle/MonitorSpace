@@ -14,6 +14,8 @@ router.post('/postd', devicesController.createDevice);
 router.put('/putdlo/:id', devicesController.putDevicesLocation);
 // PUT update device details
 router.put('/edit/:id', devicesController.saveEditDevice);
+// PUT toggle device alert
+router.put('/alert/:id', devicesController.toggleDeviceAlert);
 // DELETE device
 router.delete('/delete/:id', devicesController.deleteDevice);
 module.exports = router;

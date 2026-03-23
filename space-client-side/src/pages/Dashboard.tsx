@@ -100,15 +100,18 @@ function FloorPlan() {
       <div className={stylesF.FloorList}>
         <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#212529' }}>Floor Plans</h3>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {floorplans?.map((plan) => (
-            <li
-              key={plan.id}
-              onClick={() => setSelected(plan)}
-              className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
-            >
-              {plan.name}
-            </li>
-          ))}
+          {floorplans
+            ?.filter((plan) => plan.name !== 'Unassigned')
+            .sort((a, b) => a.id - b.id)
+            .map((plan) => (
+              <li
+                key={plan.id}
+                onClick={() => setSelected(plan)}
+                className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
+              >
+                {plan.name}
+              </li>
+            ))}
         </ul>
       </div>
 

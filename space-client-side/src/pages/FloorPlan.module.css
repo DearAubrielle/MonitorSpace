@@ -67,7 +67,7 @@ p {
   grid-template-rows: auto auto 1fr;
   gap: 1rem;
   position: relative;
-  max-height: 2300px;
+  max-height: auto;
 }
 
 .FloorList {
@@ -89,11 +89,11 @@ p {
   background-color: #f8f8f8;
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(141, 141, 141, 0.1);
-  display: inline;
+  display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  height: auto;
+  min-height: 400px;
 }
 
 .List {
@@ -124,15 +124,11 @@ p {
 }
 
 .UnassignedFloorplan {
-  border-left: 4px solid #f59e0b !important;
-  background-color: #fef3c7 !important;
-  color: #92400e !important;
-  font-style: italic;
+  border-left: 4px solid #90cdf5 !important;
 }
 
 .UnassignedFloorplan.Selected {
-  background-color: #fcd34d !important;
-  color: #78350f !important;
+  background-color: #d3ebff !important;
 }
 
 .Dropdown {
@@ -483,7 +479,7 @@ p {
 
 /* Unassigned devices view styles */
 .unassignedView {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: #e3effa;
   border-radius: 8px;
   padding: 2rem;
   min-height: 400px;
@@ -511,6 +507,7 @@ p {
   gap: 1rem;
   max-height: 300px;
   overflow-y: auto;
+  padding: 1rem;
 }
 
 .unassignedDevice {

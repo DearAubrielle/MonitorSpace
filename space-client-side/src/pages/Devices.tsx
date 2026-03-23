@@ -252,6 +252,36 @@ const Devices = () => {
     console.log('Delete device with ID:', device.id);
   };
 
+  const handleToggleAlert = async (device: Device) => {
+    setError('');
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/devices/alert/${device.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alert: !device.alert }),
+      });
+
+      let data = null;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+
+      if (res.status === 200) {
+        // Refresh device list from backend
+        fetch(`${SERVER_URL}/api/devices/getd`)
+          .then((res) => res.json())
+          .then((data) => setDevices(data));
+      } else {
+        setError(data?.message || 'Failed to update alert status');
+      }
+    } catch (err) {
+      console.error('Error toggling alert:', err);
+      setError('Network error. Please check your connection and try again.');
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!showDeleteConfirm) return;
 
@@ -344,7 +374,20 @@ const Devices = () => {
                       device.device_type_id}
                   </p>
                 </div>
-                <div className={styles.right}></div>
+                <div className={styles.right}>
+                  <div className={styles.alertToggleContainer}>
+                    <label className={styles.toggleLabel}>
+                      <input
+                        type="checkbox"
+                        checked={device.alert ?? false}
+                        onChange={() => handleToggleAlert(device)}
+                        className={styles.toggleInput}
+                      />
+                      <span className={styles.toggleSlider}></span>
+                    </label>
+                    <span className={styles.alertLabel}>Alert</span>
+                  </div>
+                </div>
               </div>
               <div className={styles.deviceActions}>
                 <button className={styles.actionButton} onClick={() => handleViewDevice(device)}>
@@ -705,7 +748,7 @@ const Devices = () => {
                           Camera
                           <input
                             name="path_topic"
-                            value={''}
+                            value={editDeviceForm.path_topic}
                             onChange={handleEditFormChange}
                             className={`${styles.editValue}`}
                             placeholder="Enter New path topic Here"
