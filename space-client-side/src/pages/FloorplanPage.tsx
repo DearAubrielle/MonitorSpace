@@ -527,7 +527,7 @@ export default function FloorplanPage() {
                   // Sort "Unassigned" floorplan to the bottom
                   if (a.name === 'Unassigned' && b.name !== 'Unassigned') return 1;
                   if (b.name === 'Unassigned' && a.name !== 'Unassigned') return -1;
-                  return a.name.localeCompare(b.name);
+                  return a.id - b.id;
                 })
                 ?.map((plan) => (
                   <li
@@ -546,7 +546,7 @@ export default function FloorplanPage() {
           {/* Floorplan Image with Drag-and-Drop */}
           <div className={styles.FloorPlan}>
             {selected && (
-              <div ref={containerRef} style={{ width: '100%', boxShadow: '0 2px 8px #0003' }}>
+              <div ref={containerRef} style={{ width: '100%'}}>
                 {selected.name === 'Unassigned' ? (
                   // Special view for unassigned devices
                   <div className={styles.unassignedView}>

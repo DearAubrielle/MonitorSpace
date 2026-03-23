@@ -2,6 +2,7 @@ const db = require("../../db");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const sharp = require('sharp');
 const cloudinary = require('cloudinary').v2;
 
 // Configure Cloudinary
@@ -29,6 +30,19 @@ const upload = multer({
   }
 });
 
+// Helper function to convert image to PNG
+const convertToPNG = async (buffer) => {
+  try {
+    const pngBuffer = await sharp(buffer)
+      .png({ quality: 90 })
+      .toBuffer();
+    return pngBuffer;
+  } catch (err) {
+    console.error('Error converting image to PNG:', err);
+    throw new Error('Failed to convert image to PNG format');
+  }
+};
+
 exports.getAllFloorplans = async (req, res) => {
   try {
     const [results] = await db.query("SELECT * FROM floorplan");
@@ -54,20 +68,23 @@ exports.createFloorplan = [
     }
     
     try {
+      // Convert image to PNG format
+      const pngBuffer = await convertToPNG(req.file.buffer);
+      
       // Upload image to Cloudinary
       const uploadResult = await new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
             folder: 'floorplans', // Organize images in a folder
             resource_type: 'image',
+            format: 'png', // Force PNG format
             quality: 'auto:good', // Automatic quality optimization
-            fetch_format: 'auto', // Automatic format optimization
           },
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
           }
-        ).end(req.file.buffer);
+        ).end(pngBuffer);
       });
 
       // Store Cloudinary URL in database
@@ -121,20 +138,23 @@ exports.editFloorplan = [
       
       // If new image was uploaded, use it and delete old image from Cloudinary
       if (req.file) {
+        // Convert image to PNG format
+        const pngBuffer = await convertToPNG(req.file.buffer);
+        
         // Upload new image to Cloudinary
         const uploadResult = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             {
               folder: 'floorplans',
               resource_type: 'image',
+              format: 'png', // Force PNG format
               quality: 'auto:good',
-              fetch_format: 'auto',
             },
             (error, result) => {
               if (error) reject(error);
               else resolve(result);
             }
-          ).end(req.file.buffer);
+          ).end(pngBuffer);
         });
 
         image_url = uploadResult.secure_url;

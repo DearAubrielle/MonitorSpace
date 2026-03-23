@@ -273,6 +273,35 @@ exports.saveEditDevice = async (req, res) => {
   }
 }
 
+exports.toggleDeviceAlert = async (req, res) => {
+  const { id } = req.params;
+  const { alert } = req.body;
+  
+  try {
+    // Validate input
+    if (alert === null || alert === undefined) {
+      return res.status(400).json({ message: 'Alert status is required' });
+    }
+
+    // Check if device exists
+    const [device] = await db.query('SELECT * FROM devices WHERE id = ?', [id]);
+    if (device.length === 0) {
+      return res.status(404).json({ message: 'Device not found' });
+    }
+
+    // Update the device alert status
+    await db.query(
+      'UPDATE devices SET alert = ? WHERE id = ?',
+      [alert ? 1 : 0, id]
+    );
+    
+    res.status(200).json({ message: `Device alert ${alert ? 'activated' : 'deactivated'} successfully` });
+  } catch (err) {
+    console.error("Error toggling device alert:", err);
+    res.status(500).json({ message: "Database update error" });
+  }
+}
+
 exports.deleteDevice = async (req, res) => {
   const { id } = req.params;
   
