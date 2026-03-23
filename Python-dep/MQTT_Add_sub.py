@@ -1,143 +1,166 @@
-from flask import Flask, request
-import paho.mqtt.client as mqtt
-import mysql.connector
 import time
-import os
 import ssl
-from dotenv import load_dotenv
+import mysql.connector
+import paho.mqtt.client as mqtt
+import threading
 from linebot.v3.messaging import MessagingApi, PushMessageRequest, TextMessage
 from linebot.v3.messaging.configuration import Configuration
 from linebot.v3.messaging.api_client import ApiClient
+# from dotenv import load_dotenv
 
-# โหลดค่า .env
-load_dotenv()
 
-app = Flask(__name__)
+DB_HOST = "hopper.proxy.rlwy.net"
+DB_USER = "root"
+DB_PASS = "zymkADYOgYCCkZgSvtAJAnesOKlKivWN"
+DB_NAME = "spacemonitor"
+DB_PORT = 28173
 
-# === ENV CONFIG ===
-hostname = os.getenv("DB_HOST")
-username = os.getenv("DB_USER")
-password = os.getenv("DB_PASS")
-database = os.getenv("DB_NAME")
-port = int(os.getenv("DB_PORT", 28173))
+# DB_HOST ="localhost"
+# DB_USER ="root"
+# DB_PASS =""
+# DB_NAME ="spacemonitor"
+# DB_PORT = "3306"
 
-CHANNEL_ACCESS_TOKEN = os.getenv("LINE_TOKEN")
-USER_ID = os.getenv("LINE_USER_ID")
+MQTT_HOST = "49ee04006403486ea360ca6114faf597.s2.eu.hivemq.cloud"
+MQTT_PORT = 8883
+MQTT_USER = "Vittapong"
+MQTT_PASS = "HappyS7*"
 
-MQTT_HOST = os.getenv("MQTT_HOST")
-MQTT_PORT = int(os.getenv("MQTT_PORT", 8883))
-MQTT_USER = os.getenv("MQTT_USER")
-MQTT_PASS = os.getenv("MQTT_PASS")
+LINE_TOKEN = "KwOqh2ygwm/ZEELgTi8wcHx1ZTOnjkddJA1rzjBKRan7OezkRaJtstVGsgTYgtjD2KijQCS6aGsea7ivdDyQ+GX2uvE+pjqubAyokDi3VtPyN3KgFTmIFySsPMDiiKOmshW43V8evvJHx/ZWAw/j2wdB04t89/1O/w1cDnyilFU="
+LINE_USER_ID = "C51151f2b2a353530e69ab5c43c3fb026"
 
-# === LINE MESSAGE ===
-def send_line_message(message_text):
+# === LINE แจ้งเตือน ===
+def send_line_message(msg):
     try:
-        configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
-        with ApiClient(configuration) as api_client:
-            messaging_api = MessagingApi(api_client)
-            messaging_api.push_message(
-                PushMessageRequest(
-                    to=USER_ID,
-                    messages=[TextMessage(text=message_text)]
-                )
+        config = Configuration(access_token=LINE_TOKEN)
+        with ApiClient(config) as api_client:
+            MessagingApi(api_client).push_message(
+                PushMessageRequest(to=LINE_USER_ID, messages=[TextMessage(text=msg)])
             )
-            print("✅ แจ้งเตือนผ่าน LINE แล้ว")
+        print(f"✅ LINE แจ้งเตือน: {msg}")
     except Exception as e:
         print(f"LINE Error: {e}")
 
-# === MQTT CALLBACK ===
+# === MQTT CALLBACKS ===
+subscribed_topics = set()
+
 def on_connect(client, userdata, flags, rc, properties=None):
-    print("CONNACK received with code %s." % rc)
+    if rc == 0:
+        print("🟢 MQTT Connected successfully")
+        subscribe_from_db(client)
+    else:
+        print("❌ MQTT connection failed with code:", rc)
 
 def on_message(client, userdata, msg):
-    print(msg.topic + " " + str(msg.qos) + " " + msg.payload.decode("utf-8"))
+    topic = msg.topic
+    payload = msg.payload.decode("utf-8")
+    print(f"📩 {topic} => {payload}")
+
     try:
-        Topic = msg.topic.split('/')
-        mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
-        mycursor = mydb.cursor()
+        db = mysql.connector.connect(
+            host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME, port=DB_PORT
+        )
+        cursor = db.cursor()
 
-        sql = "UPDATE devices SET latest_value = %s WHERE path_topic = %s"
-        val = (msg.payload.decode("utf-8"), msg.topic)
-        mycursor.execute(sql, val)
-        mydb.commit()
+        # อัปเดตค่า sensor ล่าสุด
+        cursor.execute("UPDATE devices SET latest_value = %s WHERE path_topic = %s", (payload, topic))
+        db.commit()
 
-        val = (Topic[1],)
-        mycursor.execute("SELECT latest_value, min_alert, max_alert, name FROM devices WHERE id = %s", val)
-        sensor_info = mycursor.fetchall()
+        # ดึงข้อมูล device เพื่อตรวจสอบแจ้งเตือน
+        topic_parts = topic.split('/')
+        device_id = topic_parts[1] if len(topic_parts) > 1 else None
 
-        mycursor.execute("""
-            SELECT d.id AS device_id, d.name AS device_name, f.name AS floorplan_name
-            FROM devices d
-            JOIN floorplan f ON d.floorplan_id = f.id
-            WHERE d.id = %s
-        """, val)
-        floorplan_name = mycursor.fetchall()
+        if device_id:
+            cursor.execute("""
+                SELECT d.id, d.name, d.latest_value, d.min_alert, d.max_alert, 
+                       dt.name AS device_type, f.name AS floorplan_name, d.alert
+                FROM devices d
+                JOIN floorplan f ON d.floorplan_id = f.id
+                JOIN device_type dt ON d.device_type_id = dt.id
+                WHERE d.id = %s
+            """, (device_id,))
+            data = cursor.fetchone()
 
-        try:
-            value = float(sensor_info[0][0])
-        except ValueError:
-            print(f"⚠️ ข้อมูลจาก {sensor_info[0][3]} ไม่ใช่ตัวเลข: {sensor_info[0][0]}")
-            mydb.close()
-            return
-        print("LINE_TOKEN:", CHANNEL_ACCESS_TOKEN)
-        print("LINE_USER_ID:", USER_ID)
-        if Topic[0] == "HumiditySensor":
-            if value > float(sensor_info[0][2]) or value < float(sensor_info[0][1]):
-                send_line_message(f"ความชื้นเกิน {sensor_info[0][2]} ที่ {floorplan_name[0][2]}")
-        elif Topic[0] == "TemperatureSensor":
-            if value > float(sensor_info[0][2]) or value < float(sensor_info[0][1]):
-                send_line_message(f"อุณหภูมิเกิน {sensor_info[0][2]} °C ที่ {floorplan_name[0][2]}")
-        elif Topic[0] == "GasSensor":
-            if value > float(sensor_info[0][2]) or value < float(sensor_info[0][1]):
-                send_line_message(f"ตรวจจับแก๊สอันตรายที่ {sensor_info[0][3]} ({floorplan_name[0][2]})")
+            if data:
+                device_type = data[5]
+                value = float(data[2]) if data[2] else None
+                min_alert = float(data[3]) if data[3] else None
+                max_alert = float(data[4]) if data[4] else None
+                floor = data[6]
+                device_alert = data[7]
 
-        mydb.commit()
-        mydb.close()
+                    # ตรวจสอบการแจ้งเตือน
+                if device_alert:
+                    if device_type == "Gas":
+                        if value and max_alert and value > max_alert:
+                            send_line_message(f"⚠️ ตรวจจับแก๊สเกินค่าปลอดภัยที่ {floor} ({data[1]})")
+                        elif value and min_alert and value < min_alert:
+                            send_line_message(f"⚠️ ตรวจจับแก๊สต่ำค่าปลอดภัยที่ {floor} ({data[1]})")
 
+                    elif device_type == "Temperature":
+                        if value and max_alert and value > max_alert:
+                            send_line_message(f"🌡️ อุณหภูมิสูงเกิน {max_alert} °C ที่ {floor} ({data[1]})")
+                        elif value and min_alert and value < min_alert:
+                            send_line_message(f"🌡️ อุณหภูมิต่ำกว่า {min_alert} °C ที่ {floor} ({data[1]})")
+
+                    elif device_type == "Humidity":
+                        if value and max_alert and value > max_alert:
+                            send_line_message(f"💧 ความชื้นเกิน {max_alert}% ที่ {floor} ({data[1]})")
+                        elif value and min_alert and value < min_alert:
+                            send_line_message(f"💧 ความชื้นต่ำกว่า {min_alert}% ที่ {floor} ({data[1]})")
+
+        db.close()
     except Exception as e:
-        print("Error:", e)
+        print("Database update error:", e)
 
-# === MQTT SETUP ===
-client = mqtt.Client(client_id="", userdata=None, protocol=mqtt.MQTTv5)
+# === SUBSCRIBE TOPICS ===
+def subscribe_from_db(client):
+    global subscribed_topics
+    try:
+        db = mysql.connector.connect(
+            host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME, port=DB_PORT
+        )
+        cursor = db.cursor()
+        # cursor.execute("SELECT path_topic FROM devices")
+        cursor.execute("SELECT devices.path_topic FROM devices JOIN device_type ON devices.device_type_id = device_type.id WHERE device_type.name != 'Camera';")
+        topics = cursor.fetchall()
+        for topic in topics:
+            if topic[0] is not None and topic[0] != '':  # ตรวจสอบว่า topic ไม่เป็น null และไม่ว่างเปล่า
+                client.subscribe(topic[0], qos=1)
+                print("Subscribed to topic:", topic[0])
+                time.sleep(0.05)
+        db.close()
+    except Exception as e:
+        print("Database error:", e)
+
+# === MQTT LOOP (Auto Reconnect) ===
+def mqtt_loop():
+    while True:
+        try:
+            print("🔄 Connecting to MQTT broker...")
+            client.connect(MQTT_HOST, MQTT_PORT)
+            client.loop_forever()
+        except Exception as e:
+            print(f"⚠️ MQTT error: {e}")
+            time.sleep(5)
+
+# === Refresh topics จากฐานข้อมูลทุก 5 นาที ===
+def refresh_topics():
+    while True:
+        time.sleep(60)
+        print("🔁 Refreshing topic list from DB...")
+        subscribe_from_db(client)
+
+# === MQTT CONFIG ===
+client = mqtt.Client(protocol=mqtt.MQTTv5)
+client.username_pw_set(MQTT_USER, MQTT_PASS)
+client.tls_set(tls_version=ssl.PROTOCOL_TLS)
 client.on_connect = on_connect
 client.on_message = on_message
-client.tls_set(tls_version=ssl.PROTOCOL_TLS)
-client.username_pw_set(MQTT_USER, MQTT_PASS)
 
-try:
-    client.connect(MQTT_HOST, MQTT_PORT)
-    client.loop_start()
-except Exception as e:
-    print(f"MQTT Connection Error: {e}")
-
-# === Subscribe topics ===
-try:
-    mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
-    mycursor = mydb.cursor()
-    mycursor.execute("SELECT path_topic FROM devices")
-    topics = mycursor.fetchall()
-    for topic in topics:
-        if topic[0]:
-            client.subscribe(topic[0], qos=1)
-            print("Subscribed to topic:", topic[0])
-    mydb.close()
-except Exception as e:
-    print(f"MySQL Error: {e}")
-
-# === ROUTES ===
-@app.route('/')
-def index():
-    return "MQTT Flask API is running on Render!"
-
-@app.route('/add_topic', methods=['POST'])
-def add_topic():
-    topic = request.form.get('topic')
-    if not topic:
-        return "Missing topic", 400
-    client.subscribe(topic, qos=0)
-    return f"Subscribed to topic: {topic}"
-
-# === Run App ===
+# === MAIN ===
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 10000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    threading.Thread(target=mqtt_loop, daemon=True).start()
+    threading.Thread(target=refresh_topics, daemon=True).start()
+    while True:
+        time.sleep(1)

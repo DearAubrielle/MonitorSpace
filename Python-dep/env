@@ -1,0 +1,22 @@
+# === DB ===
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=
+DB_NAME=spacemonitor
+DB_PORT=3306
+
+# === LINE ===
+LINE_TOKEN="KwOqh2ygwm/ZEELgTi8wcHx1ZTOnjkddJA1rzjBKRan7OezkRaJtstVGsgTYgtjD2KijQCS6aGsea7ivdDyQ+GX2uvE+pjqubAyokDi3VtPyN3KgFTmIFySsPMDiiKOmshW43V8evvJHx/ZWAw/j2wdB04t89/1O/w1cDnyilFU="
+LINE_USER_ID="C51151f2b2a353530e69ab5c43c3fb026"
+
+# === MQTT ===
+MQTT_HOST=49ee04006403486ea360ca6114faf597.s2.eu.hivemq.cloud
+MQTT_PORT=8883
+MQTT_USER=Vittapong
+MQTT_PASS=HappyS7*
+
+# === PY Services ===
+CAMERA_API_PORT=5001
+MQTT_API_PORT=5002
+MODEL_PATH=yolov8s.pt
+CLASSES_PATH=classes.txt
