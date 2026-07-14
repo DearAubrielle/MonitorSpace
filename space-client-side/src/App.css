@@ -9,6 +9,7 @@ body {
 
 main {
     grid-area: main;
+    min-width: 0;
 }
 .mainWrapper {
     position: relative;
