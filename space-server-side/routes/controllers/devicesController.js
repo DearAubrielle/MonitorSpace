@@ -122,7 +122,7 @@ exports.createDevice = async (req, res) => {
 
       // Insert camera device (no alert values)
       const [result] = await db.query(
-        'INSERT INTO devices (name, device_type_id, floorplan_id, path_topic, x_percent, y_percent) VALUES (?, ?, ?, ?, 50, 50)',
+        'INSERT INTO devices (name, device_type_id, floorplan_id, path_topic, x_percent, y_percent) VALUES (?, ?, ?, ?, 0.5, 0.5)',
         [name, device_type_id, floorplan_id, path_topic || null]
       );
 

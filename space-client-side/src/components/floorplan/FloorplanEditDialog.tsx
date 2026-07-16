@@ -179,7 +179,7 @@ export default function FloorplanEditDialog({
               {onDelete && !showDeleteConfirm && (
                 <button
                   className={`${styles.button}`}
-                  onClick={() => setShowDeleteConfirm(true)}
+                  onClick={handleDelete}
                   style={{
                     backgroundColor: '#dc2626',
                     borderColor: '#dc2626',
@@ -191,41 +191,7 @@ export default function FloorplanEditDialog({
                 </button>
               )}
 
-              {showDeleteConfirm && (
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', color: '#dc2626', fontWeight: '500' }}>
-                    Delete "{floorplan?.name}"?
-                  </span>
-                  <button
-                    className={`${styles.button}`}
-                    onClick={handleDelete}
-                    style={{
-                      backgroundColor: '#dc2626',
-                      borderColor: '#dc2626',
-                      color: 'white',
-                      border: '1px solid #dc2626',
-                      fontSize: '12px',
-                      padding: '4px 8px',
-                    }}
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    className={`${styles.button}`}
-                    onClick={() => setShowDeleteConfirm(false)}
-                    style={{
-                      backgroundColor: '#6b7280',
-                      borderColor: '#6b7280',
-                      color: 'white',
-                      border: '1px solid #6b7280',
-                      fontSize: '12px',
-                      padding: '4px 8px',
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+              
             </div>
 
             {/* Right side - Cancel and Update buttons */}
