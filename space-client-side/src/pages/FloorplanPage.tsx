@@ -31,6 +31,7 @@ export default function FloorplanPage() {
   const [newDescription, setNewDescription] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deletePhase, setDeletePhase] = useState<'idle' | 'moving' | 'deleting'>('idle');
 
   // When selected floorplan changes, load its image and set container size
   useEffect(() => {
@@ -301,6 +302,7 @@ export default function FloorplanPage() {
   const handleDeleteFloorplan = () => {
     if (!selected) return;
     setError(''); // Clear any previous errors
+    setDeletePhase('idle');
     setShowDeleteConfirm(true);
   };
 
@@ -308,38 +310,6 @@ export default function FloorplanPage() {
   const getAssignedDevices = () => {
     if (!selected || !devices) return [];
     return devices.filter((d) => d.floorplan_id === selected.id);
-  };
-
-  // Remove all devices from the floorplan
-  const handleRemoveAllDevices = async () => {
-    if (!selected) return;
-
-    try {
-      const assignedDevices = getAssignedDevices();
-
-      // Remove floorplan assignment from all devices (set to null/0 to trigger unassigned logic)
-      await Promise.all(
-        assignedDevices.map((device) =>
-          fetch(`${SERVER_URL}/api/devices/putdf/${device.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ floorplan_id: null }),
-          })
-        )
-      );
-
-      // The server will automatically assign these devices to an "Unassigned" floorplan
-      // We need to refresh the data to reflect this change
-      await refreshFloorplans();
-
-      // Update local devices state by removing these devices from the current floorplan
-      setDevices((prev) => (prev ? prev.filter((d) => !assignedDevices.find((ad) => ad.id === d.id)) : []));
-
-      setSuccess(`Successfully removed ${assignedDevices.length} device(s) from floorplan`);
-    } catch (error) {
-      console.error('Failed to remove devices:', error);
-      setError('Failed to remove devices from floorplan');
-    }
   };
 
   const handleConfirmDelete = async () => {
@@ -350,6 +320,26 @@ export default function FloorplanPage() {
     setIsDeleting(true);
 
     try {
+      const assignedDevices = getAssignedDevices();
+
+      if (assignedDevices.length > 0) {
+        setDeletePhase('moving');
+        const moveResponses = await Promise.all(
+          assignedDevices.map((device) =>
+            fetch(`${SERVER_URL}/api/devices/putdf/${device.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ floorplan_id: null }),
+            })
+          )
+        );
+
+        if (moveResponses.some((response) => !response.ok)) {
+          throw new Error('MOVE_DEVICES_FAILED');
+        }
+      }
+
+      setDeletePhase('deleting');
       const res = await fetch(`${SERVER_URL}/api/floorplans/delete/${selected.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -362,10 +352,23 @@ export default function FloorplanPage() {
       }
 
       if (res.status === 200) {
-        setSuccess('Floorplan deleted successfully!');
+        setSuccess(
+          assignedDevices.length > 0
+            ? `Floor plan deleted. ${assignedDevices.length} device(s) were moved to Unassigned.`
+            : 'Floor plan deleted successfully.'
+        );
         // Clear the selected floorplan since it's been deleted
         setSelected(null);
         setShowDeleteConfirm(false);
+        setDevices((prev) =>
+          prev
+            ? prev.map((device) =>
+                assignedDevices.some((assignedDevice) => assignedDevice.id === device.id)
+                  ? { ...device, floorplan_id: 0 }
+                  : device
+              )
+            : []
+        );
         // Refresh the floorplans list
         await refreshFloorplans();
       } else if (res.status === 400) {
@@ -385,13 +388,16 @@ export default function FloorplanPage() {
       }
     } catch (err) {
       console.error('Error deleting floorplan:', err);
-      if (err instanceof TypeError && err.message.includes('fetch')) {
+      if (err instanceof Error && err.message === 'MOVE_DEVICES_FAILED') {
+        setError('Some devices could not be moved to Unassigned. The floor plan was not deleted. Please try again.');
+      } else if (err instanceof TypeError && err.message.includes('fetch')) {
         setError('Network error. Please check your connection and try again.');
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setIsDeleting(false);
+      setDeletePhase('idle');
     }
   };
 
@@ -641,55 +647,81 @@ export default function FloorplanPage() {
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
           <div className={styles.modalOverlay}>
-            <div className={styles.deleteModal}>
-              <div className={styles.modalIcon}>⚠️</div>
+            <div
+              className={styles.deleteModal}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-floorplan-title"
+              aria-describedby="delete-floorplan-description"
+            >
+              <div className={styles.deleteModalHeader}>
+                <div className={styles.deleteIconWrap} aria-hidden="true">🗑</div>
+                <div className={styles.deleteHeading}>
+                  <h3 id="delete-floorplan-title">Delete “{selected?.name}”?</h3>
+                  <p id="delete-floorplan-description">
+                    This floor plan and its image will be permanently deleted. This action cannot be undone.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={styles.modalCloseButton}
+                  aria-label="Close delete confirmation"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setError('');
+                  }}
+                >
+                  ×
+                </button>
+              </div>
 
-              <div className={styles.modalHeader}>
-                <h3>Delete Floor Plan</h3>
-                <p>Are you sure you want to delete "{selected?.name}"?</p>
-                <p className={styles.warningText}>
-                  This action cannot be undone and will permanently remove the floor plan and its image.
-                </p>
-
-                {/* Show assigned devices warning */}
+              <div className={styles.deleteModalBody}>
                 {getAssignedDevices().length > 0 && (
-                  <div className={styles.assignedDevicesWarning}>
-                    <h4>⚠️ Devices Still Assigned</h4>
-                    <p>The following {getAssignedDevices().length} device(s) are assigned to this floorplan:</p>
-                    <ul className={styles.devicesList}>
-                      {getAssignedDevices().map((device) => (
-                        <li key={device.id}>{device.name}</li>
-                      ))}
+                  <>
+                    <div className={styles.moveNotice}>
+                      <span className={styles.moveNoticeIcon} aria-hidden="true">→</span>
+                      <div>
+                        <strong>{getAssignedDevices().length} device(s) will be moved to Unassigned</strong>
+                        <p>Your devices and their settings will be kept. You can assign them to another floor plan later.</p>
+                      </div>
+                    </div>
+
+                    <div className={styles.deviceListHeader}>
+                      <h4>Devices to move</h4>
+                      <span>{getAssignedDevices().length} devices</span>
+                    </div>
+                    <ul className={styles.devicesList} aria-label="Devices that will be moved to Unassigned">
+                      {getAssignedDevices().map((device) => {
+                        const deviceType = deviceTypes?.find((type) => type.id === device.device_type_id);
+                        return (
+                          <li key={device.id}>
+                            <span className={styles.deviceTypeIcon} aria-hidden="true">
+                              {deviceType?.name === 'Camera' ? '◉' : '⌁'}
+                            </span>
+                            <span className={styles.deviceDetails}>
+                              <strong>{device.name}</strong>
+                              <small>{deviceType?.name || 'Device'}</small>
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
-                    <p className={styles.removeDevicesText}>
-                      Please remove these devices before deleting the floorplan.
-                    </p>
-                    <Button
-                      variant="secondary"
-                      onClick={handleRemoveAllDevices}
-                      style={{
-                        marginTop: '0.75rem',
-                        backgroundColor: '#f59e0b',
-                        borderColor: '#f59e0b',
-                        color: 'white',
-                      }}
-                    >
-                      Remove All Devices
-                    </Button>
+                  </>
+                )}
+
+                {error && (
+                  <div className={styles.errorMessage} role="alert">
+                    <span className={styles.errorIcon}>!</span>
+                    <span>{error}</span>
                   </div>
                 )}
               </div>
 
-              {error && (
-                <div className={styles.errorMessage}>
-                  <span className={styles.errorIcon}>❌</span>
-                  <span>{error}</span>
-                </div>
-              )}
-
               <div className={styles.modalActions}>
                 <Button
                   variant="secondary"
+                  disabled={isDeleting}
                   onClick={() => {
                     setShowDeleteConfirm(false);
                     setError(''); // Clear error when closing
@@ -700,15 +732,15 @@ export default function FloorplanPage() {
                 <Button
                   variant="danger"
                   onClick={handleConfirmDelete}
-                  disabled={isDeleting || getAssignedDevices().length > 0}
-                  style={{
-                    backgroundColor: isDeleting || getAssignedDevices().length > 0 ? '#9ca3af' : '#dc2626',
-                    borderColor: isDeleting || getAssignedDevices().length > 0 ? '#9ca3af' : '#dc2626',
-                    color: 'white',
-                    cursor: isDeleting || getAssignedDevices().length > 0 ? 'not-allowed' : 'pointer',
-                  }}
+                  disabled={isDeleting}
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete Floor Plan'}
+                  {deletePhase === 'moving'
+                    ? 'Moving devices...'
+                    : deletePhase === 'deleting'
+                      ? 'Deleting floor plan...'
+                      : getAssignedDevices().length > 0
+                        ? 'Move devices & Delete'
+                        : 'Delete Floor Plan'}
                 </Button>
               </div>
             </div>
