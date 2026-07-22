@@ -15,6 +15,9 @@ router.post('/register', userController.register);
 // Login a user
 router.post('/login', userController.login);
 
+// Logout a user and clear the refresh token cookie
+router.post('/logout', userController.logout);
+
 // Get user profile (protected)
 router.get('/profile', verifyAccessToken, userController.getProfile);
 

@@ -98,6 +98,16 @@ exports.login = async (req, res) => {
   }
 };
 
+// Logout user by removing the httpOnly refresh token cookie
+exports.logout = (req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+  res.sendStatus(204);
+};
+
 // Get all users with role information
 exports.getAllUsers = async (req, res) => {
   try {
@@ -316,6 +326,7 @@ exports.createRole = async (req, res) => {
 module.exports = {
   register: exports.register,
   login: exports.login,
+  logout: exports.logout,
   getAllUsers: exports.getAllUsers,
   getUserById: exports.getUserById,
   getProfile: exports.getProfile,

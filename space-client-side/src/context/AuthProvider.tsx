@@ -68,22 +68,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // Call logout endpoint to clear refresh token on server
       await api.post('/api/users/logout');
-    } catch (error) {
-      console.warn('Failed to logout on server:', error);
+    } catch {
+      console.warn('Server logout failed; local authentication state was cleared.');
     } finally {
       // Clear client-side data regardless of server response
       setToken(null);
       setRole(null);
       setUser(null);
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('username');
 
       // Clear logout timeout
       if (logoutTimeoutRef.current) {
         clearTimeout(logoutTimeoutRef.current);
         logoutTimeoutRef.current = null;
       }
-
-      console.log('User logged out successfully');
     }
   }, []);
 
@@ -204,6 +203,5 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
   };
 
-  console.log('AuthContext Value:', authContextValue);
   return <AuthContext value={authContextValue}>{children}</AuthContext>;
 }

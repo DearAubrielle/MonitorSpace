@@ -17,7 +17,7 @@ export interface AuthContextType {
   role: string | null;
   login: (username: string, password: string) => Promise<void>;
   refresh: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
