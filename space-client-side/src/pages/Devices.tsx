@@ -1,6 +1,6 @@
 import Button from '@/components/Button';
 import { useFloorplan } from '@/context/useFlooplan';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Device } from '../types/Device';
 import styles from './devices.module.css';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -13,6 +13,10 @@ const Devices = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Device | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isCreatingDevice, setIsCreatingDevice] = useState(false);
+  const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
+  const createRequestInFlight = useRef(false);
+  const updateRequestInFlight = useRef(false);
   // const selectedDeviceType = deviceTypes.find(dt => dt.id.toString() === form.devicetype); // Moved inline where needed
 
   // Auto-dismiss success message after 5 seconds (5000ms)
@@ -69,6 +73,8 @@ const Devices = () => {
   };
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (createRequestInFlight.current) return;
+
     setError('');
     setSuccess('');
 
@@ -133,6 +139,9 @@ const Devices = () => {
       payload.max_alert = Number(form.max_alert);
     }
 
+    createRequestInFlight.current = true;
+    setIsCreatingDevice(true);
+
     try {
       const res = await fetch(`${SERVER_URL}/api/devices/postd`, {
         method: 'POST',
@@ -159,6 +168,9 @@ const Devices = () => {
     } catch (err) {
       console.error('Error adding device:', err);
       setError('Network error. Please check your connection and try again.');
+    } finally {
+      createRequestInFlight.current = false;
+      setIsCreatingDevice(false);
     }
   };
   const handleShowEditDevice = (device: Device) => {
@@ -177,10 +189,24 @@ const Devices = () => {
     setEditDeviceForm({ ...editDeviceForm, [e.target.name]: e.target.value });
   };
   const handleSubmitEditDevice = async () => {
-    if (!showEditDevice) return;
+    if (!showEditDevice || updateRequestInFlight.current) return;
 
     setError('');
     setSuccess('');
+
+    const normalizedName = editDeviceForm.name.trim();
+    if (!normalizedName) {
+      setError('Device name is required');
+      return;
+    }
+
+    if (normalizedName.length < 2 || normalizedName.length > 100) {
+      setError('Device name must be between 2 and 100 characters');
+      return;
+    }
+
+    updateRequestInFlight.current = true;
+    setIsUpdatingDevice(true);
 
     try {
       // Get device type to determine what fields to send
@@ -189,7 +215,7 @@ const Devices = () => {
 
       // Prepare payload based on device type
       const payload: Record<string, string | number | null> = {
-        name: editDeviceForm.name,
+        name: normalizedName,
         floorplan_id: Number(editDeviceForm.floorplan_id),
         path_topic: editDeviceForm.path_topic,
       };
@@ -244,6 +270,9 @@ const Devices = () => {
     } catch (err) {
       console.error('Error updating device:', err);
       setError('Network error');
+    } finally {
+      updateRequestInFlight.current = false;
+      setIsUpdatingDevice(false);
     }
   };
 
@@ -439,7 +468,7 @@ const Devices = () => {
                     maxLength={100}
                   />
                   <small style={{ color: '#666', fontSize: '0.85em' }}>
-                    Must be unique within the selected floorplan
+                    Must be unique across the system
                   </small>
                 </label>
 
@@ -546,15 +575,15 @@ const Devices = () => {
                 })()}
 
                 <div className={styles.footer}>
-                  <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                  <Button type="button" variant="secondary" onClick={handleCloseModal} disabled={isCreatingDevice}>
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     variant="primary"
-                    disabled={!form.name.trim() || !form.device_type_id || !form.floorplan_id}
+                    disabled={isCreatingDevice || !form.name.trim() || !form.device_type_id || !form.floorplan_id}
                   >
-                    Add Device
+                    {isCreatingDevice ? 'Adding Device...' : 'Add Device'}
                   </Button>
                 </div>
               </form>
@@ -761,11 +790,11 @@ const Devices = () => {
               </form>
 
               <div className={styles.footer}>
-                <Button variant="secondary" onClick={() => setShowEditDevice(null)}>
+                <Button variant="secondary" onClick={() => setShowEditDevice(null)} disabled={isUpdatingDevice}>
                   Cancel
                 </Button>
-                <Button variant="primary" onClick={handleSubmitEditDevice}>
-                  Save
+                <Button variant="primary" onClick={handleSubmitEditDevice} disabled={isUpdatingDevice}>
+                  {isUpdatingDevice ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </div>

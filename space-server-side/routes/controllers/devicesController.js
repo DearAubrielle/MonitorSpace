@@ -1,6 +1,9 @@
 const e = require("express");
 const db = require("../../db");
 const axios = require('axios');
+const { normalizeDeviceName, isDuplicateEntryError } = require('../utils/deviceName');
+
+const DUPLICATE_DEVICE_NAME_MESSAGE = 'A device with this name already exists.';
 
 exports.getAllDevices = async (req, res) => {
   try {
@@ -79,17 +82,16 @@ exports.putDevicesTofloorplan = async (req, res) => {
 }
 exports.createDevice = async (req, res) => {
   const { name, device_type_id, floorplan_id, path_topic, min_alert, max_alert } = req.body;
-  
-  console.log('Request body:', req.body); // Debug log
+  const normalizedName = normalizeDeviceName(name);
   
   try {
     // Validate required fields
-    if (!name || !device_type_id || !floorplan_id) {
+    if (!normalizedName || !device_type_id || !floorplan_id) {
       return res.status(400).json({ message: 'Name, device type, and floorplan are required' });
     }
 
     // Validate name length and characters
-    if (name.length < 2 || name.length > 100) {
+    if (normalizedName.length < 2 || normalizedName.length > 100) {
       return res.status(400).json({ message: 'Device name must be between 2 and 100 characters' });
     }
 
@@ -105,14 +107,13 @@ exports.createDevice = async (req, res) => {
       return res.status(400).json({ message: 'Invalid floorplan' });
     }
 
-    // Check for duplicate device name within the same floorplan
+    // Check for a duplicate device name across the entire system.
     const [existingDevice] = await db.query(
-      'SELECT * FROM devices WHERE name = ? AND floorplan_id = ?', 
-      [name, floorplan_id]
+      'SELECT id FROM devices WHERE name = ? LIMIT 1',
+      [normalizedName]
     );
-    console.log('Existing device check:', existingDevice); // Debug log
     if (existingDevice.length > 0) {
-      return res.status(409).json({ message: 'A device with this name already exists in the selected floorplan' });
+      return res.status(409).json({ message: DUPLICATE_DEVICE_NAME_MESSAGE });
     }
 
     const isCamera = deviceType[0].name === 'Camera';
@@ -123,7 +124,7 @@ exports.createDevice = async (req, res) => {
       // Insert camera device (no alert values)
       const [result] = await db.query(
         'INSERT INTO devices (name, device_type_id, floorplan_id, path_topic, x_percent, y_percent) VALUES (?, ?, ?, ?, 0.5, 0.5)',
-        [name, device_type_id, floorplan_id, path_topic || null]
+        [normalizedName, device_type_id, floorplan_id, path_topic || null]
       );
 
       res.status(201).json({ 
@@ -150,7 +151,7 @@ exports.createDevice = async (req, res) => {
       // Insert sensor device with alert values
       const [result] = await db.query(
         'INSERT INTO devices (name, device_type_id, floorplan_id, path_topic, min_alert, max_alert, x_percent, y_percent) VALUES (?, ?, ?, ?, ?, ?, 0.5, 0.5)',
-        [name, device_type_id, floorplan_id, path_topic || null, min_alert, max_alert]
+        [normalizedName, device_type_id, floorplan_id, path_topic || null, min_alert, max_alert]
       );
 
       // Generate path topic for non-camera devices: deviceType.name/device.id
@@ -189,12 +190,8 @@ exports.createDevice = async (req, res) => {
     console.error("Error creating new device:", err);
     
     // Handle specific database errors
-    if (err.code === 'ER_DUP_ENTRY') {
-      // Check what field is duplicated
-      if (err.message.includes('name')) {
-        return res.status(409).json({ message: 'A device with this name already exists in the selected floorplan' });
-      }
-      return res.status(409).json({ message: 'A device with this configuration already exists' });
+    if (isDuplicateEntryError(err)) {
+      return res.status(409).json({ message: DUPLICATE_DEVICE_NAME_MESSAGE });
     }
     
     res.status(500).json({ message: "Database error occurred while creating device" });
@@ -218,17 +215,30 @@ exports.putDevicesLocation = async (req, res) => {
 exports.saveEditDevice = async (req, res) => {
   const { id } = req.params;
   const { name, floorplan_id, path_topic, min_alert, max_alert } = req.body;
+  const normalizedName = normalizeDeviceName(name);
 
   try {
     // Validate input
-    if (!name || !floorplan_id) {
+    if (!normalizedName || !floorplan_id) {
       return res.status(400).json({ message: 'Name and floorplan are required' });
+    }
+
+    if (normalizedName.length < 2 || normalizedName.length > 100) {
+      return res.status(400).json({ message: 'Device name must be between 2 and 100 characters' });
     }
 
     // Get current device to check device type
     const [device] = await db.query('SELECT * FROM devices WHERE id = ?', [id]);
     if (device.length === 0) {
       return res.status(404).json({ message: 'Device not found' });
+    }
+
+    const [existingDevice] = await db.query(
+      'SELECT id FROM devices WHERE name = ? AND id <> ? LIMIT 1',
+      [normalizedName, id]
+    );
+    if (existingDevice.length > 0) {
+      return res.status(409).json({ message: DUPLICATE_DEVICE_NAME_MESSAGE });
     }
 
     // Get device type to validate required fields
@@ -244,7 +254,7 @@ exports.saveEditDevice = async (req, res) => {
       // For cameras, only validate name, floorplan_id, and path_topic
       await db.query(
         'UPDATE devices SET name = ?, floorplan_id = ?, path_topic = ? WHERE id = ?',
-        [name, floorplan_id, path_topic || null, id]
+        [normalizedName, floorplan_id, path_topic || null, id]
       );
     } else {
       // For other devices, validate alert values are numbers
@@ -262,13 +272,16 @@ exports.saveEditDevice = async (req, res) => {
 
       await db.query(
         'UPDATE devices SET name = ?, floorplan_id = ?, path_topic = ?, min_alert = ?, max_alert = ? WHERE id = ?',
-        [name, floorplan_id, path_topic || null, min_alert, max_alert, id]
+        [normalizedName, floorplan_id, path_topic || null, min_alert, max_alert, id]
       );
     }
 
     res.status(200).json({ message: 'Device updated successfully' });
   } catch (err) {
     console.error("Error updating device:", err);
+    if (isDuplicateEntryError(err)) {
+      return res.status(409).json({ message: DUPLICATE_DEVICE_NAME_MESSAGE });
+    }
     res.status(500).json({ message: "Database update error" });
   }
 }

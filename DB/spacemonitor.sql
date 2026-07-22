@@ -164,6 +164,7 @@ INSERT INTO `users` (`id`, `username`, `email`, `password`, `created_at`, `updat
 --
 ALTER TABLE `devices`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_devices_name` (`name`),
   ADD KEY `device_type_id` (`device_type_id`),
   ADD KEY `floorplan_id` (`floorplan_id`);
 
