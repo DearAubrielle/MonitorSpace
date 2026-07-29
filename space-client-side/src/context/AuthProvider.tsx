@@ -143,22 +143,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Schedule auto-logout
       scheduleLogout(accessToken);
 
-      // Fetch user profile with permissions
-      try {
-        const profileRes = await api.get('/api/users/profile', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        const userWithPermissions = {
-          ...decoded,
-          permissions: profileRes.data.permissions,
-        };
-        setUser(userWithPermissions);
-        setRole(decoded.role);
-      } catch (profileError) {
-        console.warn('Failed to fetch user permissions:', profileError);
-        setRole(decoded.role);
-        setUser(decoded);
-      }
+      setUser(decoded);
+      setRole(decoded.role);
     } catch (error) {
       // Optionally, handle error more gracefully
       console.error('Login failed:', error);
@@ -176,22 +162,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Schedule auto-logout for refresh token
     scheduleLogout(accessToken);
 
-    // Fetch user profile with permissions
-    try {
-      const profileRes = await api.get('/api/users/profile', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const userWithPermissions = {
-        ...decoded,
-        permissions: profileRes.data.permissions,
-      };
-      setUser(userWithPermissions);
-      setRole(decoded.role);
-    } catch (profileError) {
-      console.warn('Failed to fetch user permissions:', profileError);
-      setRole(decoded.role);
-      setUser(decoded);
-    }
+    setUser(decoded);
+    setRole(decoded.role);
   }
 
   const authContextValue: AuthContextType = {

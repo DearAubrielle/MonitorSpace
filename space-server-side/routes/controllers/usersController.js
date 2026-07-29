@@ -50,7 +50,7 @@ exports.login = async (req, res) => {
     
     // Find user with role information
     const [rows] = await db.query(`
-      SELECT u.*, r.name as role_name, r.display_name, r.permissions 
+      SELECT u.*, r.name as role_name, r.display_name
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id 
       WHERE u.username = ?
@@ -86,8 +86,7 @@ exports.login = async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        role: user.role_name || user.role,
-        permissions: user.permissions
+        role: user.role_name || user.role
       }
     });
 
@@ -114,7 +113,7 @@ exports.getAllUsers = async (req, res) => {
     const [results] = await db.query(`
       SELECT u.id, u.username, u.email, u.created_at, 
              r.name as role,
-             r.display_name, r.permissions
+             r.display_name
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id
       ORDER BY u.created_at DESC
@@ -133,7 +132,7 @@ exports.getUserById = async (req, res) => {
     const [results] = await db.query(`
       SELECT u.id, u.username, u.email, u.created_at, 
              r.name as role,
-             r.display_name, r.permissions
+             r.display_name
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id
       WHERE u.id = ?
@@ -157,7 +156,7 @@ exports.getProfile = async (req, res) => {
     const [rows] = await db.query(`
       SELECT u.id, u.username, u.email, 
              r.name as role,
-             r.display_name, r.permissions
+             r.display_name
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id 
       WHERE u.id = ?
@@ -186,9 +185,8 @@ exports.refreshToken = async (req, res) => {
       try {
         // Find user with role information
         const [rows] = await db.query(`
-          SELECT u.id, u.username, 
-                 r.name as role_name,
-                 r.permissions
+          SELECT u.id, u.username,
+                 r.name as role_name
           FROM users u 
           LEFT JOIN roles r ON u.role_id = r.id 
           WHERE u.id = ?
@@ -206,8 +204,7 @@ exports.refreshToken = async (req, res) => {
           user: {
             id: userData.id,
             username: userData.username,
-            role: userData.role_name,
-            permissions: userData.permissions
+            role: userData.role_name
           }
         });
       } catch (dbError) {
@@ -258,7 +255,7 @@ exports.updateUserRole = async (req, res) => {
     // Return updated user info with role details
     const [updatedRows] = await db.query(`
       SELECT u.id, u.username, u.email, u.created_at,
-             r.name as role, r.display_name, r.permissions
+             r.name as role, r.display_name
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id 
       WHERE u.id = ?
@@ -280,7 +277,7 @@ exports.updateUserRole = async (req, res) => {
 exports.getAllRoles = async (req, res) => {
   try {
     const [roles] = await db.query(`
-      SELECT id, name, display_name, description, permissions, is_active
+      SELECT id, name, display_name, description, is_active
       FROM roles 
       WHERE is_active = TRUE
       ORDER BY id ASC
@@ -295,16 +292,16 @@ exports.getAllRoles = async (req, res) => {
 // Create new role (admin only)
 exports.createRole = async (req, res) => {
   try {
-    const { name, display_name, description, permissions } = req.body;
+    const { name, display_name, description } = req.body;
     
     if (!name || !display_name) {
       return res.status(400).json({ message: 'Name and display name are required' });
     }
 
     const [result] = await db.query(`
-      INSERT INTO roles (name, display_name, description, permissions) 
-      VALUES (?, ?, ?, ?)
-    `, [name, display_name, description, JSON.stringify(permissions || [])]);
+      INSERT INTO roles (name, display_name, description)
+      VALUES (?, ?, ?)
+    `, [name, display_name, description]);
 
     const [newRole] = await db.query('SELECT * FROM roles WHERE id = ?', [result.insertId]);
     

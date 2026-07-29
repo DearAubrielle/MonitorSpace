@@ -9,7 +9,6 @@ interface Member {
   role: string;
   created_at?: string;
   display_name?: string;
-  permissions?: string;
 }
 
 interface Role {
