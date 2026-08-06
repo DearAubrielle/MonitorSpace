@@ -8,7 +8,7 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -16,15 +16,14 @@
     "jsx": "react-jsx",
 
     /* Alias */
-    "baseUrl": "./src",
     "paths": {
-      "@/components/*": ["./components/*"],
-      "@/context/*": ["./context/*"],
-      "@/pages/*": ["./pages/*"],
-      "@/images/*": ["./images/*"],
-      "@/hooks/*": ["./hooks/*"],
-      "@/types/*": ["./types/*"],
-      "@/utils/*": ["./utils/*"]
+      "@/components/*": ["./src/components/*"],
+      "@/context/*": ["./src/context/*"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/images/*": ["./src/images/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/utils/*": ["./src/utils/*"]
     },
     /* Linting */
     "strict": true,
