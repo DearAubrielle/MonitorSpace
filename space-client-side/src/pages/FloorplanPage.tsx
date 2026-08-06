@@ -10,6 +10,7 @@ import { handleDragEndFactory, PercentPosition } from '../utils/handleDragEnd';
 import FloorplanCreateDialog from '../components/floorplan/FloorplanCreateDialog';
 import FloorplanEditDialog from '../components/floorplan/FloorplanEditDialog';
 import ImageUpload from '../components/floorplan/ImageUpload';
+import { getDeviceIconUrl, handleDeviceIconError } from '../utils/deviceIcon';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -565,10 +566,15 @@ export default function FloorplanPage() {
                         ?.filter((device) => device.floorplan_id === selected?.id)
                         ?.map((device) => {
                           const type = deviceTypes?.find((t) => t.id === device.device_type_id);
-                          const icon = type ? SERVER_URL + type.icon_url : '/icons/default.png';
+                          const icon = getDeviceIconUrl(type?.icon_url);
                           return (
                             <div key={device.id} className={styles.unassignedDevice}>
-                              <img src={icon} alt={device.name} className={styles.deviceIcon} />
+                              <img
+                                src={icon}
+                                alt={device.name}
+                                className={styles.deviceIcon}
+                                onError={handleDeviceIconError}
+                              />
                               <div className={styles.deviceInfo}>
                                 <div className={styles.deviceName}>{device.name}</div>
                                 <div className={styles.deviceType}>{type?.name}</div>
@@ -602,7 +608,7 @@ export default function FloorplanPage() {
                         ?.filter((device) => device.floorplan_id === selected?.id)
                         ?.map((device) => {
                           const type = deviceTypes?.find((t) => t.id === device.device_type_id);
-                          const icon = type ? SERVER_URL + type.icon_url : '/icons/default.png';
+                          const icon = getDeviceIconUrl(type?.icon_url);
                           return (
                             <DraggableBox
                               key={device.id}
@@ -694,10 +700,11 @@ export default function FloorplanPage() {
                     <ul className={styles.devicesList} aria-label="Devices that will be moved to Unassigned">
                       {getAssignedDevices().map((device) => {
                         const deviceType = deviceTypes?.find((type) => type.id === device.device_type_id);
+                        const icon = getDeviceIconUrl(deviceType?.icon_url);
                         return (
                           <li key={device.id}>
                             <span className={styles.deviceTypeIcon} aria-hidden="true">
-                              {deviceType?.name === 'Camera' ? '◉' : '⌁'}
+                              <img src={icon} alt="" onError={handleDeviceIconError} />
                             </span>
                             <span className={styles.deviceDetails}>
                               <strong>{device.name}</strong>

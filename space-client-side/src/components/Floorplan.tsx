@@ -3,7 +3,7 @@ import { DndContext } from '@dnd-kit/core';
 import DraggableBox from './DraggableBox';
 import type { Device, DeviceType } from '../types/Device';
 import type { PercentPosition } from '../utils/handleDragEnd';
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+import { getDeviceIconUrl } from '../utils/deviceIcon';
 
 import type { DragEndEvent } from '@dnd-kit/core';
 
@@ -43,7 +43,7 @@ export default function Floorplan({
         {devices.map((device: Device) => {
           const types = deviceTypes ?? [];
           const type = types.find((t) => t.id === device.device_type_id);
-          const icon = type ? SERVER_URL + type.icon_url : '/icons/default.png';
+          const icon = getDeviceIconUrl(type?.icon_url);
           return (
             <DraggableBox
               key={device.id}

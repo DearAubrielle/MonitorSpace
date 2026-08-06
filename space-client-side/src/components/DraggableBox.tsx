@@ -1,5 +1,6 @@
 import { useDraggable } from '@dnd-kit/core';
 import { useState, useEffect } from 'react';
+import { DEFAULT_DEVICE_ICON } from '../utils/deviceIcon';
 
 // Add CSS animation for alert pulsing
 const addAlertAnimation = () => {
@@ -71,6 +72,15 @@ export default function DraggableBox({
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   const [showTooltip, setShowTooltip] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [resolvedIconURL, setResolvedIconURL] = useState(iconURL || DEFAULT_DEVICE_ICON);
+
+  useEffect(() => {
+    const nextIconURL = iconURL || DEFAULT_DEVICE_ICON;
+    const image = new Image();
+    image.onload = () => setResolvedIconURL(nextIconURL);
+    image.onerror = () => setResolvedIconURL(DEFAULT_DEVICE_ICON);
+    image.src = nextIconURL;
+  }, [iconURL]);
 
   // Add animation styles on component mount
   useEffect(() => {
@@ -411,7 +421,7 @@ export default function DraggableBox({
     fontSize: '12px',
     color: 'white',
     backgroundColor: boxColors.backgroundColor,
-    backgroundImage: iconURL ? `url(${iconURL})` : undefined,
+    backgroundImage: `url(${resolvedIconURL})`,
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'center',

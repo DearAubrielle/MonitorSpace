@@ -7,6 +7,7 @@ import { PercentPosition } from '../components/DraggableBox';
 import DraggableBox from '@/components/DraggableBox';
 import DeviceInfoModal from '../components/DeviceInfoModal';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { getDeviceIconUrl } from '../utils/deviceIcon';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 import type { Device } from '../types/Device';
 import { useFloorplan } from '../context/useFlooplan';
@@ -137,7 +138,7 @@ function FloorPlan() {
                 ?.filter((device) => Number(device.floorplan_id) === Number(selected?.id))
                 ?.map((device) => {
                   const type = deviceTypes?.find((t) => t.id === device.device_type_id);
-                  const icon = type ? SERVER_URL + type.icon_url : '/icons/default.png';
+                  const icon = getDeviceIconUrl(type?.icon_url);
 
                   // Determine alert state with better type checking
                   const rawValue = deviceValues[device.id.toString()] ?? device.latest_value;
