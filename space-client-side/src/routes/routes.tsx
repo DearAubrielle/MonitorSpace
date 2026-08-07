@@ -8,6 +8,8 @@ import Member from '../pages/Member.tsx';
 import Devices from '../pages/Devices.tsx';
 import PrivateRoute from '../utils/PrivateRoute.tsx';
 import Start from '../pages/Start.tsx';
+import Unauthorized from '../pages/Unauthorized.tsx';
+import { ROLE_ACCESS } from './access.ts';
 const routes = createBrowserRouter([
   { index: true, Component: Start },
   {
@@ -16,7 +18,7 @@ const routes = createBrowserRouter([
       {
         path: '/dashboard',
         element: (
-          <PrivateRoute allowedRoles={['user', 'manager', 'admin']}>
+          <PrivateRoute allowedRoles={ROLE_ACCESS.dashboard}>
             <Dashboard />
           </PrivateRoute>
         ),
@@ -24,7 +26,7 @@ const routes = createBrowserRouter([
       {
         path: '/floorplan',
         element: (
-          <PrivateRoute allowedRoles={['admin']}>
+          <PrivateRoute allowedRoles={ROLE_ACCESS.floorplan}>
             <FloorPlanPage />
           </PrivateRoute>
         ),
@@ -32,7 +34,7 @@ const routes = createBrowserRouter([
       {
         path: '/device',
         element: (
-          <PrivateRoute allowedRoles={['admin']}>
+          <PrivateRoute allowedRoles={ROLE_ACCESS.device}>
             <Devices />
           </PrivateRoute>
         ),
@@ -40,7 +42,7 @@ const routes = createBrowserRouter([
       {
         path: '/member',
         element: (
-          <PrivateRoute allowedRoles={['admin']}>
+          <PrivateRoute allowedRoles={ROLE_ACCESS.member}>
             <Member />
           </PrivateRoute>
         ),
@@ -49,5 +51,13 @@ const routes = createBrowserRouter([
   },
   { path: '/login', Component: Login },
   { path: '/register', Component: Register },
+  {
+    path: '/unauthorized',
+    element: (
+      <PrivateRoute>
+        <Unauthorized />
+      </PrivateRoute>
+    ),
+  },
 ]);
 export default routes;
