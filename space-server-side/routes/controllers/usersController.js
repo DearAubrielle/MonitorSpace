@@ -2,28 +2,78 @@ const db = require("../../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-exports.register = async (req, res) => {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'All fields are required' });
+const isAdmin = (req, res) => {
+  if (!req.user || req.user.role !== 'admin') {
+    res.status(403).json({ message: 'Only admins can manage user accounts.' });
+    return false;
   }
-  
+  return true;
+};
+
+exports.createAccount = async (req, res) => {
+  if (!isAdmin(req, res)) return;
+
+  const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
+  const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const password = typeof req.body.password === 'string' ? req.body.password : '';
+  const role = typeof req.body.role === 'string' ? req.body.role.trim() : '';
+
+  if (!username || !email || !password || !role) {
+    return res.status(400).json({ message: 'Username, email, password, and role are required.' });
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Enter a valid email address.' });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+  }
+
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Get default user role (role_id = 1)
-    const [roleResult] = await db.query('SELECT id FROM roles WHERE name = "user" LIMIT 1');
-    const defaultRoleId = roleResult[0]?.id || 1;
-    
-    await db.query(
-      'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)', 
-      [username, email, hashedPassword, defaultRoleId]
+    const [roleRows] = await db.query(
+      'SELECT id, name FROM roles WHERE name = ? AND is_active = TRUE LIMIT 1',
+      [role]
     );
-    
-    res.json({ message: 'User registered successfully' });
+    if (roleRows.length === 0) {
+      return res.status(400).json({ message: 'Select a valid active role.' });
+    }
+
+    const [duplicateRows] = await db.query(
+      'SELECT username, email FROM users WHERE username = ? OR email = ? LIMIT 1',
+      [username, email]
+    );
+    if (duplicateRows.length > 0) {
+      const field = duplicateRows[0].username === username ? 'Username' : 'Email';
+      return res.status(409).json({ message: `${field} is already in use.` });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await db.query(
+      'INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)',
+      [username, email, hashedPassword, roleRows[0].id]
+    );
+
+    const [createdRows] = await db.query(`
+      SELECT u.id, u.username, u.email, u.created_at,
+             r.name as role, r.display_name
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      WHERE u.id = ?
+    `, [result.insertId]);
+
+    res.status(201).json({
+      message: 'Account created successfully.',
+      user: createdRows[0]
+    });
+
+    console.log(`Account created: ${username}, role: ${role}, by admin ${req.user.username || req.user.id}`);
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'Server error during registration' });
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ message: 'Username or email is already in use.' });
+    }
+    console.error('Create account error:', error);
+    res.status(500).json({ message: 'Server error while creating account.' });
   }
 };
 
@@ -109,6 +159,8 @@ exports.logout = (req, res) => {
 
 // Get all users with role information
 exports.getAllUsers = async (req, res) => {
+  if (!isAdmin(req, res)) return;
+
   try {
     const [results] = await db.query(`
       SELECT u.id, u.username, u.email, u.created_at, 
@@ -127,6 +179,8 @@ exports.getAllUsers = async (req, res) => {
 
 // Get single user by ID with role information
 exports.getUserById = async (req, res) => {
+  if (!isAdmin(req, res)) return;
+
   try {
     const { id } = req.params;
     const [results] = await db.query(`
@@ -154,7 +208,7 @@ exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const [rows] = await db.query(`
-      SELECT u.id, u.username, u.email, 
+      SELECT u.id, u.username, u.email,
              r.name as role,
              r.display_name
       FROM users u 
@@ -170,6 +224,45 @@ exports.getProfile = async (req, res) => {
   } catch (err) {
     console.error('Profile error:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  const currentPassword = typeof req.body.currentPassword === 'string' ? req.body.currentPassword : '';
+  const newPassword = typeof req.body.newPassword === 'string' ? req.body.newPassword : '';
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required.' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ message: 'New password must be at least 8 characters.' });
+  }
+
+  try {
+    const [rows] = await db.query('SELECT id, password FROM users WHERE id = ? LIMIT 1', [req.user.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const passwordMatches = await bcrypt.compare(currentPassword, rows[0].password);
+    if (!passwordMatches) {
+      return res.status(400).json({ message: 'Current password is incorrect.' });
+    }
+
+    const reusesCurrentPassword = await bcrypt.compare(newPassword, rows[0].password);
+    if (reusesCurrentPassword) {
+      return res.status(400).json({ message: 'New password must be different from the current password.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.id]);
+
+    res.json({ message: 'Password updated successfully.' });
+    console.log(`Password updated by user ID ${req.user.id} at ${new Date().toISOString()}`);
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Server error while updating password.' });
   }
 };
 
@@ -225,9 +318,7 @@ exports.updateUserRole = async (req, res) => {
     const { role } = req.body;
 
     // Only allow admins to update roles
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Only admins can update roles.' });
-    }
+    if (!isAdmin(req, res)) return;
 
     // Get valid roles from database
     const [validRoles] = await db.query('SELECT id, name FROM roles WHERE is_active = TRUE');
@@ -275,6 +366,8 @@ exports.updateUserRole = async (req, res) => {
 
 // Get all available roles
 exports.getAllRoles = async (req, res) => {
+  if (!isAdmin(req, res)) return;
+
   try {
     const [roles] = await db.query(`
       SELECT id, name, display_name, description, is_active
@@ -292,6 +385,8 @@ exports.getAllRoles = async (req, res) => {
 // Create new role (admin only)
 exports.createRole = async (req, res) => {
   try {
+    if (!isAdmin(req, res)) return;
+
     const { name, display_name, description } = req.body;
     
     if (!name || !display_name) {
@@ -321,12 +416,13 @@ exports.createRole = async (req, res) => {
 };
 
 module.exports = {
-  register: exports.register,
+  createAccount: exports.createAccount,
   login: exports.login,
   logout: exports.logout,
   getAllUsers: exports.getAllUsers,
   getUserById: exports.getUserById,
   getProfile: exports.getProfile,
+  changePassword: exports.changePassword,
   refreshToken: exports.refreshToken,
   updateUserRole: exports.updateUserRole,
   getAllRoles: exports.getAllRoles,

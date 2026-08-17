@@ -65,12 +65,45 @@
 }
 
 .controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .searchBox {
   position: relative;
+  flex: 1;
   max-width: 400px;
+}
+
+.createAccountButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  background: #1d4ed8;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.createAccountButton:hover {
+  background: #1e40af;
+  border-color: #1e40af;
+  transform: translateY(-1px);
+}
+
+.createAccountButton span {
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .searchIcon {
@@ -121,6 +154,16 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.currentMemberCard {
+  border-color: #7da4ff;
+  background: linear-gradient(145deg, #eff5ff 0%, #ffffff 68%);
+  box-shadow: 0 2px 8px rgba(36, 87, 220, 0.1);
+}
+
+.currentMemberCard:hover {
+  border-color: #5b85ef;
+}
+
 .memberCard:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -156,6 +199,25 @@
   font-weight: 500;
   color: #1e293b;
   margin: 0 0 0.125rem 0;
+}
+
+.memberNameRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.youBadge {
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .memberEmail {
@@ -354,6 +416,15 @@
   .memberCard {
     padding: 0.875rem;
   }
+
+  .controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .searchBox {
+    max-width: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -414,6 +485,12 @@
   color: #1e293b;
 }
 
+.modalDescription {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
 .closeButton {
   background: none;
   border: none;
@@ -439,6 +516,120 @@
   padding: 1.5rem;
 }
 
+.createFormGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.createSuccessAlert {
+  display: flex;
+  gap: 0.8rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid #86efac;
+  border-radius: 9px;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.createSuccessAlert strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.createSuccessAlert p {
+  margin: 0.25rem 0 0;
+  color: #15803d;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.createSuccessIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #22c55e;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.createdAccountSummary {
+  margin-top: 1.1rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.summaryRow + .summaryRow {
+  border-top: 1px solid #e2e8f0;
+}
+
+.summaryLabel {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.summaryValue {
+  overflow-wrap: anywhere;
+  color: #1e293b;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.formField {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.formField > span {
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.formField input,
+.formField select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  color: #1e293b;
+  font: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.formField input:focus,
+.formField select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.formField input:disabled,
+.formField select:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.formField small {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
 .memberProfile {
   display: flex;
   align-items: center;
@@ -453,7 +644,7 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
   display: flex;
   align-items: center;
@@ -484,6 +675,23 @@
   font-size: 1.1rem;
   font-weight: 600;
   color: #1e293b;
+}
+
+.selfRoleNotice {
+  display: flex;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.selfRoleNotice > span:first-child {
+  font-weight: 700;
 }
 
 .detailRow {
@@ -735,6 +943,12 @@
   text-align: right;
 }
 
+.createModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 .closeModalButton {
   background: #f1f5f9;
   color: #475569;
@@ -748,6 +962,31 @@
 
 .closeModalButton:hover {
   background: #e2e8f0;
+}
+
+.closeModalButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.submitAccountButton {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitAccountButton:hover:not(:disabled) {
+  background: #1e40af;
+}
+
+.submitAccountButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 @keyframes modalSlideIn {

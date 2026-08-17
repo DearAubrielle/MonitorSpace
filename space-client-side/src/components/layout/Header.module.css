@@ -75,18 +75,44 @@
   align-items: center;
 }
 
-.header ul li b {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 0.95rem;
-  padding: 0.5rem 1rem;
-  background: #f1f5f9;
+.accountButton {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #d6e2f5;
   border-radius: 8px;
-  min-width: 100px;
-  text-align: center;
+  background: #f5f8fc;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.header ul li button {
+.accountAvatar {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.accountArrow {
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.accountButton:hover {
+  border-color: #9db8ed;
+  background: #edf3ff;
+}
+
+.logoutButton {
   background: #ffffff;
   color: #155eef;
   border: 1px solid #bcd0fa;
@@ -103,7 +129,7 @@
   box-shadow: none;
 }
 
-.header ul li button:hover {
+.logoutButton:hover {
   color: #0b4ed1;
   border-color: #155eef;
   background: #f5f8ff;
@@ -111,13 +137,13 @@
   box-shadow: none;
 }
 
-.header ul li button:active {
+.logoutButton:active {
   transform: translateY(0);
   background: #edf3ff;
   box-shadow: none;
 }
 
-.header ul li button:disabled {
+.logoutButton:disabled {
   cursor: wait;
   opacity: 0.6;
 }
@@ -137,13 +163,7 @@
     gap: 1rem;
   }
 
-  .header ul li b {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    min-width: 80px;
-  }
-
-  .header ul li button {
+  .logoutButton {
     padding: 0.5rem 1rem;
     font-size: 0.85rem;
   }
@@ -162,11 +182,11 @@
     gap: 0.75rem;
   }
 
-  .header ul li b {
+  .accountButton {
     display: none;
   }
 
-  .header ul li button {
+  .logoutButton {
     padding: 0.5rem 0.75rem;
     font-size: 0.8rem;
   }

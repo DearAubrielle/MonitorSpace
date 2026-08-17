@@ -3,6 +3,7 @@ export const ROLE_ACCESS = {
   floorplan: ['manager', 'admin'],
   device: ['manager', 'admin'],
   member: ['admin'],
+  account: ['user', 'manager', 'admin'],
 } as const;
 
 export interface NavigationItem {

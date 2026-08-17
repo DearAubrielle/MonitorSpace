@@ -7,6 +7,7 @@ export default function Header() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const initials = user?.username.slice(0, 2).toUpperCase() || 'GU';
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -38,10 +39,14 @@ export default function Header() {
         </div>
         <ul>
           <li>
-            <b>{user?.username || 'Guest'}</b>
+            <button className={styles.accountButton} onClick={() => navigate('/account')} aria-label="Open your account">
+              <span className={styles.accountAvatar} aria-hidden="true">{initials}</span>
+              <span className={styles.accountName}>{user?.username || 'Guest'}</span>
+              <span className={styles.accountArrow} aria-hidden="true">›</span>
+            </button>
           </li>
           <li>
-            <button onClick={handleLogout} disabled={isLoggingOut}>
+            <button className={styles.logoutButton} onClick={handleLogout} disabled={isLoggingOut}>
               {isLoggingOut ? 'Logging out...' : 'Logout'}
             </button>
           </li>
