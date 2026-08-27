@@ -20,7 +20,7 @@
   overflow: auto;
   margin-bottom: 30px;
   scrollbar-width: thin;
-  border-right: var(--default-boarder);
+  border-right: var(--default-border-soft);
 }
 
 .sidebar ul {
