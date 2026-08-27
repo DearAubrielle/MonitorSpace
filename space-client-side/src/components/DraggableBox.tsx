@@ -1,6 +1,7 @@
 import { useDraggable } from '@dnd-kit/core';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DEFAULT_DEVICE_ICON } from '../utils/deviceIcon';
+import CameraHoverPreview from './CameraHoverPreview';
 
 // Add CSS animation for alert pulsing
 const addAlertAnimation = () => {
@@ -47,6 +48,7 @@ export interface DraggableBoxProps {
   value?: string | number;
   unit?: string;
   useBuiltInModal?: boolean; // New prop to control modal behavior
+  cameraPreviewUrl?: string;
 }
 
 export default function DraggableBox({
@@ -63,6 +65,7 @@ export default function DraggableBox({
   value,
   unit,
   useBuiltInModal = false,
+  cameraPreviewUrl,
 }: DraggableBoxProps) {
   const boxSize = Math.max(
     MIN_BOX_SIZE,
@@ -71,6 +74,7 @@ export default function DraggableBox({
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipCloseTimer = useRef<number | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [resolvedIconURL, setResolvedIconURL] = useState(iconURL || DEFAULT_DEVICE_ICON);
 
@@ -85,7 +89,24 @@ export default function DraggableBox({
   // Add animation styles on component mount
   useEffect(() => {
     addAlertAnimation();
+    return () => {
+      if (tooltipCloseTimer.current !== null) window.clearTimeout(tooltipCloseTimer.current);
+    };
   }, []);
+
+  const openTooltip = () => {
+    if (tooltipCloseTimer.current !== null) window.clearTimeout(tooltipCloseTimer.current);
+    tooltipCloseTimer.current = null;
+    setShowTooltip(true);
+  };
+
+  const scheduleTooltipClose = () => {
+    if (tooltipCloseTimer.current !== null) window.clearTimeout(tooltipCloseTimer.current);
+    tooltipCloseTimer.current = window.setTimeout(() => {
+      setShowTooltip(false);
+      tooltipCloseTimer.current = null;
+    }, cameraPreviewUrl ? 220 : 0);
+  };
 
   const left = position.x * (containerWidth - boxSize);
   const top = position.y * (containerHeight - boxSize);
@@ -414,6 +435,7 @@ export default function DraggableBox({
 
   const style: React.CSSProperties = {
     position: 'absolute',
+    zIndex: showTooltip ? 3000 : isDragging ? 2000 : 1,
     top,
     left,
     width: boxSize,
@@ -463,11 +485,21 @@ export default function DraggableBox({
           }
           onDoubleClick?.();
         }}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseEnter={openTooltip}
+        onMouseLeave={scheduleTooltipClose}
       >
-        {/* Tooltip */}
-        {showTooltip && tooltipContent}
+        {/* Camera devices get a live hover card; other devices keep the compact value tooltip. */}
+        {showTooltip && cameraPreviewUrl ? (
+          <CameraHoverPreview
+            name={deviceName || 'Camera'}
+            streamUrl={cameraPreviewUrl}
+            align={position.x > 0.64 ? 'left' : 'right'}
+            onMouseEnter={openTooltip}
+            onMouseLeave={scheduleTooltipClose}
+          />
+        ) : (
+          showTooltip && tooltipContent
+        )}
       </div>
 
       {/* Detail Modal */}

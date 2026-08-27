@@ -63,6 +63,11 @@ export default function Floorplan({
               deviceName={device.name}
               value={device.latest_value}
               unit={type?.unit}
+              cameraPreviewUrl={
+                type?.name.toLowerCase() === 'camera' && device.path_topic?.trim()
+                  ? device.path_topic
+                  : undefined
+              }
             />
           );
         })}

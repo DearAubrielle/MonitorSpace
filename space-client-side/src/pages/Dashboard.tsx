@@ -171,6 +171,12 @@ function FloorPlan() {
                       onClick={() => handleDeviceClick(device)}
                       disabled={true} // Disable dragging for now
                       alert={alert}
+                      deviceName={device.name}
+                      cameraPreviewUrl={
+                        type?.name.toLowerCase() === 'camera' && device.path_topic?.trim()
+                          ? device.path_topic
+                          : undefined
+                      }
                     />
                   );
                 })}

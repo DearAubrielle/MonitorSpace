@@ -1,0 +1,85 @@
+.preview {
+  position: absolute;
+  top: 50%;
+  z-index: 2000;
+  width: clamp(230px, 26vw, 300px);
+  overflow: visible;
+  color: #172033;
+  background: #ffffff;
+  border: 1px solid #d9e0e9;
+  border-radius: 13px;
+  box-shadow: 0 18px 48px rgba(21, 35, 62, 0.28);
+  transform: translateY(-50%);
+  animation: previewIn 160ms ease-out;
+  pointer-events: auto;
+}
+
+.alignRight { left: calc(100% + 12px); }
+.alignLeft { right: calc(100% + 12px); }
+
+/* Keeps the hover target continuous across the visual gap beside the icon. */
+.preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+}
+
+.alignRight::before { right: 100%; }
+.alignLeft::before { left: 100%; }
+
+.feed {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  background: #162430;
+}
+
+.feed img { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+.feed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(5, 16, 28, 0.52), transparent 48%);
+  pointer-events: none;
+}
+
+.liveBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  color: #fff;
+  background: #dc3d3d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.offlineBadge { background: #596273; }
+.liveDot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: livePulse 1.5s infinite; }
+.timestamp { position: absolute; right: 10px; bottom: 9px; z-index: 1; color: #fff; font: 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-shadow: 0 1px 4px #000; }
+.unavailable { height: 100%; display: grid; place-items: center; padding: 16px; color: #dce3ea; font-size: 12px; text-align: center; background: linear-gradient(145deg, #172431, #354b5b); }
+.details { padding: 11px 12px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-radius: 0 0 12px 12px; background: #fff; }
+.details strong { display: block; overflow: hidden; max-width: 150px; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.details span { display: block; margin-top: 1px; color: #7b8493; font-size: 10px; }
+.details .openHint { flex-shrink: 0; color: #195dc7; font-size: 10px; font-weight: 700; }
+
+@keyframes previewIn { from { opacity: 0; transform: translateY(calc(-50% + 5px)) scale(0.98); } }
+@keyframes livePulse { 50% { opacity: 0.35; } }
+
+@media (max-width: 700px) {
+  .preview { width: 220px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview, .liveDot { animation: none; }
+}
