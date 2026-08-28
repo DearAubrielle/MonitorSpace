@@ -1,21 +1,21 @@
 import styles from './FloorPlan.module.css';
 import { useRef, useEffect, useState } from 'react';
-import AspectRatioBox from '../components/AspectRatioBox';
-import { DndContext } from '@dnd-kit/core';
 import { useFloorplan } from '../context/useFlooplan';
 import type { Device } from '../types/Device';
-import DraggableBox from '../components/DraggableBox';
+import Floorplan from '../components/Floorplan';
 import Button from '../components/Button';
 import { handleDragEndFactory, PercentPosition } from '../utils/handleDragEnd';
 import FloorplanCreateDialog from '../components/floorplan/FloorplanCreateDialog';
 import FloorplanEditDialog from '../components/floorplan/FloorplanEditDialog';
 import ImageUpload from '../components/floorplan/ImageUpload';
 import { getDeviceIconUrl, handleDeviceIconError } from '../utils/deviceIcon';
+import { useDeviceMonitoring } from '../hooks/useDeviceMonitoring';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export default function FloorplanPage() {
   const { floorplans, selected, setSelected, devices, setDevices, deviceTypes, refreshFloorplans } = useFloorplan();
+  const { getDeviceValue, getDeviceAlert } = useDeviceMonitoring();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({
     width: 500,
@@ -596,47 +596,21 @@ export default function FloorplanPage() {
                   </div>
                 ) : (
                   // Normal floorplan view
-                  <AspectRatioBox
-                    originalWidth={containerSize.width}
-                    originalHeight={containerSize.height}
-                    backgroundImage={
+                  <Floorplan
+                    imageUrl={
                       selected.image_url.startsWith('http') ? selected.image_url : SERVER_URL + selected.image_url
                     }
-                  >
-                    <DndContext onDragEnd={handleDragEnd}>
-                      {devices
-                        ?.filter((device) => device.floorplan_id === selected?.id)
-                        ?.map((device) => {
-                          const type = deviceTypes?.find((t) => t.id === device.device_type_id);
-                          const icon = getDeviceIconUrl(type?.icon_url);
-                          return (
-                            <DraggableBox
-                              key={device.id}
-                              id={String(device.id)}
-                              iconURL={icon}
-                              label={String(device.id)}
-                              position={
-                                devicePositions[device.id] || {
-                                  x: device.x_percent,
-                                  y: device.y_percent,
-                                }
-                              }
-                              containerWidth={renderedSize.width}
-                              containerHeight={renderedSize.height}
-                              disabled={!editMode}
-                              deviceName={device.name}
-                              value={device.latest_value}
-                              unit={type?.unit}
-                              cameraPreviewUrl={
-                                type?.name.toLowerCase() === 'camera' && device.path_topic?.trim()
-                                  ? device.path_topic
-                                  : undefined
-                              }
-                            />
-                          );
-                        })}
-                    </DndContext>
-                  </AspectRatioBox>
+                    originalWidth={containerSize.width}
+                    originalHeight={containerSize.height}
+                    devices={devices?.filter((device) => device.floorplan_id === selected.id) ?? []}
+                    deviceTypes={deviceTypes ?? []}
+                    devicePositions={devicePositions}
+                    renderedSize={renderedSize}
+                    onDragEnd={handleDragEnd}
+                    editMode={editMode}
+                    getDeviceValue={getDeviceValue}
+                    getDeviceAlert={getDeviceAlert}
+                  />
                 )}
               </div>
             )}

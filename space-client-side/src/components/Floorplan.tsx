@@ -15,8 +15,11 @@ interface FloorplanProps {
   deviceTypes: DeviceType[];
   devicePositions: Record<string, PercentPosition>;
   renderedSize: { width: number; height: number };
-  onDragEnd: (event: DragEndEvent) => void;
+  onDragEnd?: (event: DragEndEvent) => void;
+  onDeviceClick?: (device: Device) => void;
   onDeviceDoubleClick?: (device: Device) => void;
+  getDeviceValue?: (device: Device) => string | number | undefined;
+  getDeviceAlert?: (device: Device) => boolean;
   editMode?: boolean;
 }
 
@@ -29,7 +32,10 @@ export default function Floorplan({
   renderedSize,
   deviceTypes,
   onDragEnd,
+  onDeviceClick,
   onDeviceDoubleClick,
+  getDeviceValue,
+  getDeviceAlert,
   editMode = false,
 }: FloorplanProps) {
   return (
@@ -58,10 +64,12 @@ export default function Floorplan({
               }
               containerWidth={renderedSize.width}
               containerHeight={renderedSize.height}
+              onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
               onDoubleClick={onDeviceDoubleClick ? () => onDeviceDoubleClick(device) : undefined}
               disabled={!editMode}
+              alert={getDeviceAlert?.(device) ?? device.alert}
               deviceName={device.name}
-              value={device.latest_value}
+              value={getDeviceValue?.(device) ?? device.latest_value}
               unit={type?.unit}
               cameraPreviewUrl={
                 type?.name.toLowerCase() === 'camera' && device.path_topic?.trim()

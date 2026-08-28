@@ -1,13 +1,11 @@
 import stylesD from './dashboard.module.css';
 import stylesF from './FloorPlan.module.css';
 import { useRef, useEffect, useState, useCallback } from 'react';
-import AspectRatioBox from '../components/AspectRatioBox';
 import MonitorPage from './MonitorPage';
 import { PercentPosition } from '../components/DraggableBox';
-import DraggableBox from '@/components/DraggableBox';
+import FloorplanView from '../components/Floorplan';
 import DeviceInfoModal from '../components/DeviceInfoModal';
-import { useWebSocket } from '../hooks/useWebSocket';
-import { getDeviceIconUrl } from '../utils/deviceIcon';
+import { useDeviceMonitoring } from '../hooks/useDeviceMonitoring';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 import type { Device } from '../types/Device';
 import { useFloorplan } from '../context/useFlooplan';
@@ -21,12 +19,7 @@ function FloorPlan() {
 
   const [modalDevice, setModalDevice] = useState<Device | null>(null);
 
-  // Use WebSocket hook for device values
-  const { deviceValues, connectionStatus } = useWebSocket({
-    url: 'ws://localhost:8080/',
-    reconnectAttempts: 5,
-    reconnectInterval: 3000,
-  });
+  const { deviceValues, connectionStatus, getDeviceValue, getDeviceAlert } = useDeviceMonitoring();
 
   const handleDeviceClick = useCallback((device: Device) => {
     setModalDevice(device);
@@ -124,63 +117,24 @@ function FloorPlan() {
         </div>
         {selected ? (
           <div ref={containerRef} style={{ width: '100%' }}>
-            <AspectRatioBox
-              originalWidth={containerSize.width}
-              originalHeight={containerSize.height}
-              backgroundImage={
+            <FloorplanView
+              imageUrl={
                 selected.image_url && selected.image_url.startsWith('http')
                   ? selected.image_url
                   : SERVER_URL + selected.image_url
               }
-              maxWidth="100%"
-            >
-              {devices
-                ?.filter((device) => Number(device.floorplan_id) === Number(selected?.id))
-                ?.map((device) => {
-                  const type = deviceTypes?.find((t) => t.id === device.device_type_id);
-                  const icon = getDeviceIconUrl(type?.icon_url);
-
-                  // Determine alert state with better type checking
-                  const rawValue = deviceValues[device.id.toString()] ?? device.latest_value;
-                  const numValue =
-                    typeof rawValue === 'number'
-                      ? rawValue
-                      : typeof rawValue === 'string'
-                        ? parseFloat(rawValue)
-                        : null;
-                  const alert =
-                    numValue !== null &&
-                    !isNaN(numValue) &&
-                    ((device.min_alert !== undefined && numValue < device.min_alert) ||
-                      (device.max_alert !== undefined && numValue > device.max_alert));
-
-                  return (
-                    <DraggableBox
-                      key={device.id}
-                      id={String(device.id)}
-                      label={device.name}
-                      iconURL={icon}
-                      position={
-                        devicePositions[device.id] || {
-                          x: device.x_percent,
-                          y: device.y_percent,
-                        }
-                      }
-                      containerWidth={renderedSize.width}
-                      containerHeight={renderedSize.height}
-                      onClick={() => handleDeviceClick(device)}
-                      disabled={true} // Disable dragging for now
-                      alert={alert}
-                      deviceName={device.name}
-                      cameraPreviewUrl={
-                        type?.name.toLowerCase() === 'camera' && device.path_topic?.trim()
-                          ? device.path_topic
-                          : undefined
-                      }
-                    />
-                  );
-                })}
-            </AspectRatioBox>
+              originalWidth={containerSize.width}
+              originalHeight={containerSize.height}
+              devices={
+                devices?.filter((device) => Number(device.floorplan_id) === Number(selected.id)) ?? []
+              }
+              deviceTypes={deviceTypes ?? []}
+              devicePositions={devicePositions}
+              renderedSize={renderedSize}
+              onDeviceClick={handleDeviceClick}
+              getDeviceValue={getDeviceValue}
+              getDeviceAlert={getDeviceAlert}
+            />
           </div>
         ) : (
           <div className={stylesF.emptyState}>
