@@ -97,15 +97,25 @@ function FloorPlan() {
           {floorplans
             ?.filter((plan) => plan.name !== 'Unassigned')
             .sort((a, b) => a.id - b.id)
-            .map((plan) => (
-              <li
-                key={plan.id}
-                onClick={() => setSelected(plan)}
-                className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
-              >
-                {plan.name}
-              </li>
-            ))}
+            .map((plan) => {
+              const hasActiveAlert = devices?.some(
+                (device) =>
+                  Number(device.floorplan_id) === Number(plan.id) && getDeviceAlert(device)
+              );
+
+              return (
+                <li
+                  key={plan.id}
+                  onClick={() => setSelected(plan)}
+                  className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
+                >
+                  <span>{plan.name}</span>
+                  {hasActiveAlert && (
+                    <span className={stylesF.alertIcon} aria-label="Floorplan has active alerts">!</span>
+                  )}
+                </li>
+              );
+            })}
         </ul>
       </div>
 
@@ -179,32 +189,33 @@ export default function Dashboard() {
     <>
       <div className={stylesD.dashboardContainer}>
         <div className={stylesD.dashboardWrapper}>
-          {/* Tab Navigation */}
-          <div className={stylesD.tabNavigation}>
-            <button
-              onClick={() => handleTabChange('Floorplan')}
-              className={`${stylesD.tabButton} ${activeTab === 'Floorplan' ? stylesD.tabButtonActive : ''}`}
-              aria-selected={activeTab === 'Floorplan'}
-            >
-              Floorplan
-            </button>
-            <button
-              onClick={() => handleTabChange('Camera')}
-              className={`${stylesD.tabButton} ${activeTab === 'Camera' ? stylesD.tabButtonActive : ''}`}
-              aria-selected={activeTab === 'Camera'}
-            >
-              Camera
-            </button>
-          </div>
-
-          {/* Header Section */}
-          <div className={stylesD.headerSection}>
-            <h3 className={stylesD.pageTitle}>{activeTab === 'Floorplan' ? 'Floorplan' : 'Camera'}</h3>
-            <p className={stylesD.pageSubtitle}>
-              {activeTab === 'Floorplan'
-                ? 'Monitor your Devices in real-time on Floorplan'
-                : 'Monitor your camera feeds in real-time'}
-            </p>
+          <div className={stylesD.pageHeader}>
+            <div className={stylesD.headerSection}>
+              <h3 className={stylesD.pageTitle}>{activeTab === 'Floorplan' ? 'Floorplan' : 'Camera'}</h3>
+              <p className={stylesD.pageSubtitle}>
+                {activeTab === 'Floorplan'
+                  ? 'Monitor your devices in real time on the floorplan'
+                  : 'Monitor your camera feeds in real time'}
+              </p>
+            </div>
+            <div className={stylesD.tabNavigation} role="tablist" aria-label="Dashboard view">
+              <button
+                onClick={() => handleTabChange('Floorplan')}
+                className={`${stylesD.tabButton} ${activeTab === 'Floorplan' ? stylesD.tabButtonActive : ''}`}
+                aria-selected={activeTab === 'Floorplan'}
+                role="tab"
+              >
+                Floorplan
+              </button>
+              <button
+                onClick={() => handleTabChange('Camera')}
+                className={`${stylesD.tabButton} ${activeTab === 'Camera' ? stylesD.tabButtonActive : ''}`}
+                aria-selected={activeTab === 'Camera'}
+                role="tab"
+              >
+                Camera
+              </button>
+            </div>
           </div>
 
           {/* Content Area */}

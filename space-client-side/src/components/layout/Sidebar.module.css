@@ -29,12 +29,17 @@
 }
 
 .sidebar ul li {
-  margin: 15px 0;
+  margin: 4px 0;
 }
 
 .sidebar ul li a {
   color: rgb(90, 66, 109);
   text-decoration: none;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px;
 }
 
 .sidebar ul li a:hover {
@@ -43,6 +48,19 @@
 
 .activeLink {
   font-weight: bold;
-  border-left: 4px solid #007bff; /* Example border color */
-  padding-left: 10px; /* Adjust padding to align text properly */
+  border-left: 3px solid #1769e8;
+  color: #174c9f !important;
+  background: #eaf2ff;
+}
+
+.alertIcon {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.22);
+  background: #ee0e0e;
+  font-size: 0.75rem;
 }

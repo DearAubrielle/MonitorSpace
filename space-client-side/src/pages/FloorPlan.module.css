@@ -99,9 +99,25 @@ p {
 .List {
   padding: 0.5rem 1rem;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
+}
+
+.alertIcon {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.22);
+  background: #ee0e0e;
+  font-size: 0.75rem;
 }
 
 .Description {

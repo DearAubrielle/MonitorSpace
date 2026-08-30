@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Device } from '../types/Device';
 import { useWebSocket } from './useWebSocket';
+import { isDeviceAlertActive } from '../utils/deviceAlert';
 
 export function useDeviceMonitoring() {
   const { deviceValues, connectionStatus } = useWebSocket({
@@ -15,18 +16,7 @@ export function useDeviceMonitoring() {
   );
 
   const getDeviceAlert = useCallback(
-    (device: Device) => {
-      const rawValue = getDeviceValue(device);
-      const numericValue =
-        typeof rawValue === 'number' ? rawValue : Number.parseFloat(String(rawValue));
-
-      if (!Number.isFinite(numericValue)) return false;
-
-      return (
-        (device.min_alert !== undefined && numericValue < device.min_alert) ||
-        (device.max_alert !== undefined && numericValue > device.max_alert)
-      );
-    },
+    (device: Device) => isDeviceAlertActive(device, getDeviceValue(device)),
     [getDeviceValue]
   );
 

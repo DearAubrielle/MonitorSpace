@@ -89,6 +89,138 @@
   cursor: pointer;
 }
 
+.alertMenuItem {
+  position: relative;
+}
+
+.alertButton {
+  height: 40px;
+  padding: 0 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 9px;
+  color: #ffffff;
+  background: #dc2626;
+  box-shadow: 0 5px 13px rgba(220, 38, 38, 0.24);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alertButton:hover,
+.alertButton[aria-expanded='true'] {
+  background: #b91c1c;
+}
+
+.alertIcon {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.75rem;
+}
+
+.alertCount {
+  min-width: 25px;
+  height: 20px;
+  padding: 0 0.45rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #991b1b;
+  font-size: 0.7rem;
+}
+
+.alertPopover {
+  position: absolute;
+  z-index: 1000;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  width: 320px;
+  padding: 0.75rem;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(36, 24, 32, 0.2);
+}
+
+.alertPopoverHeader {
+  padding: 0.1rem 0.15rem 0.65rem;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #edf0f4;
+  font-size: 0.8rem;
+}
+
+.alertPopoverHeader span {
+  color: #b91c1c;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.alertList {
+  max-height: min(420px, calc(100vh - 160px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.alertEntry {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.65rem;
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  color: #1f2937;
+  background: #fff7f7;
+  text-align: left;
+  cursor: pointer;
+}
+
+.alertEntry:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.alertEntryIcon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+.alertEntryIcon img {
+  width: 23px;
+  height: 23px;
+  object-fit: contain;
+}
+
+.alertEntry strong,
+.alertEntry small {
+  display: block;
+}
+
+.alertEntry small {
+  margin-top: 0.1rem;
+  color: #6b7280;
+  font-size: 0.7rem;
+}
+
+.alertEntryArrow {
+  color: #b91c1c;
+  font-size: 1.1rem;
+}
+
 .accountAvatar {
   display: grid;
   place-items: center;
@@ -160,7 +292,7 @@
   }
 
   .header ul {
-    gap: 1rem;
+    gap: 0.65rem;
   }
 
   .logoutButton {
@@ -184,6 +316,18 @@
 
   .accountButton {
     display: none;
+  }
+
+  .alertButton > span:nth-child(2) {
+    display: none;
+  }
+
+  .alertPopover {
+    position: fixed;
+    top: 60px;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
   }
 
   .logoutButton {

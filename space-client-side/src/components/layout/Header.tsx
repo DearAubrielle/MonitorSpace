@@ -1,13 +1,30 @@
 import styles from './Header.module.css';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '@/context/useAuth';
+import { useFloorplan } from '@/context/useFlooplan';
+import { getDeviceIconUrl, handleDeviceIconError } from '@/utils/deviceIcon';
+import { isDeviceAlertActive } from '@/utils/deviceAlert';
 
 export default function Header() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { devices, deviceTypes, floorplans, setSelected } = useFloorplan();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(false);
   const initials = user?.username.slice(0, 2).toUpperCase() || 'GU';
+
+  const activeAlerts = useMemo(
+    () => (devices ?? []).filter((device) => isDeviceAlertActive(device)),
+    [devices]
+  );
+
+  const openAlertDevice = (floorplanId: number) => {
+    const floorplan = floorplans?.find((plan) => Number(plan.id) === Number(floorplanId));
+    if (floorplan) setSelected(floorplan);
+    setShowAlerts(false);
+    navigate('/dashboard');
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -38,6 +55,58 @@ export default function Header() {
           </span>
         </div>
         <ul>
+          {activeAlerts.length > 0 && (
+            <li className={styles.alertMenuItem}>
+              <button
+                className={styles.alertButton}
+                onClick={() => setShowAlerts((current) => !current)}
+                aria-expanded={showAlerts}
+                aria-haspopup="true"
+              >
+                <span className={styles.alertIcon} aria-hidden="true">!</span>
+                <span>Alerts</span>
+                <span className={styles.alertCount}>{activeAlerts.length}</span>
+              </button>
+              {showAlerts && (
+                <div className={styles.alertPopover}>
+                  <div className={styles.alertPopoverHeader}>
+                    <strong>Active alerts</strong>
+                    <span>{activeAlerts.length} critical</span>
+                  </div>
+                  <div className={styles.alertList}>
+                  {activeAlerts.map((device) => {
+                    const floorplan = floorplans?.find(
+                      (plan) => Number(plan.id) === Number(device.floorplan_id)
+                    );
+                    const deviceType = deviceTypes?.find((type) => type.id === device.device_type_id);
+                    return (
+                      <button
+                        key={device.id}
+                        className={styles.alertEntry}
+                        onClick={() => openAlertDevice(device.floorplan_id)}
+                      >
+                        <span className={styles.alertEntryIcon} aria-hidden="true">
+                          <img
+                            src={getDeviceIconUrl(deviceType?.icon_url)}
+                            alt=""
+                            onError={handleDeviceIconError}
+                          />
+                        </span>
+                        <span>
+                          <strong>{device.name}</strong>
+                          <small>
+                            {floorplan?.name ?? 'Unknown floor'} · {device.latest_value}
+                          </small>
+                        </span>
+                        <span className={styles.alertEntryArrow} aria-hidden="true">›</span>
+                      </button>
+                    );
+                  })}
+                  </div>
+                </div>
+              )}
+            </li>
+          )}
           <li>
             <button className={styles.accountButton} onClick={() => navigate('/account')} aria-label="Open your account">
               <span className={styles.accountAvatar} aria-hidden="true">{initials}</span>
