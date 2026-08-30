@@ -6,6 +6,7 @@ import { PercentPosition } from '../components/DraggableBox';
 import FloorplanView from '../components/Floorplan';
 import DeviceInfoModal from '../components/DeviceInfoModal';
 import { useDeviceMonitoring } from '../hooks/useDeviceMonitoring';
+import UnassignedDevicesView from '../components/UnassignedDevicesView';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 import type { Device } from '../types/Device';
 import { useFloorplan } from '../context/useFlooplan';
@@ -94,9 +95,12 @@ function FloorPlan() {
       <div className={stylesF.FloorList}>
         <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#212529' }}>Floor Plans</h3>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {floorplans
-            ?.filter((plan) => plan.name !== 'Unassigned')
-            .sort((a, b) => a.id - b.id)
+          {[...(floorplans ?? [])]
+            .sort((a, b) => {
+              if (a.name === 'Unassigned' && b.name !== 'Unassigned') return 1;
+              if (b.name === 'Unassigned' && a.name !== 'Unassigned') return -1;
+              return a.id - b.id;
+            })
             .map((plan) => {
               const hasActiveAlert = devices?.some(
                 (device) =>
@@ -109,7 +113,7 @@ function FloorPlan() {
                   onClick={() => setSelected(plan)}
                   className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
                 >
-                  <span>{plan.name}</span>
+                  <span>{plan.name === 'Unassigned' ? 'Unassigned Devices' : plan.name}</span>
                   {hasActiveAlert && (
                     <span className={stylesF.alertIcon} aria-label="Floorplan has active alerts">!</span>
                   )}
@@ -125,7 +129,15 @@ function FloorPlan() {
           <div className={`${stylesD.statusDot} ${stylesD[connectionStatus]}`}></div>
           {getConnectionStatusText()}
         </div>
-        {selected ? (
+        {selected?.name === 'Unassigned' ? (
+          <UnassignedDevicesView
+            devices={devices?.filter((device) => Number(device.floorplan_id) === Number(selected.id)) ?? []}
+            deviceTypes={deviceTypes ?? []}
+            getDeviceValue={getDeviceValue}
+            getDeviceAlert={getDeviceAlert}
+            onDeviceClick={handleDeviceClick}
+          />
+        ) : selected ? (
           <div ref={containerRef} style={{ width: '100%' }}>
             <FloorplanView
               imageUrl={

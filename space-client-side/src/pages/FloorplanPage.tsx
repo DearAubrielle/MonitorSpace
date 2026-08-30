@@ -10,6 +10,7 @@ import FloorplanEditDialog from '../components/floorplan/FloorplanEditDialog';
 import ImageUpload from '../components/floorplan/ImageUpload';
 import { getDeviceIconUrl, handleDeviceIconError } from '../utils/deviceIcon';
 import { useDeviceMonitoring } from '../hooks/useDeviceMonitoring';
+import UnassignedDevicesView from '../components/UnassignedDevicesView';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -555,45 +556,12 @@ export default function FloorplanPage() {
             {selected && (
               <div ref={containerRef} style={{ width: '100%'}}>
                 {selected.name === 'Unassigned' ? (
-                  // Special view for unassigned devices
-                  <div className={styles.unassignedView}>
-                    <div className={styles.unassignedHeader}>
-                      <h3>Unassigned Devices</h3>
-                      <p>Devices waiting to be assigned to a floorplan</p>
-                    </div>
-                    <div className={styles.unassignedDeviceGrid}>
-                      {devices
-                        ?.filter((device) => device.floorplan_id === selected?.id)
-                        ?.map((device) => {
-                          const type = deviceTypes?.find((t) => t.id === device.device_type_id);
-                          const icon = getDeviceIconUrl(type?.icon_url);
-                          return (
-                            <div key={device.id} className={styles.unassignedDevice}>
-                              <img
-                                src={icon}
-                                alt={device.name}
-                                className={styles.deviceIcon}
-                                onError={handleDeviceIconError}
-                              />
-                              <div className={styles.deviceInfo}>
-                                <div className={styles.deviceName}>{device.name}</div>
-                                <div className={styles.deviceType}>{type?.name}</div>
-                                {device.latest_value && (
-                                  <div className={styles.deviceValue}>
-                                    {device.latest_value} {type?.unit}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      {!devices?.filter((d) => d.floorplan_id === selected?.id)?.length && (
-                        <div className={styles.emptyUnassigned}>
-                          <p>No unassigned devices</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <UnassignedDevicesView
+                    devices={devices?.filter((device) => device.floorplan_id === selected.id) ?? []}
+                    deviceTypes={deviceTypes ?? []}
+                    getDeviceValue={getDeviceValue}
+                    getDeviceAlert={getDeviceAlert}
+                  />
                 ) : (
                   // Normal floorplan view
                   <Floorplan
