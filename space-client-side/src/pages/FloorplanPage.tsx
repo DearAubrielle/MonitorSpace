@@ -537,17 +537,31 @@ export default function FloorplanPage() {
                   if (b.name === 'Unassigned' && a.name !== 'Unassigned') return -1;
                   return a.id - b.id;
                 })
-                ?.map((plan) => (
-                  <li
-                    key={plan.id}
-                    onClick={() => setSelected(plan)}
-                    className={`${styles.List} ${
-                      selected?.id === plan.id ? styles.Selected : styles.Unselected
-                    } ${plan.name === 'Unassigned' ? styles.UnassignedFloorplan : ''}`}
-                  >
-                    {plan.name === 'Unassigned' ? 'Unassigned Devices' : plan.name}
-                  </li>
-                ))}
+                ?.map((plan) => {
+                  const activeAlertCount = devices?.filter(
+                    (device) =>
+                      Number(device.floorplan_id) === Number(plan.id) && getDeviceAlert(device)
+                  ).length ?? 0;
+
+                  return (
+                    <li
+                      key={plan.id}
+                      onClick={() => setSelected(plan)}
+                      className={`${styles.List} ${
+                        selected?.id === plan.id ? styles.Selected : styles.Unselected
+                      } ${plan.name === 'Unassigned' ? styles.UnassignedFloorplan : ''}`}
+                    >
+                      <span className={styles.floorListContent}>
+                        <span>{plan.name === 'Unassigned' ? 'Unplaced Devices' : plan.name}</span>
+                        {activeAlertCount > 0 && (
+                          <span className={styles.alertDetail} role="status">
+                            {activeAlertCount} active {activeAlertCount === 1 ? 'alert' : 'alerts'}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
             </ul>
           </div>
 

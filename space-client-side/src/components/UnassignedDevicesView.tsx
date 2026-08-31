@@ -21,8 +21,8 @@ export default function UnassignedDevicesView({
     <section className={styles.view}>
       <header className={styles.header}>
         <div>
-          <h3>Unassigned Devices</h3>
-          <p>Devices waiting to be assigned to a floorplan</p>
+          <h3>Unplaced Devices</h3>
+          <p>Place these devices on a floor plan to monitor their location.</p>
         </div>
         <span className={styles.count}>{devices.length}</span>
       </header>

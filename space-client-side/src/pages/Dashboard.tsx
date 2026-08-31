@@ -10,17 +10,23 @@ import UnassignedDevicesView from '../components/UnassignedDevicesView';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 import type { Device } from '../types/Device';
 import { useFloorplan } from '../context/useFlooplan';
-function FloorPlan() {
+
+interface FloorPlanProps {
+  deviceValues: Record<string, number>;
+  getDeviceValue: (device: Device) => number;
+  getDeviceAlert: (device: Device) => boolean;
+}
+
+function FloorPlan({ deviceValues, getDeviceValue, getDeviceAlert }: FloorPlanProps) {
   const { floorplans, selected, setSelected, devices, deviceTypes } = useFloorplan();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({
     width: 500,
     height: 500,
   });
+  const [loadedFloorplanId, setLoadedFloorplanId] = useState<number | null>(null);
 
   const [modalDevice, setModalDevice] = useState<Device | null>(null);
-
-  const { deviceValues, connectionStatus, getDeviceValue, getDeviceAlert } = useDeviceMonitoring();
 
   const handleDeviceClick = useCallback((device: Device) => {
     setModalDevice(device);
@@ -33,16 +39,28 @@ function FloorPlan() {
   // When selected floorplan changes, load its image and set container size
   useEffect(() => {
     if (selected && selected.image_url) {
+      let cancelled = false;
       const img = new window.Image();
       img.onload = () => {
+        if (cancelled) return;
         setContainerSize({
           width: img.naturalWidth,
           height: img.naturalHeight,
         });
+        setLoadedFloorplanId(selected.id);
+      };
+      img.onerror = () => {
+        if (!cancelled) setLoadedFloorplanId(null);
       };
       // Handle both Cloudinary URLs (start with http) and local URLs
       img.src = selected.image_url.startsWith('http') ? selected.image_url : SERVER_URL + selected.image_url;
+
+      return () => {
+        cancelled = true;
+      };
     }
+
+    setLoadedFloorplanId(selected?.id ?? null);
   }, [selected]);
 
   // Update rendered size on window resize for responsive layout
@@ -56,10 +74,11 @@ function FloorPlan() {
         });
       }
     }
-    window.addEventListener('resize', updateSize);
     updateSize();
-    return () => window.removeEventListener('resize', updateSize);
-  }, [containerSize.width, containerSize.height]);
+    const resizeObserver = new ResizeObserver(updateSize);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, [containerSize.width, containerSize.height, loadedFloorplanId]);
 
   // Store device positions separately for drag state
   const [devicePositions, setDevicePositions] = useState<Record<string, PercentPosition>>({});
@@ -75,21 +94,6 @@ function FloorPlan() {
     setDevicePositions(positions);
   }, [devices, selected]);
 
-  const getConnectionStatusText = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return 'Connected';
-      case 'connecting':
-        return 'Connecting...';
-      case 'disconnected':
-        return 'Disconnected';
-      case 'error':
-        return 'Connection Error';
-      default:
-        return 'Unknown';
-    }
-  };
-
   return (
     <div className={stylesF.Wrapper}>
       <div className={stylesF.FloorList}>
@@ -102,10 +106,10 @@ function FloorPlan() {
               return a.id - b.id;
             })
             .map((plan) => {
-              const hasActiveAlert = devices?.some(
+              const activeAlertCount = devices?.filter(
                 (device) =>
                   Number(device.floorplan_id) === Number(plan.id) && getDeviceAlert(device)
-              );
+              ).length ?? 0;
 
               return (
                 <li
@@ -113,10 +117,14 @@ function FloorPlan() {
                   onClick={() => setSelected(plan)}
                   className={`${stylesF.List} ${selected?.id === plan.id ? stylesF.Selected : stylesF.Unselected}`}
                 >
-                  <span>{plan.name === 'Unassigned' ? 'Unassigned Devices' : plan.name}</span>
-                  {hasActiveAlert && (
-                    <span className={stylesF.alertIcon} aria-label="Floorplan has active alerts">!</span>
-                  )}
+                  <span className={stylesF.floorListContent}>
+                    <span>{plan.name === 'Unassigned' ? 'Unplaced Devices' : plan.name}</span>
+                    {activeAlertCount > 0 && (
+                      <span className={stylesF.alertDetail} role="status">
+                        {activeAlertCount} active {activeAlertCount === 1 ? 'alert' : 'alerts'}
+                      </span>
+                    )}
+                  </span>
                 </li>
               );
             })}
@@ -124,11 +132,6 @@ function FloorPlan() {
       </div>
 
       <div className={stylesF.FloorPlan}>
-        {/* Connection Status Indicator */}
-        <div className={`${stylesD.connectionStatus} ${stylesD[connectionStatus]}`}>
-          <div className={`${stylesD.statusDot} ${stylesD[connectionStatus]}`}></div>
-          {getConnectionStatusText()}
-        </div>
         {selected?.name === 'Unassigned' ? (
           <UnassignedDevicesView
             devices={devices?.filter((device) => Number(device.floorplan_id) === Number(selected.id)) ?? []}
@@ -137,8 +140,8 @@ function FloorPlan() {
             getDeviceAlert={getDeviceAlert}
             onDeviceClick={handleDeviceClick}
           />
-        ) : selected ? (
-          <div ref={containerRef} style={{ width: '100%' }}>
+        ) : selected && loadedFloorplanId === selected.id ? (
+          <div key={selected.id} ref={containerRef} style={{ width: '100%' }}>
             <FloorplanView
               imageUrl={
                 selected.image_url && selected.image_url.startsWith('http')
@@ -157,6 +160,10 @@ function FloorPlan() {
               getDeviceValue={getDeviceValue}
               getDeviceAlert={getDeviceAlert}
             />
+          </div>
+        ) : selected ? (
+          <div className={stylesF.emptyState} role="status" aria-live="polite">
+            <p>Loading floorplan...</p>
           </div>
         ) : (
           <div className={stylesF.emptyState}>
@@ -192,6 +199,37 @@ function FloorPlan() {
 }
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'Floorplan' | 'Camera'>('Floorplan');
+  const [awaitingFreshData, setAwaitingFreshData] = useState(false);
+  const hasReceivedDataRef = useRef(false);
+  const recoveryPendingRef = useRef(false);
+  const recoveryStartedAfterMessageRef = useRef<number | null>(null);
+  const { deviceValues, isConnected, lastMessageAt, getDeviceValue, getDeviceAlert } = useDeviceMonitoring();
+
+  useEffect(() => {
+    if (!isConnected) {
+      if (hasReceivedDataRef.current && !recoveryPendingRef.current) {
+        recoveryPendingRef.current = true;
+        recoveryStartedAfterMessageRef.current = lastMessageAt;
+        setAwaitingFreshData(true);
+      }
+    }
+  }, [isConnected, lastMessageAt]);
+
+  useEffect(() => {
+    if (lastMessageAt === null) return;
+
+    hasReceivedDataRef.current = true;
+
+    const receivedFreshRecoveryData =
+      recoveryStartedAfterMessageRef.current === null ||
+      lastMessageAt > recoveryStartedAfterMessageRef.current;
+
+    if (isConnected && recoveryPendingRef.current && receivedFreshRecoveryData) {
+      recoveryPendingRef.current = false;
+      recoveryStartedAfterMessageRef.current = null;
+      setAwaitingFreshData(false);
+    }
+  }, [isConnected, lastMessageAt]);
 
   const handleTabChange = (tab: 'Floorplan' | 'Camera') => {
     setActiveTab(tab);
@@ -203,7 +241,21 @@ export default function Dashboard() {
         <div className={stylesD.dashboardWrapper}>
           <div className={stylesD.pageHeader}>
             <div className={stylesD.headerSection}>
-              <h3 className={stylesD.pageTitle}>{activeTab === 'Floorplan' ? 'Floorplan' : 'Camera'}</h3>
+              <div className={stylesD.pageTitleRow}>
+                <h3 className={stylesD.pageTitle}>{activeTab === 'Floorplan' ? 'Floorplan' : 'Camera'}</h3>
+                {activeTab === 'Floorplan' &&
+                  hasReceivedDataRef.current &&
+                  (!isConnected || awaitingFreshData) && (
+                  <div
+                    className={`${stylesD.connectionBadge} ${stylesD.connectionBadgeConnecting}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span className={stylesD.connectionBadgeDot} aria-hidden="true" />
+                    Reconnecting…
+                  </div>
+                )}
+              </div>
               <p className={stylesD.pageSubtitle}>
                 {activeTab === 'Floorplan'
                   ? 'Monitor your devices in real time on the floorplan'
@@ -232,7 +284,13 @@ export default function Dashboard() {
 
           {/* Content Area */}
           <div className={stylesD.content}>
-            {activeTab === 'Floorplan' && <FloorPlan />}
+            {activeTab === 'Floorplan' && (
+              <FloorPlan
+                deviceValues={deviceValues}
+                getDeviceValue={getDeviceValue}
+                getDeviceAlert={getDeviceAlert}
+              />
+            )}
             {activeTab === 'Camera' && <MonitorPage />}
           </div>
         </div>

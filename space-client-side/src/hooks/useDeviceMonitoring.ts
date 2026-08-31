@@ -4,10 +4,11 @@ import { useWebSocket } from './useWebSocket';
 import { isDeviceAlertActive } from '../utils/deviceAlert';
 
 export function useDeviceMonitoring() {
-  const { deviceValues, connectionStatus } = useWebSocket({
+  const { deviceValues, isConnected, lastMessageAt } = useWebSocket({
     url: 'ws://localhost:8080/',
     reconnectAttempts: 5,
     reconnectInterval: 3000,
+    inactivityTimeout: 20_000,
   });
 
   const getDeviceValue = useCallback(
@@ -22,7 +23,8 @@ export function useDeviceMonitoring() {
 
   return {
     deviceValues,
-    connectionStatus,
+    isConnected,
+    lastMessageAt,
     getDeviceValue,
     getDeviceAlert,
   };

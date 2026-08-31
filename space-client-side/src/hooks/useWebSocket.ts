@@ -9,15 +9,21 @@ interface UseWebSocketOptions {
   url: string;
   reconnectAttempts?: number;
   reconnectInterval?: number;
+  inactivityTimeout?: number;
 }
 
-export function useWebSocket({ url, reconnectAttempts = 5, reconnectInterval = 3000 }: UseWebSocketOptions) {
+export function useWebSocket({
+  url,
+  reconnectAttempts = 5,
+  reconnectInterval = 3000,
+  inactivityTimeout = 20_000,
+}: UseWebSocketOptions) {
   const [deviceValues, setDeviceValues] = useState<Record<string, number>>({});
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>(
-    'disconnected'
-  );
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastMessageAt, setLastMessageAt] = useState<number | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectCountRef = useRef(0);
 
   const connect = useCallback(() => {
@@ -25,15 +31,29 @@ export function useWebSocket({ url, reconnectAttempts = 5, reconnectInterval = 3
       return;
     }
 
-    setConnectionStatus('connecting');
+    setIsConnected(false);
 
     try {
       const socket = new WebSocket(url);
 
+      const resetInactivityTimeout = () => {
+        if (inactivityTimeoutRef.current) {
+          clearTimeout(inactivityTimeoutRef.current);
+        }
+
+        inactivityTimeoutRef.current = setTimeout(() => {
+          if (socket.readyState === WebSocket.OPEN) {
+            console.warn('WebSocket received no data; reconnecting...');
+            socket.close();
+          }
+        }, inactivityTimeout);
+      };
+
       socket.onopen = () => {
         console.log('WebSocket connected');
-        setConnectionStatus('connected');
+        setIsConnected(true);
         reconnectCountRef.current = 0;
+        resetInactivityTimeout();
       };
 
       socket.onmessage = (event) => {
@@ -43,8 +63,12 @@ export function useWebSocket({ url, reconnectAttempts = 5, reconnectInterval = 3
 
           if (Array.isArray(data)) {
             updates = data.filter((item) => item && typeof item === 'object' && 'id' in item && 'latest_value' in item);
+            setLastMessageAt(Date.now());
+            resetInactivityTimeout();
           } else if (data && typeof data === 'object' && 'id' in data && 'latest_value' in data) {
             updates = [data];
+            setLastMessageAt(Date.now());
+            resetInactivityTimeout();
           }
 
           const mapped = updates.reduce((acc: Record<string, number>, d) => {
@@ -72,7 +96,11 @@ export function useWebSocket({ url, reconnectAttempts = 5, reconnectInterval = 3
 
       socket.onclose = () => {
         console.log('WebSocket disconnected');
-        setConnectionStatus('disconnected');
+        if (inactivityTimeoutRef.current) {
+          clearTimeout(inactivityTimeoutRef.current);
+          inactivityTimeoutRef.current = null;
+        }
+        setIsConnected(false);
         socketRef.current = null;
 
         // Attempt to reconnect
@@ -85,19 +113,24 @@ export function useWebSocket({ url, reconnectAttempts = 5, reconnectInterval = 3
 
       socket.onerror = (error) => {
         console.error('WebSocket error:', error);
-        setConnectionStatus('error');
+        setIsConnected(false);
       };
 
       socketRef.current = socket;
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
-      setConnectionStatus('error');
+      setIsConnected(false);
     }
-  }, [url, reconnectAttempts, reconnectInterval]);
+  }, [url, reconnectAttempts, reconnectInterval, inactivityTimeout]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
+    }
+
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current);
+      inactivityTimeoutRef.current = null;
     }
 
     if (socketRef.current) {
@@ -105,7 +138,7 @@ export function useWebSocket({ url, reconnectAttempts = 5, reconnectInterval = 3
       socketRef.current = null;
     }
 
-    setConnectionStatus('disconnected');
+    setIsConnected(false);
   }, []);
 
   useEffect(() => {
@@ -118,8 +151,7 @@ export function useWebSocket({ url, reconnectAttempts = 5, reconnectInterval = 3
 
   return {
     deviceValues,
-    connectionStatus,
-    connect,
-    disconnect,
+    isConnected,
+    lastMessageAt,
   };
 }
