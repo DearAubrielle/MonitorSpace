@@ -447,30 +447,32 @@
 /* Modal Styles */
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.48);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
+  animation: modalOverlayIn 0.18s ease-out;
 }
 
 .modal {
+  display: flex;
+  flex-direction: column;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.24);
   max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalSlideIn 0.3s ease-out;
+  width: 100%;
+  max-height: calc(100vh - 3rem);
+  max-height: calc(100dvh - 3rem);
+  overflow: hidden;
+  animation: modalSlideIn 0.22s ease-out;
 }
 
 .modalHeader {
+  flex: 0 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -483,6 +485,15 @@
   font-size: 1.5rem;
   font-weight: 600;
   color: #1e293b;
+}
+
+.detailsModalHeader {
+  padding: 1rem 1.5rem;
+}
+
+.modalHeader .detailsModalTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .modalDescription {
@@ -513,6 +524,10 @@
 }
 
 .modalBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1.5rem;
 }
 
@@ -720,6 +735,29 @@
   font-size: 1.1rem;
   font-weight: 600;
   color: #1e293b;
+}
+
+.roleManagementSection {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.roleManagementSection h4 {
+  margin: 0;
+}
+
+.roleManagementSection .roleActions {
+  margin-bottom: 0;
+}
+
+.roleManagementSection .roleLabel {
+  margin-bottom: 0.5rem;
+}
+
+.roleManagementSection .roleDropdownContainer {
+  display: block;
+  max-width: none;
 }
 
 .currentRole {
@@ -938,6 +976,7 @@
 }
 
 .modalFooter {
+  flex: 0 0 auto;
   padding: 1rem 1.5rem;
   border-top: 1px solid #e2e8f0;
   text-align: right;
@@ -992,10 +1031,41 @@
 @keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(10px) scale(0.98);
   }
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 540px) {
+  .modalOverlay {
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+
+  .modal {
+    max-height: calc(100vh - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
+  }
+
+  .modalHeader,
+  .modalBody,
+  .modalFooter {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modalOverlay,
+  .modal {
+    animation: none;
   }
 }

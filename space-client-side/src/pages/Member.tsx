@@ -502,11 +502,19 @@ export default function Member() {
       {/* Create Account Modal */}
       {isCreateModalOpen && (
         <div className={styles.modalOverlay} onClick={handleCloseCreateModal}>
-          <form className={styles.modal} onSubmit={handleCreateAccount} onClick={(event) => event.stopPropagation()}>
+          <form
+            className={styles.modal}
+            onSubmit={handleCreateAccount}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-account-title"
+            aria-describedby="create-account-description"
+          >
             <div className={styles.modalHeader}>
               <div>
-                <h2>Create Account</h2>
-                <p className={styles.modalDescription}>Create sign-in credentials and assign an access role.</p>
+                <h2 id="create-account-title">Create Account</h2>
+                <p id="create-account-description" className={styles.modalDescription}>Create sign-in credentials and assign an access role.</p>
               </div>
               <button
                 type="button"
@@ -612,10 +620,16 @@ export default function Member() {
       {/* Member Details Modal */}
       {isModalOpen && selectedMember && (
         <div className={styles.modalOverlay} onClick={handleCloseModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2>{user && selectedMember.id === user.id ? 'Your Account Details' : 'Family Member Details'}</h2>
-              <button className={styles.closeButton} onClick={handleCloseModal}>
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={user && selectedMember.id === user.id ? 'Your account details' : 'Family member details'}
+          >
+            <div className={`${styles.modalHeader} ${styles.detailsModalHeader}`}>
+              <h2 className={styles.detailsModalTitle}>Details</h2>
+              <button className={styles.closeButton} onClick={handleCloseModal} aria-label="Close member details">
                 ×
               </button>
             </div>
@@ -671,7 +685,7 @@ export default function Member() {
               {/* Only show role management if current user is admin */}
               {user && user.role === 'admin' && selectedMember.id !== user.id && (
                 <div>
-                  <div className={styles.roleSection}>
+                  <div className={`${styles.roleSection} ${styles.roleManagementSection}`}>
                     <h4>Role Management</h4>
                     <div className={styles.roleActions}>
                       <label className={styles.roleLabel}>Change Role:</label>
@@ -735,11 +749,6 @@ export default function Member() {
               )}
             </div>
 
-            <div className={styles.modalFooter}>
-              <button className={styles.closeModalButton} onClick={handleCloseModal}>
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}
