@@ -132,17 +132,23 @@ export default function DraggableBox({
   const getTooltipColors = () => {
     if (alert) {
       return {
-        backgroundColor: 'rgba(220, 38, 38, 0.95)', // Red background for alerts
-        borderColor: 'rgba(220, 38, 38, 0.95)',
-        textColor: 'white',
-        shadowColor: 'rgba(220, 38, 38, 0.4)',
+        backgroundColor: 'rgba(127, 29, 29, 0.96)',
+        borderColor: 'rgba(127, 29, 29, 0.96)',
+        textColor: '#fff7ed',
+        shadowColor: 'rgba(127, 29, 29, 0.36)',
+        mutedTextColor: '#fecaca',
+        accentColor: '#fca5a5',
+        dividerColor: 'rgba(254, 202, 202, 0.22)',
       };
     }
     return {
-      backgroundColor: 'rgba(0, 0, 0, 0.9)', // Default dark background
-      borderColor: 'rgba(0, 0, 0, 0.9)',
-      textColor: 'white',
-      shadowColor: 'rgba(0, 0, 0, 0.3)',
+      backgroundColor: 'rgba(15, 23, 42, 0.96)',
+      borderColor: 'rgba(15, 23, 42, 0.96)',
+      textColor: '#f8fafc',
+      shadowColor: 'rgba(15, 23, 42, 0.28)',
+      mutedTextColor: '#cbd5e1',
+      accentColor: '#7dd3fc',
+      dividerColor: 'rgba(203, 213, 225, 0.18)',
     };
   };
 
@@ -344,54 +350,80 @@ export default function DraggableBox({
           transform: 'translateX(-50%)',
           backgroundColor: tooltipColors.backgroundColor,
           color: tooltipColors.textColor,
-          padding: '8px 12px',
-          borderRadius: '6px',
+          minWidth: '154px',
+          padding: '10px 12px 9px',
+          borderRadius: '10px',
           fontSize: '12px',
           whiteSpace: 'nowrap',
-          marginBottom: '8px',
-          boxShadow: `0 2px 8px ${tooltipColors.shadowColor}`,
+          marginBottom: '10px',
+          boxShadow: `0 8px 24px ${tooltipColors.shadowColor}`,
           zIndex: 1000,
           pointerEvents: 'none',
-          border: alert ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+          border: `1px solid ${alert ? 'rgba(254, 202, 202, 0.2)' : 'rgba(255, 255, 255, 0.1)'}`,
+          backdropFilter: 'blur(8px)',
         }}
       >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginBottom: '5px',
+            color: tooltipColors.accentColor,
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            lineHeight: 1,
+            textTransform: 'uppercase',
+          }}
+        >
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: tooltipColors.accentColor,
+              boxShadow: alert ? '0 0 0 3px rgba(252, 165, 165, 0.14)' : 'none',
+            }}
+          />
+          {alert ? 'Alert' : 'Normal'}
+        </div>
         {deviceName && (
           <div
             style={{
-              fontWeight: 'bold',
-              marginBottom: '2px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
+              fontWeight: 650,
+              fontSize: '12px',
+              lineHeight: 1.35,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '190px',
             }}
           >
-            {alert && <span style={{ fontSize: '10px' }}>⚠️</span>}
             {deviceName}
           </div>
         )}
-        {value !== undefined && <div>{formatValue()}</div>}
-        {alert && !deviceName && (
+        {value !== undefined && (
           <div
             style={{
-              fontSize: '10px',
-              opacity: 0.9,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
+              color: value === null || value === '' ? tooltipColors.mutedTextColor : tooltipColors.textColor,
+              fontSize: value === null || value === '' ? '11px' : '15px',
+              fontWeight: value === null || value === '' ? 500 : 700,
+              lineHeight: 1.4,
+              marginTop: '1px',
             }}
           >
-            ⚠️ Alert
+            {formatValue()}
           </div>
         )}
         {/* Click hint */}
         <div
           style={{
+            color: tooltipColors.mutedTextColor,
             fontSize: '9px',
-            opacity: 0.7,
-            marginTop: '4px',
-            fontStyle: 'italic',
-            borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-            paddingTop: '4px',
+            marginTop: '7px',
+            borderTop: `1px solid ${tooltipColors.dividerColor}`,
+            paddingTop: '6px',
+            lineHeight: 1.2,
           }}
         >
           {useBuiltInModal ? 'Click for details' : 'Double-click for details'}
