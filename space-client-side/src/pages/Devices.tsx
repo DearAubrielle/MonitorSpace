@@ -736,28 +736,25 @@ const Devices = () => {
         )}
 
         {showDeleteConfirm && (
-          <div className={`${styles.overlay} ${styles.deleteOverlay}`}>
-            <div className={`${styles.modal} ${styles.deleteModal}`} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.deleteIcon}>⚠️</div>
-              <h3 className={styles.deleteTitle}>Delete Device</h3>
-              <p className={styles.deleteMessage}>Are you sure you want to delete "{showDeleteConfirm.name}"?</p>
-              <p className={styles.deleteWarning}>This action cannot be undone.</p>
-
-              {error && (
-                <div
-                  style={{
-                    color: 'red',
-                    marginBottom: '10px',
-                    padding: '8px',
-                    backgroundColor: '#ffebee',
-                    borderRadius: '4px',
-                  }}
-                >
-                  {error}
+          <div className={`${styles.overlay} ${styles.deleteOverlay}`} onClick={() => setShowDeleteConfirm(null)}>
+            <div className={`${styles.modal} ${styles.deleteModal}`} role="alertdialog" aria-modal="true" aria-labelledby="delete-device-title" aria-describedby="delete-device-description" onClick={(e) => e.stopPropagation()}>
+              <div className={styles.deleteContent}>
+                <span className={styles.deleteIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13" />
+                  </svg>
+                </span>
+                <div className={styles.deleteCopy}>
+                  <h3 id="delete-device-title" className={styles.deleteTitle}>Delete device?</h3>
+                  <p id="delete-device-description" className={styles.deleteMessage}>
+                    You’re about to permanently delete <strong>{showDeleteConfirm.name}</strong>. This cannot be undone.
+                  </p>
                 </div>
-              )}
+              </div>
 
-              <div className={styles.footer}>
+              {error && <div className={styles.deleteError}>{error}</div>}
+
+              <div className={styles.deleteActions}>
                 <Button variant="secondary" onClick={() => setShowDeleteConfirm(null)}>
                   Cancel
                 </Button>
@@ -766,7 +763,7 @@ const Devices = () => {
                   onClick={handleConfirmDelete}
                   style={{ backgroundColor: '#dc3545', borderColor: '#dc3545' }}
                 >
-                  Delete Device
+                  Delete
                 </Button>
               </div>
             </div>

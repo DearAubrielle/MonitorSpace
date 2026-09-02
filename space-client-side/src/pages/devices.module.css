@@ -939,41 +939,82 @@
 }
 
 .deleteModal {
-  min-width: 280px;
-  max-width: 320px;
-  text-align: center;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-  border: 2px solid #ef4444;
-  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+  width: min(400px, calc(100vw - 2rem));
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #d9e4ee;
+  border-radius: 0.875rem;
+  background: #fff;
+  box-shadow: 0 15px 38px rgba(19, 50, 79, 0.14);
 }
 
 .deleteIcon {
-  font-size: 2.5rem;
-  color: #ef4444;
-  margin-bottom: 0.75rem;
+  display: grid;
+  width: 2.625rem;
+  height: 2.625rem;
+  flex: 0 0 2.625rem;
+  place-items: center;
+  border: 1px solid #ffd7db;
+  border-radius: 0.7rem;
+  color: #c73543;
+  background: #fff3f4;
 }
 
+.deleteIcon svg { width: 1.3rem; height: 1.3rem; }
+
+.deleteContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1.6rem;
+}
+
+.deleteCopy { min-width: 0; }
+
 .deleteTitle {
-  color: #dc2626;
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
+  margin: 0;
+  color: #153c61;
+  font-size: 1.18rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
 }
 
 .deleteMessage {
-  color: #7f1d1d;
-  margin-bottom: 0.25rem;
-  font-size: 0.9rem;
-  font-weight: 500;
+  margin: 0.45rem 0 0;
+  color: #657b90;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.55;
 }
 
-.deleteWarning {
-  color: #991b1b;
-  margin-bottom: 1rem;
-  font-size: 0.8rem;
-  font-style: italic;
-  opacity: 0.8;
+.deleteMessage strong { color: #264b6d; font-weight: 800; overflow-wrap: anywhere; }
+
+.deleteError {
+  margin: -0.5rem 1.6rem 1.1rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #a9232d;
+  background: #fff4f4;
+  font-size: 0.75rem;
+}
+
+.deleteActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.9rem 1.6rem;
+  border-top: 1px solid #d9e4ee;
+  background: #fbfcfd;
+}
+
+.deleteActions button {
+  min-height: 2.45rem;
+  min-width: 5.5rem;
+  margin: 0 !important;
+  border-radius: 0.5rem !important;
 }
 
 .deleteButton {
@@ -983,6 +1024,12 @@
 .deleteButton:hover {
   background-color: #dc2626 !important;
   border-color: #dc2626 !important;
+}
+
+@media (max-width: 430px) {
+  .deleteContent { padding: 1.35rem; }
+  .deleteActions { padding: 0.9rem 1.35rem; flex-direction: column-reverse; }
+  .deleteActions button { width: 100%; }
 }
 
 .alertToggleContainer {
