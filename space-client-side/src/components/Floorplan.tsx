@@ -18,7 +18,6 @@ interface FloorplanProps {
   renderedSize: { width: number; height: number };
   onDragEnd?: (event: DragEndEvent) => void;
   onDeviceClick?: (device: Device) => void;
-  onDeviceDoubleClick?: (device: Device) => void;
   getDeviceValue?: (device: Device) => string | number | undefined;
   getDeviceAlert?: (device: Device) => boolean;
   editMode?: boolean;
@@ -34,7 +33,6 @@ export default function Floorplan({
   deviceTypes,
   onDragEnd,
   onDeviceClick,
-  onDeviceDoubleClick,
   getDeviceValue,
   getDeviceAlert,
   editMode = false,
@@ -83,7 +81,6 @@ export default function Floorplan({
               containerWidth={renderedSize.width}
               containerHeight={renderedSize.height}
               onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
-              onDoubleClick={onDeviceDoubleClick ? () => onDeviceDoubleClick(device) : undefined}
               disabled={!editMode}
               alert={getDeviceAlert?.(device) ?? device.alert}
               deviceName={device.name}
@@ -106,20 +103,25 @@ export default function Floorplan({
                 width: dragPreviewSize,
                 height: dragPreviewSize,
                 boxSizing: 'border-box',
-                padding: '5px',
-                borderRadius: '20%',
+                display: 'grid',
+                placeItems: 'center',
+                padding: 0,
+                borderRadius: '24%',
                 backgroundColor: (getDeviceAlert?.(activeDevice) ?? activeDevice.alert)
                   ? 'rgba(220, 38, 38, 0.9)'
-                  : 'rgba(132, 221, 243, 0.5)',
-                backgroundImage: `url(${getDeviceIconUrl(activeType?.icon_url)})`,
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
+                  : 'rgba(218, 239, 235, 0.9)',
                 border: '1px solid rgba(255, 255, 255, 0.8)',
                 boxShadow: '0 10px 28px rgba(15, 23, 42, 0.38)',
                 cursor: 'grabbing',
               }}
-            />
+            >
+              <img
+                src={getDeviceIconUrl(activeType?.icon_url)}
+                alt=""
+                draggable={false}
+                style={{ width: '84%', height: '84%', objectFit: 'contain', pointerEvents: 'none' }}
+              />
+            </div>
           ) : null}
         </DragOverlay>
       </DndContext>

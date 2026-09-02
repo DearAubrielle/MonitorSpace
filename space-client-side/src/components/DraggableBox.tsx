@@ -13,10 +13,22 @@ const addAlertAnimation = () => {
         0%, 100% {
           opacity: 1;
           filter: brightness(1);
+          background-color: rgba(220, 38, 38, 0.92);
+          border-color: rgba(254, 226, 226, 1);
+          box-shadow:
+            0 4px 12px rgba(127, 29, 29, 0.42),
+            0 0 15px 6px rgba(239, 68, 68, 0.42),
+            0 0 30px 14px rgba(220, 38, 38, 0.2);
         }
         50% {
-          opacity: 0.86;
-          filter: brightness(1.12);
+          opacity: 1;
+          filter: brightness(1.12) saturate(1.18);
+          background-color: rgba(250, 204, 21, 0.96);
+          border-color: rgba(255, 251, 235, 1);
+          box-shadow:
+            0 4px 13px rgba(161, 98, 7, 0.4),
+            0 0 17px 7px rgba(250, 204, 21, 0.44),
+            0 0 34px 16px rgba(234, 179, 8, 0.2);
         }
       }
     `;
@@ -41,7 +53,6 @@ export interface DraggableBoxProps {
   containerHeight: number;
   iconURL?: string;
   onClick?: (event?: React.PointerEvent) => void;
-  onDoubleClick?: () => void;
   disabled?: boolean;
   alert?: boolean;
   deviceName?: string;
@@ -59,7 +70,6 @@ export default function DraggableBox({
   containerHeight,
   iconURL,
   onClick,
-  onDoubleClick,
   disabled = true,
   alert = false,
   deviceName,
@@ -417,19 +427,20 @@ export default function DraggableBox({
             {formatValue()}
           </div>
         )}
-        {/* Click hint */}
-        <div
-          style={{
-            color: tooltipColors.mutedTextColor,
-            fontSize: '9px',
-            marginTop: '7px',
-            borderTop: `1px solid ${tooltipColors.dividerColor}`,
-            paddingTop: '6px',
-            lineHeight: 1.2,
-          }}
-        >
-          {useBuiltInModal ? 'Click for details' : 'Double-click for details'}
-        </div>
+        {useBuiltInModal && (
+          <div
+            style={{
+              color: tooltipColors.mutedTextColor,
+              fontSize: '9px',
+              marginTop: '7px',
+              borderTop: `1px solid ${tooltipColors.dividerColor}`,
+              paddingTop: '6px',
+              lineHeight: 1.2,
+            }}
+          >
+            Click for details
+          </div>
+        )}
         {/* Tooltip arrow */}
         <div
           style={{
@@ -458,9 +469,9 @@ export default function DraggableBox({
       };
     }
     return {
-      backgroundColor: 'rgba(132, 221, 243, 0.31)', // Default blue
-      borderColor: 'rgba(255, 255, 255, 0.56)', // Default white border
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.49)', // Default shadow
+      backgroundColor: 'rgba(218, 239, 235, 0.82)',
+      borderColor: 'rgba(255, 255, 255, 0.9)',
+      boxShadow: '0 5px 14px rgba(26, 44, 47, 0.25), inset 0 1px rgba(255, 255, 255, 0.56)',
       pulse: false,
     };
   };
@@ -474,31 +485,28 @@ export default function DraggableBox({
     left,
     width: boxSize,
     height: boxSize,
+    boxSizing: 'border-box',
     fontSize: '12px',
     color: 'white',
     backgroundColor: boxColors.backgroundColor,
-    backgroundImage: `url(${resolvedIconURL})`,
-    backgroundSize: 'cover',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: '20%',
-    backdropFilter: 'blur(2px)',
+    borderRadius: '24%',
+    backdropFilter: 'blur(5px)',
     border: `1px solid ${boxColors.borderColor}`,
     boxShadow: boxColors.boxShadow,
     margin: 0,
-    padding: '5px',
+    padding: 0,
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     cursor: disabled ? 'pointer' : isDragging ? 'grabbing' : 'grab',
     touchAction: disabled ? undefined : 'none',
     userSelect: isDragging ? 'none' : undefined,
     willChange: isDragging ? 'transform' : undefined,
-    opacity: dragging ? 0 : !disabled ? 0.75 : 1,
+    opacity: dragging ? 0 : 1,
     visibility: dragging ? 'hidden' : 'visible',
     // Add pulsing animation for alerts
-    animation: alert ? 'alertPulse 2s ease-in-out infinite' : undefined,
+    animation: alert && !dragging ? 'alertPulse 1.2s ease-in-out infinite' : undefined,
   };
 
   return (
@@ -515,17 +523,22 @@ export default function DraggableBox({
             onClick?.(e);
           }
         }}
-        onDoubleClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!useBuiltInModal) {
-            handleDetailClick(e);
-          }
-          onDoubleClick?.();
-        }}
         onMouseEnter={openTooltip}
         onMouseLeave={scheduleTooltipClose}
       >
+        <img
+          src={resolvedIconURL}
+          alt=""
+          draggable={false}
+          style={{
+            display: 'block',
+            width: '84%',
+            height: '84%',
+            objectFit: 'contain',
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        />
         {/* Camera devices get a live hover card; other devices keep the compact value tooltip. */}
         {showTooltip && cameraPreviewUrl ? (
           <CameraHoverPreview
