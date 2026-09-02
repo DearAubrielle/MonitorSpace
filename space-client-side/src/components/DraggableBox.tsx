@@ -12,11 +12,11 @@ const addAlertAnimation = () => {
       @keyframes alertPulse {
         0%, 100% {
           opacity: 1;
-          transform: scale(1);
+          filter: brightness(1);
         }
         50% {
-          opacity: 0.8;
-          transform: scale(1.05);
+          opacity: 0.86;
+          filter: brightness(1.12);
         }
       }
     `;
@@ -49,6 +49,7 @@ export interface DraggableBoxProps {
   unit?: string;
   useBuiltInModal?: boolean; // New prop to control modal behavior
   cameraPreviewUrl?: string;
+  dragging?: boolean;
 }
 
 export default function DraggableBox({
@@ -66,6 +67,7 @@ export default function DraggableBox({
   unit,
   useBuiltInModal = false,
   cameraPreviewUrl,
+  dragging = false,
 }: DraggableBoxProps) {
   const boxSize = Math.max(
     MIN_BOX_SIZE,
@@ -488,9 +490,13 @@ export default function DraggableBox({
     boxShadow: boxColors.boxShadow,
     margin: 0,
     padding: '5px',
-    transform: isDragging && transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    cursor: disabled ? 'pointer' : 'grab',
-    opacity: !disabled ? 0.6 : 1,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    cursor: disabled ? 'pointer' : isDragging ? 'grabbing' : 'grab',
+    touchAction: disabled ? undefined : 'none',
+    userSelect: isDragging ? 'none' : undefined,
+    willChange: isDragging ? 'transform' : undefined,
+    opacity: dragging ? 0 : !disabled ? 0.75 : 1,
+    visibility: dragging ? 'hidden' : 'visible',
     // Add pulsing animation for alerts
     animation: alert ? 'alertPulse 2s ease-in-out infinite' : undefined,
   };

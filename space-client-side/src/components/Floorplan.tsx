@@ -1,5 +1,6 @@
 import AspectRatioBox from './AspectRatioBox';
-import { DndContext } from '@dnd-kit/core';
+import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { useState } from 'react';
 import DraggableBox from './DraggableBox';
 import type { Device, DeviceType } from '../types/Device';
 import type { PercentPosition } from '../utils/handleDragEnd';
@@ -38,6 +39,16 @@ export default function Floorplan({
   getDeviceAlert,
   editMode = false,
 }: FloorplanProps) {
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null);
+  const activeDevice = devices.find((device) => String(device.id) === activeDeviceId);
+  const activeType = activeDevice
+    ? deviceTypes.find((type) => type.id === activeDevice.device_type_id)
+    : undefined;
+  const dragPreviewSize = Math.max(
+    20,
+    Math.min(Math.min(renderedSize.width, renderedSize.height) * 0.07, 40)
+  );
+
   return (
     <AspectRatioBox
       originalWidth={originalWidth}
@@ -45,7 +56,14 @@ export default function Floorplan({
       backgroundImage={imageUrl}
       maxWidth="100%"
     >
-      <DndContext onDragEnd={onDragEnd}>
+      <DndContext
+        onDragStart={({ active }) => setActiveDeviceId(String(active.id))}
+        onDragCancel={() => setActiveDeviceId(null)}
+        onDragEnd={(event) => {
+          setActiveDeviceId(null);
+          onDragEnd?.(event);
+        }}
+      >
         {devices.map((device: Device) => {
           const types = deviceTypes ?? [];
           const type = types.find((t) => t.id === device.device_type_id);
@@ -76,9 +94,34 @@ export default function Floorplan({
                   ? device.path_topic
                   : undefined
               }
+              dragging={activeDeviceId === String(device.id)}
             />
           );
         })}
+        <DragOverlay dropAnimation={null} zIndex={5000}>
+          {activeDevice ? (
+            <div
+              aria-hidden="true"
+              style={{
+                width: dragPreviewSize,
+                height: dragPreviewSize,
+                boxSizing: 'border-box',
+                padding: '5px',
+                borderRadius: '20%',
+                backgroundColor: (getDeviceAlert?.(activeDevice) ?? activeDevice.alert)
+                  ? 'rgba(220, 38, 38, 0.9)'
+                  : 'rgba(132, 221, 243, 0.5)',
+                backgroundImage: `url(${getDeviceIconUrl(activeType?.icon_url)})`,
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.8)',
+                boxShadow: '0 10px 28px rgba(15, 23, 42, 0.38)',
+                cursor: 'grabbing',
+              }}
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </AspectRatioBox>
   );
