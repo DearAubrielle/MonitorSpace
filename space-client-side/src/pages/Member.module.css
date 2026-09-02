@@ -529,6 +529,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 1.5rem;
+  scrollbar-gutter: stable;
 }
 
 .createFormGrid {

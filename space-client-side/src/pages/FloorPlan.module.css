@@ -348,6 +348,8 @@ p {
 }
 
 .deleteModal {
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 18px;
@@ -424,6 +426,11 @@ p {
 }
 
 .deleteModalBody {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 1.5rem;
 }
 
@@ -834,7 +841,8 @@ p {
   }
 
   .deleteModalHeader,
-  .deleteModalBody {
+.deleteModalBody {
+  flex: 1 1 auto;
     padding: 1rem;
   }
 

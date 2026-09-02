@@ -46,6 +46,9 @@ const Devices = () => {
     max_alert: '',
   });
 
+  const selectedCreateType = deviceTypes?.find((type) => String(type.id) === form.device_type_id);
+  const createTypeIsCamera = selectedCreateType?.name === 'Camera';
+
   const handleViewDevice = (device: Device) => {
     setShowDeviceDetails(device);
     console.log('View device with ID:', device.id);
@@ -439,143 +442,92 @@ const Devices = () => {
 
         {showModal && (
           <div className={styles.overlay}>
-            <div className={styles.modal}>
-              <h2 className={styles.headerDetail}>Add New Device</h2>
-
-              {error && (
-                <div
-                  style={{
-                    color: 'red',
-                    marginBottom: '10px',
-                    padding: '8px',
-                    backgroundColor: '#ffebee',
-                    borderRadius: '4px',
-                  }}
-                >
-                  {error}
+            <div className={`${styles.modal} ${styles.addDeviceModal}`} role="dialog" aria-modal="true" aria-labelledby="add-device-title">
+              <div className={styles.addDeviceHeader}>
+                <div>
+                  <h2 id="add-device-title" className={styles.addDeviceTitle}>Add new device</h2>
                 </div>
-              )}
+                <button className={styles.addDeviceClose} type="button" onClick={handleCloseModal} aria-label="Close" disabled={isCreatingDevice}>×</button>
+              </div>
 
-              <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <label className={styles.label}>
-                  Device Name:
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleFormChange}
-                    required
-                    className={styles.editValue}
-                    placeholder="Enter device name (2-100 characters)"
-                    maxLength={100}
-                  />
-                  <small style={{ color: '#666', fontSize: '0.85em' }}>
-                    Must be unique across the system
-                  </small>
-                </label>
+              <form onSubmit={handleFormSubmit} className={styles.addDeviceForm}>
+                {error && <div className={styles.formError}>{error}</div>}
 
-                <label className={styles.label}>
-                  Device Type:
-                  <select
-                    name="device_type_id"
-                    value={form.device_type_id}
-                    onChange={handleFormChange}
-                    className={styles.editValue}
-                    required
-                  >
-                    <option value="">Select device type...</option>
-                    {deviceTypes?.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name} {type.unit && `(${type.unit})`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <h3 className={styles.addDeviceSectionTitle}>Choose device type</h3>
+                <div className={styles.deviceTypeGrid} role="radiogroup" aria-label="Device type">
+                  {deviceTypes?.map((type) => (
+                    <label key={type.id} className={styles.deviceTypeOption}>
+                      <input
+                        type="radio"
+                        name="device_type_id"
+                        value={type.id}
+                        checked={form.device_type_id === String(type.id)}
+                        onChange={handleFormChange}
+                        required
+                      />
+                      <span className={styles.deviceTypeCard}>
+                        <span className={styles.deviceTypeIcon}>
+                          <img src={getDeviceIconUrl(type.icon_url)} onError={handleDeviceIconError} alt="" />
+                        </span>
+                        <strong>{type.name}</strong>
+                        <small>{type.unit || (type.name === 'Camera' ? 'Video' : 'Device')}</small>
+                      </span>
+                    </label>
+                  ))}
+                </div>
 
-                <label className={styles.label}>
-                  Floorplan:
-                  <select
-                    name="floorplan_id"
-                    value={form.floorplan_id}
-                    onChange={handleFormChange}
-                    className={styles.editValue}
-                    required
-                  >
-                    <option value="">Select floorplan...</option>
-                    {floorplans?.map((fp) => (
-                      <option key={fp.id} value={fp.id}>
-                        {fp.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <h3 className={`${styles.addDeviceSectionTitle} ${styles.addDeviceDetailsTitle}`}>Device details</h3>
+                <div className={styles.addDeviceFieldRow}>
+                  <label className={styles.addDeviceField}>
+                    <span className={styles.addDeviceFieldLabel}>Device name <b className={styles.requiredMark}>*</b></span>
+                    <input name="name" value={form.name} onChange={handleFormChange} required className={styles.editValue} placeholder="e.g. Lobby sensor" maxLength={100} autoComplete="off" />
+                    <small>Must be unique across the system.</small>
+                  </label>
+                  <label className={styles.addDeviceField}>
+                    <span className={styles.addDeviceFieldLabel}>Assigned floor plan <b className={styles.requiredMark}>*</b></span>
+                    <select name="floorplan_id" value={form.floorplan_id} onChange={handleFormChange} className={styles.editValue} required>
+                      <option value="">Select a floor plan</option>
+                      {floorplans?.map((fp) => <option key={fp.id} value={fp.id}>{fp.name}</option>)}
+                    </select>
+                  </label>
+                </div>
 
-                {(() => {
-                  const selectedType = deviceTypes?.find((dt) => dt.id.toString() === form.device_type_id);
-                  if (selectedType && selectedType.name === 'Camera') {
-                    return (
-                      <label className={styles.label}>
-                        Camera URL (Optional):
-                        <input
-                          name="path_topic"
-                          value={form.path_topic}
-                          onChange={handleFormChange}
-                          className={styles.editValue}
-                          placeholder="e.g., http://192.168.1.100:8080 or https://camera.local"
-                        />
-                        <small style={{ color: '#666', fontSize: '0.85em' }}>
-                          Valid formats: HTTP/HTTPS URLs or IP addresses
-                        </small>
+                {createTypeIsCamera && (
+                  <div className={styles.addDeviceDynamicPanel}>
+                    <label className={styles.addDeviceField}>
+                      Camera URL <small className={styles.inlineHint}>· optional</small>
+                      <input name="path_topic" value={form.path_topic} onChange={handleFormChange} className={styles.editValue} placeholder="https://camera.local/stream" />
+                      <small>Use an HTTP or HTTPS stream address. You can add this later.</small>
+                    </label>
+                  </div>
+                )}
+
+                {selectedCreateType && !createTypeIsCamera && (
+                  <div className={styles.addDeviceDynamicPanel}>
+                    <h3 className={styles.addDeviceSectionTitle}>{selectedCreateType.name} alert range</h3>
+                    <div className={styles.addDeviceFieldRow}>
+                      <label className={styles.addDeviceField}>
+                        <span className={styles.addDeviceFieldLabel}>Alert below <b className={styles.requiredMark}>*</b></span>
+                        <span className={styles.addDeviceUnitInput}>
+                          <input name="min_alert" value={form.min_alert} onChange={handleFormChange} type="number" step="any" className={styles.editValue} placeholder="Minimum" required />
+                          {selectedCreateType.unit && <b>{selectedCreateType.unit}</b>}
+                        </span>
                       </label>
-                    );
-                  }
-                  return null;
-                })()}
+                      <label className={styles.addDeviceField}>
+                        <span className={styles.addDeviceFieldLabel}>Alert above <b className={styles.requiredMark}>*</b></span>
+                        <span className={styles.addDeviceUnitInput}>
+                          <input name="max_alert" value={form.max_alert} onChange={handleFormChange} type="number" step="any" className={styles.editValue} placeholder="Maximum" required />
+                          {selectedCreateType.unit && <b>{selectedCreateType.unit}</b>}
+                        </span>
+                      </label>
+                    </div>
+                    <small className={styles.panelHint}>Alerts are sent when the reading falls outside this range.</small>
+                  </div>
+                )}
 
-                {(() => {
-                  const selectedType = deviceTypes?.find((dt) => dt.id.toString() === form.device_type_id);
-                  const isCamera = selectedType && selectedType.name === 'Camera';
-                  const unit = selectedType?.unit || '';
-
-                  if (!isCamera && selectedType) {
-                    return (
-                      <>
-                        <label className={styles.label}>
-                          Min Alert Value{unit && ` (${unit})`}:
-                          <input
-                            name="min_alert"
-                            value={form.min_alert}
-                            onChange={handleFormChange}
-                            type="number"
-                            step="any"
-                            className={styles.editValue}
-                            placeholder={`Enter minimum threshold${unit ? ` in ${unit}` : ''}`}
-                            required
-                          />
-                        </label>
-
-                        <label className={styles.label}>
-                          Max Alert Value{unit && ` (${unit})`}:
-                          <input
-                            name="max_alert"
-                            value={form.max_alert}
-                            onChange={handleFormChange}
-                            type="number"
-                            step="any"
-                            className={styles.editValue}
-                            placeholder={`Enter maximum threshold${unit ? ` in ${unit}` : ''}`}
-                            required
-                          />
-                        </label>
-                        <small style={{ color: '#666', fontSize: '0.85em' }}>
-                          Device will alert when values are outside this range
-                        </small>
-                      </>
-                    );
-                  }
-                  return null;
-                })()}
-
-                <div className={styles.footer}>
+                <div className={styles.addDeviceActions}>
+                  <span><b>*</b> Required fields</span>
+                  <div>
                   <Button type="button" variant="secondary" onClick={handleCloseModal} disabled={isCreatingDevice}>
                     Cancel
                   </Button>
@@ -584,8 +536,9 @@ const Devices = () => {
                     variant="primary"
                     disabled={isCreatingDevice || !form.name.trim() || !form.device_type_id || !form.floorplan_id}
                   >
-                    {isCreatingDevice ? 'Adding Device...' : 'Add Device'}
+                    {isCreatingDevice ? 'Adding device...' : 'Add device'}
                   </Button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -606,7 +559,7 @@ const Devices = () => {
                 )?.name ?? String(showDeviceDetails.floorplan_id);
 
                 return (
-                  <>
+                  <div className={styles.deviceInfoScroll}>
                     <div className={styles.deviceInfoHeader}>
                       <span className={styles.deviceInfoIcon} aria-hidden="true">
                         <img src={getDeviceIconUrl(deviceType?.icon_url)} alt="" onError={handleDeviceIconError} />
@@ -657,7 +610,7 @@ const Devices = () => {
                     <div className={styles.deviceInfoActions}>
                       <Button variant="secondary" onClick={() => setShowDeviceDetails(null)}>Close</Button>
                     </div>
-                  </>
+                  </div>
                 );
               })()}
             </div>
