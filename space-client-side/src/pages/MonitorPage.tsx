@@ -39,10 +39,9 @@ export default function MonitorPage() {
           return;
         }
 
-        // Filter devices to only include cameras with RTSP paths
-        const cameraDevices = devices.filter(
-          (device) => device.device_type_id === cameraType.id && device.path_topic && device.path_topic.trim() !== ''
-        );
+        // Include every configured camera. Cameras without a stream URL are shown
+        // as offline instead of disappearing from the monitoring view.
+        const cameraDevices = devices.filter((device) => device.device_type_id === cameraType.id);
 
         // Transform devices to camera format
         const transformedCameras: Camera[] = cameraDevices.map((device) => {
@@ -52,8 +51,8 @@ export default function MonitorPage() {
           return {
             id: device.id.toString(),
             name: device.name,
-            streamUrl: device.path_topic,
-            details: `Camera device located on floorplan ${floorplanName}.`,
+            streamUrl: device.path_topic?.trim() ?? '',
+            details: floorplanName,
           };
         });
 
@@ -68,7 +67,7 @@ export default function MonitorPage() {
     };
 
     fetchCameraDevices();
-  }, []);
+  }, [floorplans]);
 
   if (loading) {
     return (
@@ -89,7 +88,7 @@ export default function MonitorPage() {
   if (cameras.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>No camera devices found. Please add cameras with HTTP URLs in the devices section.</p>
+        <p>No camera devices found. Add a camera in the devices section to begin monitoring.</p>
       </div>
     );
   }
