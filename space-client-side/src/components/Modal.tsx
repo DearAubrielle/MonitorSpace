@@ -18,7 +18,8 @@ const defaultOverlayStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  zIndex: 100,
+  // Keep dialogs above hovered device markers and drag previews on the floorplan.
+  zIndex: 11000,
 };
 
 const defaultModalStyle: React.CSSProperties = {
