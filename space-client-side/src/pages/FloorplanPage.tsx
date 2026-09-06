@@ -12,6 +12,7 @@ import { getDeviceIconUrl, handleDeviceIconError } from '../utils/deviceIcon';
 import { useDeviceMonitoring } from '../hooks/useDeviceMonitoring';
 import UnassignedDevicesView from '../components/UnassignedDevicesView';
 import SuccessModal from '../components/SuccessModal';
+import ErrorModal from '../components/ErrorModal';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -31,6 +32,7 @@ export default function FloorplanPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorFeedback, setErrorFeedback] = useState<{ title: string; message: string } | null>(null);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
@@ -211,7 +213,7 @@ export default function FloorplanPage() {
       setEditMode(false); // Exit edit mode after saving
     } catch (error) {
       console.error('Failed to save device positions:', error);
-      alert('Failed to save positions');
+      setErrorFeedback({ title: 'Unable to save positions', message: 'Some device positions may not have been saved. Review your layout and try saving again.' });
     }
   };
   const handleNewFloorplan = () => {
@@ -227,11 +229,11 @@ export default function FloorplanPage() {
     const imageFile = data?.imageFile ?? newImageFile;
 
     if (!name) {
-      alert('Please provide a name');
+      setErrorFeedback({ title: 'Floorplan name required', message: 'Enter a name before creating your floorplan.' });
       return;
     }
     if (!imageFile) {
-      alert('Please select an image file. Image is required for creating a floorplan.');
+      setErrorFeedback({ title: 'Floorplan image required', message: 'Choose an image before creating your floorplan.' });
       return;
     }
 
@@ -260,7 +262,7 @@ export default function FloorplanPage() {
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create floorplan';
-      alert(errorMessage);
+      setErrorFeedback({ title: 'Unable to create floorplan', message: errorMessage });
       return false;
     }
   };
@@ -307,7 +309,7 @@ export default function FloorplanPage() {
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update floorplan';
-      alert(errorMessage);
+      setErrorFeedback({ title: 'Unable to update', message: errorMessage });
     }
   };
 
@@ -416,6 +418,7 @@ export default function FloorplanPage() {
   return (
     <div className={styles.floorplanContainer}>
       <SuccessModal message={successMessage} onClose={() => setSuccessMessage('')} />
+      <ErrorModal title={errorFeedback?.title} message={errorFeedback?.message ?? ''} onClose={() => setErrorFeedback(null)} />
       <div className={styles.floorplanWrapper}>
         {/* Header Section */}
         <div className={styles.headerSection}>

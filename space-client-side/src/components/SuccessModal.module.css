@@ -44,3 +44,5 @@
 .continueButton { width: 100%; padding: 9px 15px; border: 0; border-radius: 7px; background: #3267ac; color: white; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .continueButton:hover { background: #28558f; }
 .dialog button:focus-visible { outline: 3px solid #69aeb8; outline-offset: 3px; }
+
+.errorIcon { background: #fff4dc; color: #9a6714; box-shadow: 0 0 0 5px #fffbf1; }
