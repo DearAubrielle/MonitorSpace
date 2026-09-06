@@ -78,62 +78,66 @@ function broadcast(data) {
 // --- Send all device latest values every 5s (reduced frequency) ---
 let broadcastErrors = 0;
 const maxBroadcastErrors = 5;
+let broadcastInterval = null;
+let broadcastRestartTimeout = null;
+let databaseConnectionLost = false;
 
-const broadcastInterval = setInterval(async () => {
+async function broadcastDeviceValues() {
   try {
     const [rows] = await db.query(
       "SELECT id, latest_value FROM devices"
     );
+
+    if (databaseConnectionLost) {
+      console.log('Database connection restored. Device broadcasting resumed.');
+      databaseConnectionLost = false;
+    }
+
     broadcast(rows); // send all devices in one packet
     broadcastErrors = 0; // Reset error count on success
-    //console.log("Broadcasted device values");
   } catch (err) {
+    databaseConnectionLost = true;
     broadcastErrors++;
     console.error(`Database error during broadcast (${broadcastErrors}/${maxBroadcastErrors}):`, err.message);
-    
+
     // If too many consecutive errors, stop broadcasting temporarily
     if (broadcastErrors >= maxBroadcastErrors) {
       console.error('Too many broadcast errors, pausing for 30 seconds...');
       clearInterval(broadcastInterval);
-      
+      broadcastInterval = null;
+
       // Restart broadcasting after 30 seconds
-      setTimeout(() => {
+      broadcastRestartTimeout = setTimeout(() => {
         broadcastErrors = 0;
         startBroadcasting();
       }, 30000);
     }
   }
-}, 5000); // Increased from 2000ms to 5000ms
+}
 
 function startBroadcasting() {
   console.log('Restarting device broadcasting...');
-  return setInterval(async () => {
-    try {
-      const [rows] = await db.query(
-        "SELECT id, latest_value FROM devices"
-      );
-      broadcast(rows);
-      broadcastErrors = 0;
-    } catch (err) {
-      broadcastErrors++;
-      console.error(`Database error during broadcast (${broadcastErrors}/${maxBroadcastErrors}):`, err.message);
-      
-      if (broadcastErrors >= maxBroadcastErrors) {
-        console.error('Too many broadcast errors, pausing for 30 seconds...');
-        clearInterval(broadcastInterval);
-        setTimeout(() => {
-          broadcastErrors = 0;
-          startBroadcasting();
-        }, 30000);
-      }
-    }
-  }, 5000);
+  broadcastInterval = setInterval(broadcastDeviceValues, 5000);
+}
+
+startBroadcasting();
+
+function stopBroadcasting() {
+  if (broadcastInterval) {
+    clearInterval(broadcastInterval);
+    broadcastInterval = null;
+  }
+
+  if (broadcastRestartTimeout) {
+    clearTimeout(broadcastRestartTimeout);
+    broadcastRestartTimeout = null;
+  }
 }
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM, shutting down gracefully');
-  clearInterval(broadcastInterval);
+  stopBroadcasting();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
@@ -142,7 +146,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('Received SIGINT, shutting down gracefully');
-  clearInterval(broadcastInterval);
+  stopBroadcasting();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);

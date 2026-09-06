@@ -8,7 +8,7 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
-header {
+.header {
   margin: 0;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-bottom: 1px solid #e2e8f0;
@@ -23,25 +23,44 @@ header {
   backdrop-filter: blur(10px);
 }
 
-header:hover {
+.header:hover {
   box-shadow: 0 4px 16px rgba(138, 138, 138, 0.1);
 }
 
-header .logo {
-  font-size: 1.5rem;
+.header .logo {
+  font-family: Calibri, 'Segoe UI', sans-serif;
+  font-size: 1.375rem;
   font-weight: 700;
   color: #0f172a;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.45px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #3b92f6 0%, #3845b4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  gap: 0.7rem;
 }
 
-header ul {
+.logoMark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #ffffff;
+  background: linear-gradient(115deg, #155eef 0%, #155eef 58%, #20c8e5 100%);
+  box-shadow:
+    0 8px 22px rgba(32, 200, 229, 0.26),
+    0 3px 10px rgba(21, 94, 239, 0.18);
+}
+
+.logoMark svg {
+  width: 22px;
+}
+
+.logoAccent {
+  color: #155eef;
+}
+
+.header ul {
   list-style: none;
   display: flex;
   margin: 0;
@@ -50,92 +69,268 @@ header ul {
   align-items: center;
 }
 
-header ul li {
+.header ul li {
   margin: 0;
   display: flex;
   align-items: center;
 }
 
-header ul li b {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 0.95rem;
-  padding: 0.5rem 1rem;
-  background: #f1f5f9;
+.accountButton {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #d6e2f5;
   border-radius: 8px;
-  min-width: 100px;
-  text-align: center;
+  background: #f5f8fc;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-header ul li button {
-  background: linear-gradient(135deg, #3b82f6 0%, #3d61ad 100%);
-  color: white;
-  border: none;
+.alertMenuItem {
+  position: relative;
+}
+
+.alertButton {
+  height: 40px;
+  padding: 0 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 9px;
+  color: #ffffff;
+  background: #dc2626;
+  box-shadow: 0 5px 13px rgba(220, 38, 38, 0.24);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alertButton:hover,
+.alertButton[aria-expanded='true'] {
+  background: #b91c1c;
+}
+
+.alertIcon {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.75rem;
+}
+
+.alertCount {
+  min-width: 25px;
+  height: 20px;
+  padding: 0 0.45rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #991b1b;
+  font-size: 0.7rem;
+}
+
+.alertPopover {
+  position: absolute;
+  z-index: 1000;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  width: 320px;
+  padding: 0.75rem;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(36, 24, 32, 0.2);
+}
+
+.alertPopoverHeader {
+  padding: 0.1rem 0.15rem 0.65rem;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #edf0f4;
+  font-size: 0.8rem;
+}
+
+.alertPopoverHeader span {
+  color: #b91c1c;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.alertList {
+  max-height: min(420px, calc(100vh - 160px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.alertEntry {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.65rem;
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  color: #1f2937;
+  background: #fff7f7;
+  text-align: left;
+  cursor: pointer;
+}
+
+.alertEntry:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.alertEntryIcon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+.alertEntryIcon img {
+  width: 23px;
+  height: 23px;
+  object-fit: contain;
+}
+
+.alertEntry strong,
+.alertEntry small {
+  display: block;
+}
+
+.alertEntry small {
+  margin-top: 0.1rem;
+  color: #6b7280;
+  font-size: 0.7rem;
+}
+
+.alertEntryArrow {
+  color: #b91c1c;
+  font-size: 1.1rem;
+}
+
+.accountAvatar {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.accountArrow {
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.accountButton:hover {
+  border-color: #9db8ed;
+  background: #edf3ff;
+}
+
+.logoutButton {
+  background: #ffffff;
+  color: #155eef;
+  border: 1px solid #bcd0fa;
   padding: 0.625rem 1.25rem;
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+  box-shadow: none;
 }
 
-header ul li button:hover {
-  background: linear-gradient(135deg, #abc2f3 0%, #1d4ed8 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+.logoutButton:hover {
+  color: #0b4ed1;
+  border-color: #155eef;
+  background: #f5f8ff;
+  transform: translateY(-1px);
+  box-shadow: none;
 }
 
-header ul li button:active {
+.logoutButton:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  background: #edf3ff;
+  box-shadow: none;
+}
+
+.logoutButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  header {
+  .header {
     padding: 0 1rem;
     height: 56px;
   }
 
-  header .logo {
+  .header .logo {
     font-size: 1.25rem;
   }
 
-  header ul {
-    gap: 1rem;
+  .header ul {
+    gap: 0.65rem;
   }
 
-  header ul li b {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    min-width: 80px;
-  }
-
-  header ul li button {
+  .logoutButton {
     padding: 0.5rem 1rem;
     font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
-  header {
+  .header {
     padding: 0 0.75rem;
   }
 
-  header .logo {
+  .header .logo {
     font-size: 1.1rem;
   }
 
-  header ul {
+  .header ul {
     gap: 0.75rem;
   }
 
-  header ul li b {
+  .accountButton {
     display: none;
   }
 
-  header ul li button {
+  .alertButton > span:nth-child(2) {
+    display: none;
+  }
+
+  .alertPopover {
+    position: fixed;
+    top: 60px;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+
+  .logoutButton {
     padding: 0.5rem 0.75rem;
     font-size: 0.8rem;
   }

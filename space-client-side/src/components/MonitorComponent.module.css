@@ -1,573 +1,380 @@
 .monitorContainer {
-  padding: 2rem 1rem;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 1.35rem 0 2rem;
+  color: #142033;
 }
-
+.summary {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+.statCard {
+  min-width: 100px;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #dde4ed;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(31, 48, 77, 0.03);
+}
+.statCard strong {
+  display: block;
+  font-size: 1.08rem;
+  line-height: 1.3;
+}
+.statCard span {
+  color: #6e7b8f;
+  font-size: 0.7rem;
+}
+.liveNumber {
+  color: #08a866;
+}
+.offlineNumber {
+  color: #e34850;
+}
 .cameraGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1rem;
-  justify-content: center;
-  max-width: 1200px;
-  margin: 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.15rem;
 }
-
 .cameraCard {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
   overflow: hidden;
-  transition: all 0.3s ease;
-  position: relative;
-  max-width: 450px;
-  width: 100%;
-  justify-self: center;
+  border: 1px solid #e0e6ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(31, 48, 77, 0.06);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
 }
-
 .cameraCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 34px rgba(31, 48, 77, 0.1);
 }
-
-.cameraCardSelected {
-  border-color: #3b82f6;
-  box-shadow:
-    0 0 0 2px rgba(59, 130, 246, 0.2),
-    0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.cameraHeader {
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f1f3f4;
-}
-
-.cameraTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #212529;
-  margin: 0;
-}
-
-.cameraStatus {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.statusDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.statusDot.online {
-  background-color: #22c55e;
-  animation: pulse 2s infinite;
-}
-
-.statusDot.offline {
-  background-color: #ef4444;
-}
-
-.statusText {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6c757d;
-}
-
 .cameraPreview {
   position: relative;
   aspect-ratio: 16/9;
-  background: #f8f9fa;
   overflow: hidden;
+  background: #f6f8fa;
 }
-
 .cameraImage {
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.25s;
 }
-
 .cameraCard:hover .cameraImage {
-  transform: scale(1.02);
+  transform: scale(1.015);
 }
-
+.liveBadge,
+.modalLiveBadge {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+  padding: 0.28rem 0.48rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(18, 29, 43, 0.82);
+  backdrop-filter: blur(8px);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.liveBadge i,
+.modalLiveBadge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #24d086;
+}
+.feedTime,
+.modalTime {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.7rem;
+  color: #fff;
+  font:
+    700 0.68rem ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  text-shadow: 0 1px 4px #000;
+}
+.expandButton {
+  position: absolute;
+  inset: 0;
+  width: 46px;
+  height: 46px;
+  margin: auto;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(15, 25, 38, 0.72);
+  font-size: 1.05rem;
+  opacity: 0;
+  cursor: pointer;
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+}
+.cameraPreview:hover .expandButton,
+.expandButton:focus-visible {
+  opacity: 1;
+}
+.expandButton:hover {
+  transform: scale(1.06);
+}
+.cameraInfo {
+  padding: 1rem 1.05rem 1.05rem;
+}
+.cameraInfo h3 {
+  margin: 0;
+  color: #172235;
+  font-size: 1.05rem;
+}
+.cameraInfo p {
+  margin: 0.28rem 0 0;
+  color: #6e7b8f;
+  font-size: 0.75rem;
+}
 .errorPlaceholder {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #6c757d;
-  background: #f8f9fa;
+  padding: 1.5rem;
+  text-align: center;
 }
-
-.errorIcon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
+.errorPlaceholder strong {
+  font-size: 0.9rem;
 }
-
-.errorPlaceholder p {
-  margin: 0;
-  font-weight: 500;
+.errorPlaceholder span {
+  margin: 0.25rem 0 0.8rem;
+  color: #8390a2;
+  font-size: 0.72rem;
 }
-
-.cameraActions {
-  padding: 1rem 1.5rem;
-}
-
-.detailsButton {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #3b82f6;
-  background: transparent;
-  color: #3b82f6;
+.retryButton {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #d6e0eb;
   border-radius: 8px;
+  color: #41658f;
+  background: #fff;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
-
-.detailsButton:hover {
-  background: #3b82f6;
-  color: white;
-  transform: translateY(-1px);
+.retryButton:hover:not(:disabled) {
+  border-color: #aabfd8;
+  background: #f8fbff;
 }
-
-.detailsButtonActive {
-  background: #3b82f6;
-  color: white;
+.retryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
-
-.cameraDetails {
-  padding: 0 1.5rem 1.5rem 1.5rem;
-  border-top: 1px solid #f1f3f4;
-  background: #f8f9fa;
-  animation: slideDown 0.3s ease;
-}
-
-.cameraDetails h4 {
-  margin: 1rem 0 0.5rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #495057;
-}
-
-.cameraDetails p {
-  margin: 0;
-  color: #6c757d;
-  line-height: 1.5;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .cameraGrid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    max-width: 450px;
-  }
-
-  .cameraCard {
-    max-width: 100%;
-  }
-
-  .monitorContainer {
-    padding: 1rem 0.5rem;
-  }
-
-  .cameraHeader {
-    padding: 1rem;
-  }
-
-  .cameraActions {
-    padding: 1rem;
-  }
-
-  .cameraDetails {
-    padding: 0 1rem 1rem 1rem;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .cameraGrid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-    gap: 1.5rem;
-  }
-
-  .cameraCard {
-    max-width: 400px;
-  }
-}
-
-/* Expanded Modal Styles */
 .expandedModal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
   z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  animation: fadeIn 0.3s ease;
+  inset: 0;
+  padding: 1.5rem;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 16, 29, 0.78);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.18s ease;
 }
-
 .expandedContainer {
-  background: white;
-  border-radius: 16px;
-  max-width: 90vw;
-  max-height: 90vh;
+  /* Fit a 16:9 feed inside both viewport dimensions. The vh term is
+     (available viewport height × 16/9), including the modal padding. */
+  width: min(1200px, calc(100vw - 3rem), calc(177.78vh - 5.34rem));
+  max-height: calc(100vh - 3rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  background: #101a28;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+  animation: scaleIn 0.2s ease;
+}
+.expandedVideoContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #080d14;
+}
+.expandedImage {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.3s ease;
-}
-
-.expandedHeader {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e9ecef;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: white;
-  flex-shrink: 0;
-}
-
-.expandedTitleSection {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.expandedTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #212529;
-  margin: 0;
-}
-
-.expandedStatus {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.closeButton {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: #f8f9fa;
-  border-radius: 50%;
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #6c757d;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.closeButton:hover {
-  background: #e9ecef;
-  color: #495057;
-}
-
-.expandedVideoContainer {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  position: relative;
-  overflow: hidden;
-}
-
-.expandedImage {
-  max-width: 100%;
-  max-height: 100%;
+  display: block;
   object-fit: contain;
-  border-radius: 0;
 }
-
 .expandedErrorPlaceholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
+  color: #fff;
   text-align: center;
-  padding: 2rem;
 }
-
-.expandedErrorIcon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  opacity: 0.7;
-}
-
 .expandedErrorPlaceholder h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.expandedErrorPlaceholder p {
   margin: 0;
-  opacity: 0.8;
-  font-size: 1rem;
+  font-size: 1.15rem;
 }
-
-/* Video Overlay Styles */
-.videoOverlay {
+.expandedErrorPlaceholder p {
+  margin: 0.35rem 0 1rem;
+  color: #8e9bad;
+  font-size: 0.8rem;
+}
+.closeButton {
   position: absolute;
-  top: 0;
-  left: 0;
+  z-index: 5;
+  top: 1rem;
+  right: 1rem;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  color: #fff;
+  background: rgba(10, 20, 33, 0.72);
+  backdrop-filter: blur(10px);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.closeButton:hover {
+  background: rgba(42, 67, 99, 0.92);
+}
+.modalLiveBadge {
+  z-index: 4;
+  top: 1rem;
+  left: 1rem;
+}
+.overlayActions {
+  position: absolute;
+  z-index: 4;
+  right: 1rem;
+  top: 50%;
+  display: grid;
+  gap: 0.5rem;
+  transform: translateY(-50%);
+}
+.overlayActions button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9px;
+  color: #fff;
+  background: rgba(10, 20, 33, 0.72);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+.overlayActions button:hover {
+  background: rgba(42, 67, 99, 0.92);
+}
+.cinematicBar {
+  position: absolute;
+  z-index: 3;
   right: 0;
   bottom: 0;
-  pointer-events: none;
+  left: 0;
+  padding: 3.25rem 1.25rem 1rem;
   display: flex;
-  flex-direction: column;
+  align-items: flex-end;
   justify-content: space-between;
-  z-index: 10;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.expandedVideoContainer:hover .videoOverlay {
-  opacity: 1;
-}
-
-.overlayTop {
-  padding: 1rem;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
-  transform: translateY(-10px);
-  transition: transform 0.3s ease;
-}
-
-.overlayBottom {
-  padding: 1rem;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
-  display: flex;
-  justify-content: flex-end;
-  transform: translateY(10px);
-  transition: transform 0.3s ease;
-}
-
-.expandedVideoContainer:hover .overlayTop {
-  transform: translateY(0);
-}
-
-.expandedVideoContainer:hover .overlayBottom {
-  transform: translateY(0);
-}
-
-.overlayInfo {
-  pointer-events: auto;
-}
-
-.overlayDetails {
-  color: white;
-  font-size: 0.875rem;
-  line-height: 1.4;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
-  display: inline-block;
-}
-
-.overlayActions {
-  display: flex;
-  gap: 0.5rem;
-  pointer-events: auto;
-}
-
-.overlayButton {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.overlayButton:hover {
-  background: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.overlayButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.overlayButton:disabled:hover {
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Add cursor pointer and click indicator to camera cards */
-.cameraCard {
-  cursor: pointer;
-  position: relative;
-}
-
-.cameraCard::after {
-  content: '🔍 Click to expand';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  gap: 1.25rem;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(4, 9, 16, 0.9));
   pointer-events: none;
-  z-index: 10;
 }
-
-.cameraCard:hover::after {
-  opacity: 1;
+.cinematicBar h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
 }
-
-/* Animation keyframes */
+.cinematicBar p {
+  margin: 0.2rem 0 0;
+  color: #a9b6c8;
+  font-size: 0.7rem;
+}
+.cinematicBar .modalTime {
+  position: static;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
-  to {
-    opacity: 1;
-  }
 }
-
-@keyframes slideUp {
+@keyframes scaleIn {
   from {
     opacity: 0;
-    transform: translateY(50px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(0.96);
   }
 }
-
-/* Responsive styles for expanded modal */
 @media (max-width: 768px) {
+  .monitorContainer {
+    padding: 1rem 0;
+  }
+  .cameraGrid {
+    grid-template-columns: 1fr;
+  }
+  .summary {
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+  }
+  .statCard {
+    flex: 1;
+    min-width: 92px;
+  }
   .expandedModal {
-    padding: 0.5rem;
+    padding: 0.6rem;
   }
-
   .expandedContainer {
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 12px;
+    width: min(100%, calc(177.78vh - 2.14rem));
   }
-
-  .expandedHeader {
-    padding: 0.75rem 1rem;
+  .cameraInfo {
+    padding: 0.9rem;
   }
-
-  .expandedTitle {
-    font-size: 1.125rem;
+  .cameraPreview {
+    min-height: 210px;
   }
-
-  .overlayTop,
-  .overlayBottom {
-    padding: 0.75rem;
+  .closeButton {
+    top: 0.65rem;
+    right: 0.65rem;
+    width: 33px;
+    height: 33px;
   }
-
-  .overlayDetails {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.6rem;
+  .modalLiveBadge {
+    top: 0.65rem;
+    left: 0.65rem;
   }
-
-  .overlayButton {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9rem;
+  .overlayActions {
+    right: 0.65rem;
+  }
+  .overlayActions button {
+    width: 33px;
+    height: 33px;
+  }
+  .cinematicBar {
+    padding: 2.5rem 0.75rem 0.65rem;
+  }
+  .cinematicBar h2 {
+    font-size: 0.95rem;
+  }
+  .cinematicBar p {
+    font-size: 0.6rem;
   }
 }
-
-@media (max-width: 480px) {
-  .expandedModal {
-    padding: 0;
-  }
-
+@media (prefers-reduced-motion: reduce) {
+  .cameraCard,
+  .cameraImage,
+  .expandButton,
+  .expandedModal,
   .expandedContainer {
-    border-radius: 0;
-    max-width: 100vw;
-    max-height: 100vh;
-  }
-
-  .expandedHeader {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .expandedTitle {
-    font-size: 1rem;
-  }
-
-  .closeButton {
-    width: 28px;
-    height: 28px;
-    font-size: 1rem;
-  }
-
-  .overlayTop,
-  .overlayBottom {
-    padding: 0.5rem;
-  }
-
-  .overlayButton {
-    width: 32px;
-    height: 32px;
-    font-size: 0.8rem;
+    animation: none;
+    transition: none;
   }
 }

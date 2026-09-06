@@ -1,11 +1,9 @@
 import { createContext } from 'react';
-import { Permission } from '../utils/permissions';
 
 // --- Define Types ---
 export interface DecodedToken {
   username: string;
   role: string;
-  permissions?: Permission[];
   exp?: number;
   iat?: number;
   [key: string]: unknown; // in case your token contains other fields

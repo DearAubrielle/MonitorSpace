@@ -163,24 +163,6 @@ exports.createDevice = async (req, res) => {
         [generatedPathTopic, result.insertId]
       );
 
-      // Send topic to MQTT subscriber service
-      try {
-        const axios = require('axios');
-        const response = await axios.post(
-          `${process.env.PYTHON_SERVER_HOST}/add_topic`,
-          new URLSearchParams({ topic: generatedPathTopic }),
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            }
-          }
-        );
-        console.log("Topic sent to MQTT service:", response.data);
-      } catch (mqttError) {
-        console.error("Failed to send topic to MQTT service:", mqttError.message);
-        // Don't fail the device creation if MQTT service is unavailable
-      }
-
       res.status(201).json({ 
         message: 'Sensor device created successfully',
         device_id: result.insertId

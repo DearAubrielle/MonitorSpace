@@ -1,8 +1,13 @@
 import { DragEndEvent } from '@dnd-kit/core';
 
-export const BOX_SIZE_PERCENT = 0.07;
+export const BOX_SIZE_PERCENT = 0.06;
 export const MIN_BOX_SIZE = 20;
 export const MAX_BOX_SIZE = 40;
+
+// Marker size follows the available floorplan width, not its aspect ratio.
+// This keeps markers consistent when switching between tall and wide plans.
+export const getDeviceBoxSize = (containerWidth: number) =>
+  Math.max(MIN_BOX_SIZE, Math.min(containerWidth * BOX_SIZE_PERCENT, MAX_BOX_SIZE));
 
 export type PercentPosition = {
   x: number;
@@ -22,10 +27,7 @@ export function handleDragEndFactory(options: HandleDragEndOptions) {
     const containerWidth = options.renderedSize.width;
     const containerHeight = options.renderedSize.height;
 
-    const boxSize = Math.max(
-      MIN_BOX_SIZE,
-      Math.min(Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT, MAX_BOX_SIZE)
-    );
+    const boxSize = getDeviceBoxSize(containerWidth);
 
     const current = options.devicePositions[id];
     if (!current) return;

@@ -1,0 +1,237 @@
+.page {
+  --ink: #12243f;
+  --muted: #66758c;
+  --blue: #155eef;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(75, 137, 255, 0.16), transparent 28rem),
+    radial-gradient(circle at 90% 80%, rgba(22, 184, 166, 0.1), transparent 25rem),
+    #f5f8fc;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.33;
+  background-image:
+    linear-gradient(rgba(30, 70, 130, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 70, 130, 0.04) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.shell {
+  position: relative;
+  width: min(1180px, calc(100% - 48px));
+  min-height: 100vh;
+  margin: 0 auto;
+}
+
+.header {
+  height: 92px;
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  font-family: Calibri, 'Segoe UI', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.45px;
+}
+
+.brandMark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: white;
+  background: linear-gradient(115deg, #155eef 0%, #155eef 58%, #20c8e5 100%);
+  box-shadow:
+    0 8px 22px rgba(32, 200, 229, 0.26),
+    0 3px 10px rgba(21, 94, 239, 0.18);
+}
+
+.brandMark svg {
+  width: 23px;
+}
+
+.brandAccent {
+  color: var(--blue);
+}
+
+.main {
+  min-height: calc(100vh - 92px);
+  display: grid;
+  place-items: center;
+  padding: 30px 0 80px;
+}
+
+.card {
+  width: min(420px, 100%);
+  padding: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 28px 75px rgba(29, 62, 113, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #65758d;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.backLink:hover {
+  color: var(--blue);
+}
+
+.card h1 {
+  margin: 28px 0 8px;
+  font-size: 32px;
+  letter-spacing: -0.04em;
+}
+
+.intro {
+  margin: 0 0 26px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.error {
+  margin-bottom: 18px;
+  padding: 11px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  color: #991b1b;
+  background: #fef2f2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.field {
+  margin: 17px 0;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.field input {
+  width: 100%;
+  height: 49px;
+  padding: 0 13px;
+  border: 1px solid #ccd7e5;
+  border-radius: 10px;
+  outline: none;
+  color: var(--ink);
+  background: #fbfcfe;
+  font: inherit;
+  font-size: 14px;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.field input:focus {
+  border-color: #3d72f3;
+  box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.1);
+}
+
+.card button {
+  width: 100%;
+  height: 50px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  background: var(--blue);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 11px 24px rgba(21, 94, 239, 0.26);
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.card button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #0b4ed1;
+}
+
+.card button:focus-visible,
+.backLink:focus-visible,
+.brand:focus-visible {
+  outline: 3px solid rgba(21, 94, 239, 0.25);
+  outline-offset: 4px;
+}
+
+.card button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.workspaceNote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 19px;
+  color: #8290a4;
+  font-size: 10px;
+}
+
+.workspaceNote svg {
+  width: 14px;
+  color: #16a995;
+}
+
+@media (max-width: 520px) {
+  .shell {
+    width: calc(100% - 28px);
+  }
+
+  .header {
+    height: 76px;
+  }
+
+  .main {
+    min-height: calc(100vh - 76px);
+    padding: 10px 0 48px;
+  }
+
+  .card {
+    padding: 28px 22px;
+  }
+
+  .card h1 {
+    font-size: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field input,
+  .card button {
+    transition: none;
+  }
+}

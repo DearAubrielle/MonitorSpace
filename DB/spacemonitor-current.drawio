@@ -1,0 +1,40 @@
+<mxfile host="app.diagrams.net" modified="2026-07-23T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="spacemonitor-er" name="SpaceMonitor ER Diagram">
+    <mxGraphModel dx="1440" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="devices" value="&lt;b&gt;devices&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; id : int&lt;br&gt;name : varchar(100)&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; device_type_id : int&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; floorplan_id : int (nullable)&lt;br&gt;path_topic : varchar(255)&lt;br&gt;x_percent : decimal(30,25)&lt;br&gt;y_percent : decimal(30,25)&lt;br&gt;latest_value : varchar(255)&lt;br&gt;last_updated : datetime&lt;br&gt;min_alert : varchar(50)&lt;br&gt;max_alert : varchar(50)&lt;br&gt;alert : tinyint(1)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=10;spacingTop=8;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="440" y="280" width="275" height="300" as="geometry"/>
+        </mxCell>
+        <mxCell id="device_type" value="&lt;b&gt;device_type&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; id : int&lt;br&gt;name : varchar(100)&lt;br&gt;icon_url : varchar(255)&lt;br&gt;has_value : tinyint(1)&lt;br&gt;unit : varchar(20)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=10;spacingTop=8;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="60" y="310" width="250" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="floorplan" value="&lt;b&gt;floorplan&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; id : int&lt;br&gt;name : varchar(100)&lt;br&gt;image_url : varchar(255)&lt;br&gt;description : text&lt;br&gt;cloudinary_public_id : varchar(255)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=10;spacingTop=8;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="840" y="310" width="280" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="users" value="&lt;b&gt;users&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; id : int&lt;br&gt;username : varchar(50) [unique]&lt;br&gt;email : varchar(100) [unique]&lt;br&gt;password : varchar(255)&lt;br&gt;created_at : timestamp&lt;br&gt;updated_at : timestamp&lt;br&gt;&lt;b&gt;FK&lt;/b&gt; role_id : int (nullable)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;spacingTop=8;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="440" y="660" width="275" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="roles" value="&lt;b&gt;roles&lt;/b&gt;&lt;hr&gt;&lt;b&gt;PK&lt;/b&gt; id : int&lt;br&gt;name : varchar(50) [unique]&lt;br&gt;display_name : varchar(100)&lt;br&gt;description : text&lt;br&gt;is_active : tinyint(1)&lt;br&gt;created_at : timestamp&lt;br&gt;updated_at : timestamp" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=10;spacingTop=8;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="840" y="650" width="280" height="245" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-device-type" value="device_type_id: 1 → many" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;fontSize=12;" edge="1" parent="1" source="device_type" target="devices">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-floorplan-devices" value="floorplan_id: 1 → many (optional on device)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;fontSize=12;" edge="1" parent="1" source="floorplan" target="devices">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-roles-users" value="role_id: 1 → many (optional on user)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;fontSize=12;" edge="1" parent="1" source="roles" target="users">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="title" value="&lt;b&gt;SpaceMonitor — Current Database Schema&lt;/b&gt;&lt;br&gt;Source: spacemonitor (9).sql, 23 Jul 2026" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="350" y="70" width="540" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="note" value="&lt;b&gt;Notes&lt;/b&gt;&lt;br&gt;• devices.name is not unique in this dump.&lt;br&gt;• min_alert, max_alert, and alert are NOT NULL.&lt;br&gt;• path_topic stores MQTT topics and camera URLs.&lt;br&gt;• roles.permissions is removed by migration." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=10;spacingTop=8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="660" width="260" height="130" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

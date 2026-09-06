@@ -1,9 +1,10 @@
 import AspectRatioBox from './AspectRatioBox';
-import { DndContext } from '@dnd-kit/core';
+import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { useState } from 'react';
 import DraggableBox from './DraggableBox';
 import type { Device, DeviceType } from '../types/Device';
-import type { PercentPosition } from '../utils/handleDragEnd';
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+import { getDeviceBoxSize, type PercentPosition } from '../utils/handleDragEnd';
+import { getDeviceIconUrl } from '../utils/deviceIcon';
 
 import type { DragEndEvent } from '@dnd-kit/core';
 
@@ -15,8 +16,10 @@ interface FloorplanProps {
   deviceTypes: DeviceType[];
   devicePositions: Record<string, PercentPosition>;
   renderedSize: { width: number; height: number };
-  onDragEnd: (event: DragEndEvent) => void;
-  onDeviceDoubleClick?: (device: Device) => void;
+  onDragEnd?: (event: DragEndEvent) => void;
+  onDeviceClick?: (device: Device) => void;
+  getDeviceValue?: (device: Device) => string | number | undefined;
+  getDeviceAlert?: (device: Device) => boolean;
   editMode?: boolean;
 }
 
@@ -29,9 +32,18 @@ export default function Floorplan({
   renderedSize,
   deviceTypes,
   onDragEnd,
-  onDeviceDoubleClick,
+  onDeviceClick,
+  getDeviceValue,
+  getDeviceAlert,
   editMode = false,
 }: FloorplanProps) {
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null);
+  const activeDevice = devices.find((device) => String(device.id) === activeDeviceId);
+  const activeType = activeDevice
+    ? deviceTypes.find((type) => type.id === activeDevice.device_type_id)
+    : undefined;
+  const dragPreviewSize = getDeviceBoxSize(renderedSize.width);
+
   return (
     <AspectRatioBox
       originalWidth={originalWidth}
@@ -39,11 +51,18 @@ export default function Floorplan({
       backgroundImage={imageUrl}
       maxWidth="100%"
     >
-      <DndContext onDragEnd={onDragEnd}>
+      <DndContext
+        onDragStart={({ active }) => setActiveDeviceId(String(active.id))}
+        onDragCancel={() => setActiveDeviceId(null)}
+        onDragEnd={(event) => {
+          setActiveDeviceId(null);
+          onDragEnd?.(event);
+        }}
+      >
         {devices.map((device: Device) => {
           const types = deviceTypes ?? [];
           const type = types.find((t) => t.id === device.device_type_id);
-          const icon = type ? SERVER_URL + type.icon_url : '/icons/default.png';
+          const icon = getDeviceIconUrl(type?.icon_url);
           return (
             <DraggableBox
               key={device.id}
@@ -58,14 +77,50 @@ export default function Floorplan({
               }
               containerWidth={renderedSize.width}
               containerHeight={renderedSize.height}
-              onDoubleClick={onDeviceDoubleClick ? () => onDeviceDoubleClick(device) : undefined}
+              onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
               disabled={!editMode}
+              alert={getDeviceAlert?.(device) ?? device.alert}
               deviceName={device.name}
-              value={device.latest_value}
+              value={getDeviceValue?.(device) ?? device.latest_value}
               unit={type?.unit}
+              cameraPreviewUrl={
+                type?.name.toLowerCase() === 'camera' && device.path_topic?.trim()
+                  ? device.path_topic
+                  : undefined
+              }
+              dragging={activeDeviceId === String(device.id)}
             />
           );
         })}
+        <DragOverlay dropAnimation={null} zIndex={5000}>
+          {activeDevice ? (
+            <div
+              aria-hidden="true"
+              style={{
+                width: dragPreviewSize,
+                height: dragPreviewSize,
+                boxSizing: 'border-box',
+                display: 'grid',
+                placeItems: 'center',
+                padding: 0,
+                borderRadius: '24%',
+                backgroundColor: (getDeviceAlert?.(activeDevice) ?? activeDevice.alert)
+                  ? 'rgba(220, 38, 38, 0.9)'
+                  : 'rgba(218, 239, 235, 0.9)',
+                border: '1px solid rgba(255, 255, 255, 0.8)',
+                boxShadow: '0 10px 28px rgba(15, 23, 42, 0.38)',
+                cursor: 'grabbing',
+              }}
+            >
+              <img
+                src={getDeviceIconUrl(activeType?.icon_url)}
+                alt=""
+                draggable={false}
+                style={{ width: '84%', height: '84%', objectFit: 'contain', pointerEvents: 'none' }}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </AspectRatioBox>
   );

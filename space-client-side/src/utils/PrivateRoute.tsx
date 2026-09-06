@@ -4,11 +4,11 @@ import { useAuth } from '../context/useAuth';
 
 interface PrivateRouteProps {
   children: ReactNode;
-  allowedRoles?: string[];
+  allowedRoles?: readonly string[];
 }
 
 export default function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
-  const { token, role } = useAuth(); // Force role to 'admin' for testingconst role = 'admin';
+  const { token, role } = useAuth();
   // Not logged in → redirect to login
   if (!token) return <Navigate to="/login" replace />;
 

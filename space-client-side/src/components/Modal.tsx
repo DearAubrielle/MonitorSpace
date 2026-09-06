@@ -18,7 +18,8 @@ const defaultOverlayStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  zIndex: 100,
+  // Keep dialogs above hovered device markers and drag previews on the floorplan.
+  zIndex: 11000,
 };
 
 const defaultModalStyle: React.CSSProperties = {
@@ -26,9 +27,19 @@ const defaultModalStyle: React.CSSProperties = {
   borderRadius: 8,
   minWidth: 300,
   maxWidth: '70%',
-  padding: 32,
+  padding: 6,
   display: 'flex',
   flexDirection: 'column',
+  maxHeight: 'calc(100dvh - 32px)',
+  overflow: 'hidden',
+};
+
+const scrollSurfaceStyle: React.CSSProperties = {
+  minHeight: 0,
+  overflowX: 'hidden',
+  overflowY: 'auto',
+  padding: 26,
+  borderRadius: 6,
 };
 
 export default function Modal({ open, children, style, position }: ModalProps) {
@@ -80,7 +91,9 @@ export default function Modal({ open, children, style, position }: ModalProps) {
 
   return (
     <div style={overlayStyles}>
-      <div style={{ ...defaultModalStyle, ...style }}>{children}</div>
+      <div style={{ ...defaultModalStyle, ...style }}>
+        <div style={scrollSurfaceStyle}>{children}</div>
+      </div>
     </div>
   );
 }

@@ -9,7 +9,6 @@ interface Member {
   role: string;
   created_at?: string;
   display_name?: string;
-  permissions?: string;
 }
 
 interface Role {
@@ -18,6 +17,22 @@ interface Role {
   display_name: string;
   description?: string;
 }
+
+interface CreateAccountForm {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: string;
+}
+
+const EMPTY_CREATE_ACCOUNT_FORM: CreateAccountForm = {
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  role: 'user',
+};
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -34,6 +49,12 @@ export default function Member() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateAccountForm>(EMPTY_CREATE_ACCOUNT_FORM);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [accountSuccess, setAccountSuccess] = useState<string | null>(null);
+  const [createdAccount, setCreatedAccount] = useState<Member | null>(null);
 
   // Fetch members and roles from API
   useEffect(() => {
@@ -42,9 +63,13 @@ export default function Member() {
         setLoading(true);
         setRolesLoading(true);
         setError(null);
+        const token = localStorage.getItem('accessToken');
+        if (!token) throw new Error('No authentication token found');
+
+        const authHeaders = { Authorization: `Bearer ${token}` };
         console.log('Attempting to fetch members from:', `${SERVER_URL}/api/users/getall`);
 
-        const membersResponse = await fetch(`${SERVER_URL}/api/users/getall`);
+        const membersResponse = await fetch(`${SERVER_URL}/api/users/getall`, { headers: authHeaders });
         console.log('Members response status:', membersResponse.status);
 
         if (!membersResponse.ok) {
@@ -59,7 +84,7 @@ export default function Member() {
         // Fetch available roles
         try {
           console.log('Attempting to fetch roles from:', `${SERVER_URL}/api/users/roles`);
-          const rolesResponse = await fetch(`${SERVER_URL}/api/users/roles`);
+          const rolesResponse = await fetch(`${SERVER_URL}/api/users/roles`, { headers: authHeaders });
 
           if (rolesResponse.ok) {
             const rolesData = await rolesResponse.json();
@@ -97,9 +122,10 @@ export default function Member() {
     fetchData();
   }, []);
 
-  // Filter members based on search term and exclude current user
+  const currentMember = user ? members.find((member) => member.id === user.id) : undefined;
+
+  // Keep the current account pinned while filtering the other family members.
   const filteredMembers = members.filter((member) => {
-    // Exclude current user
     if (user && member.id === user.id) {
       return false;
     }
@@ -111,6 +137,7 @@ export default function Member() {
       (member.display_name && member.display_name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
+  const displayedMembers = currentMember ? [currentMember, ...filteredMembers] : filteredMembers;
 
   // Get role badge color
   const getRoleBadgeColor = (role: string) => {
@@ -162,6 +189,88 @@ export default function Member() {
     setSelectedMember(null);
     setUpdateError(null);
     setUpdateSuccess(null);
+  };
+
+  const handleOpenCreateModal = () => {
+    const defaultRole = roles.find((role) => role.name === 'user')?.name || roles[0]?.name || 'user';
+    setCreateForm({ ...EMPTY_CREATE_ACCOUNT_FORM, role: defaultRole });
+    setCreateError(null);
+    setAccountSuccess(null);
+    setCreatedAccount(null);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    if (isCreating) return;
+    setIsCreateModalOpen(false);
+    setCreateError(null);
+    setAccountSuccess(null);
+    setCreatedAccount(null);
+    setCreateForm(EMPTY_CREATE_ACCOUNT_FORM);
+  };
+
+  const handleCreateAnother = () => {
+    const defaultRole = roles.find((role) => role.name === 'user')?.name || roles[0]?.name || 'user';
+    setCreateForm({ ...EMPTY_CREATE_ACCOUNT_FORM, role: defaultRole });
+    setCreateError(null);
+    setAccountSuccess(null);
+    setCreatedAccount(null);
+  };
+
+  const handleCreateFieldChange = (field: keyof CreateAccountForm, value: string) => {
+    setCreateForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleCreateAccount = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCreateError(null);
+
+    if (createForm.password !== createForm.confirmPassword) {
+      setCreateError('Passwords do not match.');
+      return;
+    }
+
+    if (createForm.password.length < 8) {
+      setCreateError('Password must be at least 8 characters.');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('No authentication token found');
+
+      const response = await fetch(`${SERVER_URL}/api/users/create-account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          username: createForm.username,
+          email: createForm.email,
+          password: createForm.password,
+          role: createForm.role,
+        }),
+      });
+      const responseData = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(responseData?.message || 'Failed to create account.');
+      }
+
+      if (!responseData?.user) {
+        throw new Error('The server did not return the created account.');
+      }
+
+      setMembers((current) => [responseData.user, ...current]);
+      setAccountSuccess(responseData.message || 'Account created successfully.');
+      setCreatedAccount(responseData.user);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create account.');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   // Handle role update
@@ -216,7 +325,9 @@ export default function Member() {
 
       // Refetch the updated member data
       try {
-        const updatedMemberResponse = await fetch(`${SERVER_URL}/api/users/${selectedMember.id}`);
+        const updatedMemberResponse = await fetch(`${SERVER_URL}/api/users/${selectedMember.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (updatedMemberResponse.ok) {
           const updatedMember = await updatedMemberResponse.json();
           // Update the members list with fresh data
@@ -287,20 +398,18 @@ export default function Member() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.titleSection}>
-          <h1 className={styles.title}>Team Members</h1>
-          <p className={styles.subtitle}>Manage and view all team members in your organization</p>
+          <h1 className={styles.title}>Family Members</h1>
+          <p className={styles.subtitle}>Manage and view all family members in your household</p>
         </div>
 
         <div className={styles.stats}>
           <div className={styles.statCard}>
-            <span className={styles.statNumber}>{filteredMembers.length}</span>
+            <span className={styles.statNumber}>{members.length}</span>
             <span className={styles.statLabel}>Total Members</span>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statNumber}>
-              {user && user.role === 'admin'
-                ? filteredMembers.filter((m) => m.role === 'admin').length + 1
-                : filteredMembers.filter((m) => m.role === 'admin').length}
+              {members.filter((member) => member.role === 'admin').length}
             </span>
             <span className={styles.statLabel}>Admins</span>
           </div>
@@ -318,28 +427,39 @@ export default function Member() {
           </svg>
           <input
             type="text"
-            placeholder="Search members by name, email, or role..."
+            placeholder="Search family members by name, email, or role..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={styles.searchInput}
           />
         </div>
+        {user?.role === 'admin' && (
+          <button type="button" className={styles.createAccountButton} onClick={handleOpenCreateModal}>
+            <span aria-hidden="true">+</span>
+            Create Account
+          </button>
+        )}
       </div>
 
       <div className={styles.memberGrid}>
-        {filteredMembers.length === 0 ? (
+        {displayedMembers.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>👥</div>
-            <h3>No members found</h3>
+            <h3>No family members found</h3>
             <p>Try adjusting your search criteria</p>
           </div>
         ) : (
-          filteredMembers.map((member) => (
-            <div key={member.id} className={styles.memberCard}>
+          displayedMembers.map((member) => {
+            const isCurrentMember = Boolean(user && member.id === user.id);
+            return (
+            <div key={member.id} className={`${styles.memberCard} ${isCurrentMember ? styles.currentMemberCard : ''}`}>
               <div className={styles.cardHeader}>
                 <div className={styles.avatar}>{getInitials(member.username)}</div>
                 <div className={styles.memberInfo}>
-                  <h3 className={styles.memberName}>{member.username}</h3>
+                  <div className={styles.memberNameRow}>
+                    <h3 className={styles.memberName}>{member.username}</h3>
+                    {isCurrentMember && <span className={styles.youBadge}>You</span>}
+                  </div>
                   <p className={styles.memberEmail}>{member.email}</p>
                 </div>
               </div>
@@ -370,21 +490,146 @@ export default function Member() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  View Details
+                  {isCurrentMember ? 'View My Details' : 'View Details'}
                 </button>
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
+
+      {/* Create Account Modal */}
+      {isCreateModalOpen && (
+        <div className={styles.modalOverlay} onClick={handleCloseCreateModal}>
+          <form
+            className={styles.modal}
+            onSubmit={handleCreateAccount}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-account-title"
+            aria-describedby="create-account-description"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <h2 id="create-account-title">Create Account</h2>
+                <p id="create-account-description" className={styles.modalDescription}>Create sign-in credentials and assign an access role.</p>
+              </div>
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={handleCloseCreateModal}
+                aria-label="Close create account dialog"
+                disabled={isCreating}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              {createdAccount && accountSuccess ? (
+                <>
+                  <div className={styles.createSuccessAlert} role="status">
+                    <span className={styles.createSuccessIcon} aria-hidden="true">✓</span>
+                    <div>
+                      <strong>{accountSuccess}</strong>
+                      <p>The new account can now sign in using the credentials you provided.</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.createdAccountSummary} aria-label="Created account summary">
+                    <div className={styles.summaryRow}>
+                      <span className={styles.summaryLabel}>Username</span>
+                      <span className={styles.summaryValue}>{createdAccount.username}</span>
+                    </div>
+                    <div className={styles.summaryRow}>
+                      <span className={styles.summaryLabel}>Email</span>
+                      <span className={styles.summaryValue}>{createdAccount.email}</span>
+                    </div>
+                    <div className={styles.summaryRow}>
+                      <span className={styles.summaryLabel}>Role</span>
+                      <span className={`${styles.roleBadge} ${getRoleBadgeColor(createdAccount.role)}`}>
+                        {getRoleDisplayName(createdAccount.role, createdAccount.display_name)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {createError && (
+                    <div className={styles.errorMessage} role="alert">
+                      {createError}
+                    </div>
+                  )}
+
+                  <div className={styles.createFormGrid}>
+                    <label className={styles.formField}>
+                      <span>Username</span>
+                      <input name="username" value={createForm.username} onChange={(event) => handleCreateFieldChange('username', event.target.value)} autoComplete="off" required disabled={isCreating} />
+                    </label>
+
+                    <label className={styles.formField}>
+                      <span>Email</span>
+                      <input name="email" type="email" value={createForm.email} onChange={(event) => handleCreateFieldChange('email', event.target.value)} autoComplete="off" required disabled={isCreating} />
+                    </label>
+
+                    <label className={styles.formField}>
+                      <span>Temporary password</span>
+                      <input name="password" type="password" value={createForm.password} onChange={(event) => handleCreateFieldChange('password', event.target.value)} autoComplete="new-password" minLength={8} required disabled={isCreating} />
+                      <small>Use at least 8 characters.</small>
+                    </label>
+
+                    <label className={styles.formField}>
+                      <span>Confirm password</span>
+                      <input name="confirmPassword" type="password" value={createForm.confirmPassword} onChange={(event) => handleCreateFieldChange('confirmPassword', event.target.value)} autoComplete="new-password" minLength={8} required disabled={isCreating} />
+                    </label>
+
+                    <label className={styles.formField}>
+                      <span>Role</span>
+                      <select name="role" value={createForm.role} onChange={(event) => handleCreateFieldChange('role', event.target.value)} required disabled={isCreating || rolesLoading}>
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.name}>{role.display_name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className={`${styles.modalFooter} ${styles.createModalFooter}`}>
+              {createdAccount ? (
+                <>
+                  <button type="button" className={styles.closeModalButton} onClick={handleCreateAnother}>Create Another</button>
+                  <button type="button" className={styles.submitAccountButton} onClick={handleCloseCreateModal}>Done</button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className={styles.closeModalButton} onClick={handleCloseCreateModal} disabled={isCreating}>Cancel</button>
+                  <button type="submit" className={styles.submitAccountButton} disabled={isCreating || rolesLoading}>
+                    {isCreating ? 'Creating…' : 'Create Account'}
+                  </button>
+                </>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Member Details Modal */}
       {isModalOpen && selectedMember && (
         <div className={styles.modalOverlay} onClick={handleCloseModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2>Member Details</h2>
-              <button className={styles.closeButton} onClick={handleCloseModal}>
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={user && selectedMember.id === user.id ? 'Your account details' : 'Family member details'}
+          >
+            <div className={`${styles.modalHeader} ${styles.detailsModalHeader}`}>
+              <h2 className={styles.detailsModalTitle}>Details</h2>
+              <button className={styles.closeButton} onClick={handleCloseModal} aria-label="Close member details">
                 ×
               </button>
             </div>
@@ -430,10 +675,17 @@ export default function Member() {
                 </div>
               </div>
 
+              {user && selectedMember.id === user.id && (
+                <div className={styles.selfRoleNotice} role="note">
+                  <span aria-hidden="true">ⓘ</span>
+                  <span>Your role cannot be changed from this page. Another administrator must update it.</span>
+                </div>
+              )}
+
               {/* Only show role management if current user is admin */}
-              {user && user.role === 'admin' && (
+              {user && user.role === 'admin' && selectedMember.id !== user.id && (
                 <div>
-                  <div className={styles.roleSection}>
+                  <div className={`${styles.roleSection} ${styles.roleManagementSection}`}>
                     <h4>Role Management</h4>
                     <div className={styles.roleActions}>
                       <label className={styles.roleLabel}>Change Role:</label>
@@ -497,11 +749,6 @@ export default function Member() {
               )}
             </div>
 
-            <div className={styles.modalFooter}>
-              <button className={styles.closeModalButton} onClick={handleCloseModal}>
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}

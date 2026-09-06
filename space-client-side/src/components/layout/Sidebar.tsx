@@ -1,43 +1,28 @@
 import { NavLink } from 'react-router';
 import { useAuth } from '@/context/useAuth';
+import { useFloorplan } from '@/context/useFlooplan';
+import { NAVIGATION_ITEMS } from '../../routes/access';
 import styles from './Sidebar.module.css';
+import { isDeviceAlertActive } from '@/utils/deviceAlert';
 
 export default function Sidebar() {
   const { user } = useAuth();
+  const { devices } = useFloorplan();
 
-  // Define all navigation links
-  const allNavLinks = [
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/floorplan', label: 'Floor Plan' },
-    { to: '/device', label: 'Device' },
-    { to: '/member', label: 'Member' },
-  ];
+  const navLinks = user ? NAVIGATION_ITEMS.filter((item) => item.allowedRoles.includes(user.role)) : [];
+  const hasActiveAlerts = (devices ?? []).some((device) => isDeviceAlertActive(device));
 
-  // Filter navigation links based on user role
-  const getNavLinksForRole = () => {
-    if (!user) return [];
-
-    if (user.role === 'user') {
-      // Regular users only see Dashboard
-      return [{ to: '/dashboard', label: 'Dashboard' }];
-    } else if (user.role === 'admin') {
-      // Admins see all pages
-      return allNavLinks;
-    }
-
-    // Default fallback - show only dashboard
-    return [{ to: '/dashboard', label: 'Dashboard' }];
-  };
-
-  const navLinks = getNavLinksForRole();
   return (
     <div className={styles.sidebarContainer}>
       <aside className={styles.sidebar}>
         <ul>
-          {navLinks.map((link, index) => (
-            <li key={index}>
+          {navLinks.map((link) => (
+            <li key={link.to}>
               <NavLink to={link.to} className={({ isActive }) => (isActive ? styles.activeLink : undefined)}>
-                {link.label}
+                <span>{link.label}</span>
+                {link.to === '/dashboard' && hasActiveAlerts && (
+                   <span className={styles.alertIcon} aria-hidden="true">!</span>
+                )}
               </NavLink>
             </li>
           ))}

@@ -1,5 +1,8 @@
 import { useDraggable } from '@dnd-kit/core';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { DEFAULT_DEVICE_ICON } from '../utils/deviceIcon';
+import { getDeviceBoxSize } from '../utils/handleDragEnd';
+import CameraHoverPreview from './CameraHoverPreview';
 
 // Add CSS animation for alert pulsing
 const addAlertAnimation = () => {
@@ -10,11 +13,23 @@ const addAlertAnimation = () => {
       @keyframes alertPulse {
         0%, 100% {
           opacity: 1;
-          transform: scale(1);
+          filter: brightness(1);
+          background-color: rgba(220, 38, 38, 0.92);
+          border-color: rgba(254, 226, 226, 1);
+          box-shadow:
+            0 4px 12px rgba(127, 29, 29, 0.42),
+            0 0 15px 6px rgba(239, 68, 68, 0.42),
+            0 0 30px 14px rgba(220, 38, 38, 0.2);
         }
         50% {
-          opacity: 0.8;
-          transform: scale(1.05);
+          opacity: 1;
+          filter: brightness(1.12) saturate(1.18);
+          background-color: rgba(250, 204, 21, 0.96);
+          border-color: rgba(255, 251, 235, 1);
+          box-shadow:
+            0 4px 13px rgba(161, 98, 7, 0.4),
+            0 0 17px 7px rgba(250, 204, 21, 0.44),
+            0 0 34px 16px rgba(234, 179, 8, 0.2);
         }
       }
     `;
@@ -39,13 +54,14 @@ export interface DraggableBoxProps {
   containerHeight: number;
   iconURL?: string;
   onClick?: (event?: React.PointerEvent) => void;
-  onDoubleClick?: () => void;
   disabled?: boolean;
   alert?: boolean;
   deviceName?: string;
   value?: string | number;
   unit?: string;
   useBuiltInModal?: boolean; // New prop to control modal behavior
+  cameraPreviewUrl?: string;
+  dragging?: boolean;
 }
 
 export default function DraggableBox({
@@ -55,27 +71,52 @@ export default function DraggableBox({
   containerHeight,
   iconURL,
   onClick,
-  onDoubleClick,
   disabled = true,
   alert = false,
   deviceName,
   value,
   unit,
   useBuiltInModal = false,
+  cameraPreviewUrl,
+  dragging = false,
 }: DraggableBoxProps) {
-  const boxSize = Math.max(
-    MIN_BOX_SIZE,
-    Math.min(Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT, MAX_BOX_SIZE)
-  );
+  const boxSize = getDeviceBoxSize(containerWidth);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipCloseTimer = useRef<number | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [resolvedIconURL, setResolvedIconURL] = useState(iconURL || DEFAULT_DEVICE_ICON);
+
+  useEffect(() => {
+    const nextIconURL = iconURL || DEFAULT_DEVICE_ICON;
+    const image = new Image();
+    image.onload = () => setResolvedIconURL(nextIconURL);
+    image.onerror = () => setResolvedIconURL(DEFAULT_DEVICE_ICON);
+    image.src = nextIconURL;
+  }, [iconURL]);
 
   // Add animation styles on component mount
   useEffect(() => {
     addAlertAnimation();
+    return () => {
+      if (tooltipCloseTimer.current !== null) window.clearTimeout(tooltipCloseTimer.current);
+    };
   }, []);
+
+  const openTooltip = () => {
+    if (tooltipCloseTimer.current !== null) window.clearTimeout(tooltipCloseTimer.current);
+    tooltipCloseTimer.current = null;
+    setShowTooltip(true);
+  };
+
+  const scheduleTooltipClose = () => {
+    if (tooltipCloseTimer.current !== null) window.clearTimeout(tooltipCloseTimer.current);
+    tooltipCloseTimer.current = window.setTimeout(() => {
+      setShowTooltip(false);
+      tooltipCloseTimer.current = null;
+    }, cameraPreviewUrl ? 220 : 0);
+  };
 
   const left = position.x * (containerWidth - boxSize);
   const top = position.y * (containerHeight - boxSize);
@@ -101,17 +142,23 @@ export default function DraggableBox({
   const getTooltipColors = () => {
     if (alert) {
       return {
-        backgroundColor: 'rgba(220, 38, 38, 0.95)', // Red background for alerts
-        borderColor: 'rgba(220, 38, 38, 0.95)',
-        textColor: 'white',
-        shadowColor: 'rgba(220, 38, 38, 0.4)',
+        backgroundColor: 'rgba(127, 29, 29, 0.96)',
+        borderColor: 'rgba(127, 29, 29, 0.96)',
+        textColor: '#fff7ed',
+        shadowColor: 'rgba(127, 29, 29, 0.36)',
+        mutedTextColor: '#fecaca',
+        accentColor: '#fca5a5',
+        dividerColor: 'rgba(254, 202, 202, 0.22)',
       };
     }
     return {
-      backgroundColor: 'rgba(0, 0, 0, 0.9)', // Default dark background
-      borderColor: 'rgba(0, 0, 0, 0.9)',
-      textColor: 'white',
-      shadowColor: 'rgba(0, 0, 0, 0.3)',
+      backgroundColor: 'rgba(15, 23, 42, 0.96)',
+      borderColor: 'rgba(15, 23, 42, 0.96)',
+      textColor: '#f8fafc',
+      shadowColor: 'rgba(15, 23, 42, 0.28)',
+      mutedTextColor: '#cbd5e1',
+      accentColor: '#7dd3fc',
+      dividerColor: 'rgba(203, 213, 225, 0.18)',
     };
   };
 
@@ -313,58 +360,85 @@ export default function DraggableBox({
           transform: 'translateX(-50%)',
           backgroundColor: tooltipColors.backgroundColor,
           color: tooltipColors.textColor,
-          padding: '8px 12px',
-          borderRadius: '6px',
+          minWidth: '154px',
+          padding: '10px 12px 9px',
+          borderRadius: '10px',
           fontSize: '12px',
           whiteSpace: 'nowrap',
-          marginBottom: '8px',
-          boxShadow: `0 2px 8px ${tooltipColors.shadowColor}`,
+          marginBottom: '10px',
+          boxShadow: `0 8px 24px ${tooltipColors.shadowColor}`,
           zIndex: 1000,
           pointerEvents: 'none',
-          border: alert ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+          border: `1px solid ${alert ? 'rgba(254, 202, 202, 0.2)' : 'rgba(255, 255, 255, 0.1)'}`,
+          backdropFilter: 'blur(8px)',
         }}
       >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginBottom: '5px',
+            color: tooltipColors.accentColor,
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            lineHeight: 1,
+            textTransform: 'uppercase',
+          }}
+        >
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: tooltipColors.accentColor,
+              boxShadow: alert ? '0 0 0 3px rgba(252, 165, 165, 0.14)' : 'none',
+            }}
+          />
+          {alert ? 'Alert' : 'Normal'}
+        </div>
         {deviceName && (
           <div
             style={{
-              fontWeight: 'bold',
-              marginBottom: '2px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
+              fontWeight: 650,
+              fontSize: '12px',
+              lineHeight: 1.35,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '190px',
             }}
           >
-            {alert && <span style={{ fontSize: '10px' }}>⚠️</span>}
             {deviceName}
           </div>
         )}
-        {value !== undefined && <div>{formatValue()}</div>}
-        {alert && !deviceName && (
+        {value !== undefined && (
           <div
             style={{
-              fontSize: '10px',
-              opacity: 0.9,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
+              color: value === null || value === '' ? tooltipColors.mutedTextColor : tooltipColors.textColor,
+              fontSize: value === null || value === '' ? '11px' : '15px',
+              fontWeight: value === null || value === '' ? 500 : 700,
+              lineHeight: 1.4,
+              marginTop: '1px',
             }}
           >
-            ⚠️ Alert
+            {formatValue()}
           </div>
         )}
-        {/* Click hint */}
-        <div
-          style={{
-            fontSize: '9px',
-            opacity: 0.7,
-            marginTop: '4px',
-            fontStyle: 'italic',
-            borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-            paddingTop: '4px',
-          }}
-        >
-          {useBuiltInModal ? 'Click for details' : 'Double-click for details'}
-        </div>
+        {useBuiltInModal && (
+          <div
+            style={{
+              color: tooltipColors.mutedTextColor,
+              fontSize: '9px',
+              marginTop: '7px',
+              borderTop: `1px solid ${tooltipColors.dividerColor}`,
+              paddingTop: '6px',
+              lineHeight: 1.2,
+            }}
+          >
+            Click for details
+          </div>
+        )}
         {/* Tooltip arrow */}
         <div
           style={{
@@ -393,9 +467,9 @@ export default function DraggableBox({
       };
     }
     return {
-      backgroundColor: 'rgba(132, 221, 243, 0.31)', // Default blue
-      borderColor: 'rgba(255, 255, 255, 0.56)', // Default white border
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.49)', // Default shadow
+      backgroundColor: 'rgba(218, 239, 235, 0.82)',
+      borderColor: 'rgba(255, 255, 255, 0.9)',
+      boxShadow: '0 5px 14px rgba(26, 44, 47, 0.25), inset 0 1px rgba(255, 255, 255, 0.56)',
       pulse: false,
     };
   };
@@ -404,31 +478,33 @@ export default function DraggableBox({
 
   const style: React.CSSProperties = {
     position: 'absolute',
+    zIndex: showTooltip ? 3000 : isDragging ? 2000 : 1,
     top,
     left,
     width: boxSize,
     height: boxSize,
+    boxSizing: 'border-box',
     fontSize: '12px',
     color: 'white',
     backgroundColor: boxColors.backgroundColor,
-    backgroundImage: iconURL ? `url(${iconURL})` : undefined,
-    backgroundSize: 'cover',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: '20%',
-    backdropFilter: 'blur(2px)',
+    borderRadius: '24%',
+    backdropFilter: 'blur(5px)',
     border: `1px solid ${boxColors.borderColor}`,
     boxShadow: boxColors.boxShadow,
     margin: 0,
-    padding: '5px',
-    transform: isDragging && transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    cursor: disabled ? 'pointer' : 'grab',
-    opacity: !disabled ? 0.6 : 1,
+    padding: 0,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    cursor: disabled ? 'pointer' : isDragging ? 'grabbing' : 'grab',
+    touchAction: disabled ? undefined : 'none',
+    userSelect: isDragging ? 'none' : undefined,
+    willChange: isDragging ? 'transform' : undefined,
+    opacity: dragging ? 0 : 1,
+    visibility: dragging ? 'hidden' : 'visible',
     // Add pulsing animation for alerts
-    animation: alert ? 'alertPulse 2s ease-in-out infinite' : undefined,
+    animation: alert && !dragging ? 'alertPulse 1.2s ease-in-out infinite' : undefined,
   };
 
   return (
@@ -445,19 +521,34 @@ export default function DraggableBox({
             onClick?.(e);
           }
         }}
-        onDoubleClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!useBuiltInModal) {
-            handleDetailClick(e);
-          }
-          onDoubleClick?.();
-        }}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseEnter={openTooltip}
+        onMouseLeave={scheduleTooltipClose}
       >
-        {/* Tooltip */}
-        {showTooltip && tooltipContent}
+        <img
+          src={resolvedIconURL}
+          alt=""
+          draggable={false}
+          style={{
+            display: 'block',
+            width: '84%',
+            height: '84%',
+            objectFit: 'contain',
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        />
+        {/* Camera devices get a live hover card; other devices keep the compact value tooltip. */}
+        {showTooltip && cameraPreviewUrl ? (
+          <CameraHoverPreview
+            name={deviceName || 'Camera'}
+            streamUrl={cameraPreviewUrl}
+            align={position.x > 0.64 ? 'left' : 'right'}
+            onMouseEnter={openTooltip}
+            onMouseLeave={scheduleTooltipClose}
+          />
+        ) : (
+          showTooltip && tooltipContent
+        )}
       </div>
 
       {/* Detail Modal */}
