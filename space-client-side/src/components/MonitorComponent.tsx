@@ -46,16 +46,6 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
     setRetryKeys((current) => ({ ...current, [camera.id]: (current[camera.id] ?? 0) + 1 }));
   };
 
-  const takeScreenshot = () => {
-    if (!expandedCamera || imageErrors[expandedCamera.id]) return;
-    const link = document.createElement('a');
-    link.href = expandedCamera.streamUrl;
-    link.download = `${expandedCamera.name}_screenshot_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  };
-
   return (
     <div className={styles.monitorContainer}>
       <section className={styles.summary} aria-label="Camera status summary">
@@ -101,7 +91,7 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
               ) : (
                 <img key={retryKeys[expandedCamera.id] ?? 0} src={expandedCamera.streamUrl} alt={expandedCamera.name} className={styles.expandedImage} onError={() => setImageErrors((current) => ({ ...current, [expandedCamera.id]: true }))} />
               )}
-              {!imageErrors[expandedCamera.id] && <><span className={styles.modalLiveBadge}><i /> LIVE</span><div className={styles.overlayActions}><button type="button" onClick={takeScreenshot} title="Take screenshot">▣</button><button type="button" onClick={() => retryCamera(expandedCamera)} title="Refresh feed">↻</button></div><div className={styles.cinematicBar}><div><h2>{expandedCamera.name}</h2><p>{expandedCamera.details} · Secure live stream</p></div><time className={styles.modalTime}>{clock}</time></div></>}
+              {!imageErrors[expandedCamera.id] && <><span className={styles.modalLiveBadge}><i /> LIVE</span><div className={styles.overlayActions}><button type="button" onClick={() => retryCamera(expandedCamera)} title="Refresh feed">↻</button></div><div className={styles.cinematicBar}><div><h2>{expandedCamera.name}</h2><p>{expandedCamera.details} · Secure live stream</p></div><time className={styles.modalTime}>{clock}</time></div></>}
             </div>
           </div>
         </div>
