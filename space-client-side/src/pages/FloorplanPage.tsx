@@ -11,6 +11,7 @@ import ImageUpload from '../components/floorplan/ImageUpload';
 import { getDeviceIconUrl, handleDeviceIconError } from '../utils/deviceIcon';
 import { useDeviceMonitoring } from '../hooks/useDeviceMonitoring';
 import UnassignedDevicesView from '../components/UnassignedDevicesView';
+import SuccessModal from '../components/SuccessModal';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -29,6 +30,7 @@ export default function FloorplanPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
@@ -205,7 +207,7 @@ export default function FloorplanPage() {
       );
 
       console.log('All device positions saved successfully');
-      alert('Device positions saved!');
+      setSuccessMessage('Your device positions are up to date.');
       setEditMode(false); // Exit edit mode after saving
     } catch (error) {
       console.error('Failed to save device positions:', error);
@@ -254,10 +256,12 @@ export default function FloorplanPage() {
       if (created && created.id) {
         setSelected(created);
       }
+      return true;
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create floorplan';
       alert(errorMessage);
+      return false;
     }
   };
 
@@ -299,7 +303,7 @@ export default function FloorplanPage() {
       // Note: You might need to add an update function to your FloorplanContext
 
       setOpenEditFloorplan(false);
-      alert('Floorplan updated successfully!');
+      setSuccessMessage('Your floorplan is up to date.');
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update floorplan';
@@ -411,6 +415,7 @@ export default function FloorplanPage() {
 
   return (
     <div className={styles.floorplanContainer}>
+      <SuccessModal message={successMessage} onClose={() => setSuccessMessage('')} />
       <div className={styles.floorplanWrapper}>
         {/* Header Section */}
         <div className={styles.headerSection}>

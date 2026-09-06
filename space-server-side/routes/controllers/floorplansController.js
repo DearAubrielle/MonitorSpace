@@ -34,7 +34,7 @@ const upload = multer({
 const convertToPNG = async (buffer) => {
   try {
     const pngBuffer = await sharp(buffer)
-      .png({ quality: 90 })
+      .png({ compressionLevel: 9 })
       .toBuffer();
     return pngBuffer;
   } catch (err) {
@@ -75,13 +75,14 @@ exports.createFloorplan = [
       const uploadResult = await new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
+            timeout: 120000,
             folder: 'floorplans', // Organize images in a folder
             resource_type: 'image',
             format: 'png', // Force PNG format
             quality: 'auto:good', // Automatic quality optimization
           },
           (error, result) => {
-            if (error) reject(error);
+            if (error) reject(Object.assign(new Error(error.message), { uploadFailure: true, uploadTimeout: error.name === 'TimeoutError' || error.http_code === 499 }));
             else resolve(result);
           }
         ).end(pngBuffer);
@@ -106,9 +107,15 @@ exports.createFloorplan = [
       
       res.status(201).json(newFloorplan);
     } catch (err) {
-      console.error("Error executing query:", err);
-      
-      // If there's an error, we don't need to delete files since they're in cloud
+      console.error("Error creating floorplan:", err);
+      if (err.uploadFailure) {
+        return res.status(err.uploadTimeout ? 504 : 502).json({
+          message: err.uploadTimeout
+            ? "Image upload timed out. Please try again or use a smaller image."
+            : "Image upload failed. Please try again.",
+        });
+      }
+
       res.status(500).json({ message: "Database query error" });
     }
   }

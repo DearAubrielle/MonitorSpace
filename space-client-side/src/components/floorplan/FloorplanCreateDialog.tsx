@@ -4,7 +4,7 @@ import styles from './FloorplanCreateDialog.module.css';
 interface FloorplanCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { name: string; description: string; imageFile: File | null }) => void;
+  onSubmit: (data: { name: string; description: string; imageFile: File | null }) => Promise<boolean | undefined>;
   ImageUpload: React.ComponentType<{ onImageUpload: (file: File) => void }>;
 }
 
@@ -17,6 +17,7 @@ export default function FloorplanCreateDialog({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; image?: string }>({});
 
   if (!open) return null;
@@ -36,19 +37,27 @@ export default function FloorplanCreateDialog({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!validateForm()) {
       return;
     }
 
-    onSubmit({ name, description, imageFile });
-    setName('');
-    setDescription('');
-    setImageFile(null);
-    setErrors({});
+    setIsSubmitting(true);
+    try {
+      if (await onSubmit({ name, description, imageFile })) {
+        setName('');
+        setDescription('');
+        setImageFile(null);
+        setErrors({});
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
+    if (isSubmitting) return;
     onOpenChange(false);
     setName('');
     setDescription('');
@@ -81,6 +90,7 @@ export default function FloorplanCreateDialog({
             <input
               id="name"
               type="text"
+              autoComplete="off"
               className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
               value={name}
               onChange={(e) => {
@@ -101,6 +111,7 @@ export default function FloorplanCreateDialog({
             </label>
             <textarea
               id="description"
+              autoComplete="off"
               className={styles.textarea}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -131,13 +142,13 @@ export default function FloorplanCreateDialog({
           <button
             className={`${styles.button} ${styles.buttonPrimary}`}
             onClick={handleSubmit}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isSubmitting}
             style={{
               opacity: isFormValid ? 1 : 0.5,
               cursor: isFormValid ? 'pointer' : 'not-allowed',
             }}
           >
-            Create
+            {isSubmitting ? 'Creating...' : 'Create'}
           </button>
         </div>
       </div>
