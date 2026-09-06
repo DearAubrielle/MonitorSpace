@@ -74,17 +74,23 @@ export default function FloorplanPage() {
   // Update rendered size on window resize for responsive layout
   const [renderedSize, setRenderedSize] = useState({ width: 1, height: 1 });
   useEffect(() => {
-    function updateSize() {
+    const updateSize = () => {
       if (containerRef.current) {
-        setRenderedSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-        });
+        const nextWidth = containerRef.current.offsetWidth;
+        const nextHeight = containerRef.current.offsetHeight;
+        setRenderedSize((current) =>
+          current.width === nextWidth && current.height === nextHeight
+            ? current
+            : { width: nextWidth, height: nextHeight }
+        );
       }
-    }
-    window.addEventListener('resize', updateSize);
+    };
+
     updateSize();
-    return () => window.removeEventListener('resize', updateSize);
+
+    const observer = new ResizeObserver(updateSize);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [containerSize.width, containerSize.height]);
 
   // Store device positions separately for drag state

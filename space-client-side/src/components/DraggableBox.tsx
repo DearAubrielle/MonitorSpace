@@ -1,6 +1,7 @@
 import { useDraggable } from '@dnd-kit/core';
 import { useState, useEffect, useRef } from 'react';
 import { DEFAULT_DEVICE_ICON } from '../utils/deviceIcon';
+import { getDeviceBoxSize } from '../utils/handleDragEnd';
 import CameraHoverPreview from './CameraHoverPreview';
 
 // Add CSS animation for alert pulsing
@@ -79,10 +80,7 @@ export default function DraggableBox({
   cameraPreviewUrl,
   dragging = false,
 }: DraggableBoxProps) {
-  const boxSize = Math.max(
-    MIN_BOX_SIZE,
-    Math.min(Math.min(containerWidth, containerHeight) * BOX_SIZE_PERCENT, MAX_BOX_SIZE)
-  );
+  const boxSize = getDeviceBoxSize(containerWidth);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   const [showTooltip, setShowTooltip] = useState(false);

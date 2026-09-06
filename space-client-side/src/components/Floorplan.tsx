@@ -3,7 +3,7 @@ import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { useState } from 'react';
 import DraggableBox from './DraggableBox';
 import type { Device, DeviceType } from '../types/Device';
-import type { PercentPosition } from '../utils/handleDragEnd';
+import { getDeviceBoxSize, type PercentPosition } from '../utils/handleDragEnd';
 import { getDeviceIconUrl } from '../utils/deviceIcon';
 
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -42,10 +42,7 @@ export default function Floorplan({
   const activeType = activeDevice
     ? deviceTypes.find((type) => type.id === activeDevice.device_type_id)
     : undefined;
-  const dragPreviewSize = Math.max(
-    20,
-    Math.min(Math.min(renderedSize.width, renderedSize.height) * 0.07, 40)
-  );
+  const dragPreviewSize = getDeviceBoxSize(renderedSize.width);
 
   return (
     <AspectRatioBox
