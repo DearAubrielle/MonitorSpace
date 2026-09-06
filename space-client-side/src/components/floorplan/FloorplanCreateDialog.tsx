@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import styles from './FloorplanCreateDialog.module.css';
 
 interface FloorplanCreateDialogProps {
@@ -14,6 +14,8 @@ export default function FloorplanCreateDialog({
   onSubmit,
   ImageUpload,
 }: FloorplanCreateDialogProps) {
+  const nameRef = useRef<HTMLInputElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -26,14 +28,16 @@ export default function FloorplanCreateDialog({
     const newErrors: { name?: string; image?: string } = {};
 
     if (!name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Enter a name for your floorplan.';
     }
 
     if (!imageFile) {
-      newErrors.image = 'Image is required';
+      newErrors.image = 'Choose a floorplan image before creating it.';
     }
 
     setErrors(newErrors);
+    if (newErrors.name) nameRef.current?.focus();
+    else if (newErrors.image) imageRef.current?.focus();
     return Object.keys(newErrors).length === 0;
   };
 
@@ -71,8 +75,6 @@ export default function FloorplanCreateDialog({
     }
   };
 
-  // Check if form is valid for submit button styling
-  const isFormValid = name.trim() && imageFile;
 
   return (
     <div className={styles.overlay} onClick={handleOverlayClick}>
@@ -89,6 +91,9 @@ export default function FloorplanCreateDialog({
             </label>
             <input
               id="name"
+              ref={nameRef}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? "floorplan-name-error" : undefined}
               type="text"
               autoComplete="off"
               className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
@@ -102,7 +107,7 @@ export default function FloorplanCreateDialog({
               placeholder="Enter floorplan name"
               required
             />
-            {errors.name && <p className={styles.errorText}>{errors.name}</p>}
+            {errors.name && <p id="floorplan-name-error" role="alert" className={styles.errorText}>{errors.name}</p>}
           </div>
 
           <div className={styles.formGroup}>
@@ -121,7 +126,7 @@ export default function FloorplanCreateDialog({
 
           <div className={styles.formGroup}>
             <label className={styles.label}>Floorplan Image *</label>
-            <div className={errors.image ? styles.imageUploadError : ''}>
+            <div ref={imageRef} tabIndex={-1} role="group" aria-label="Floorplan image" aria-describedby={errors.image ? "floorplan-image-error" : undefined} className={errors.image ? styles.imageUploadError : ''}>
               <ImageUpload
                 onImageUpload={(file) => {
                   setImageFile(file);
@@ -131,7 +136,7 @@ export default function FloorplanCreateDialog({
                 }}
               />
             </div>
-            {errors.image && <p className={styles.errorText}>{errors.image}</p>}
+            {errors.image && <p id="floorplan-image-error" role="alert" className={styles.errorText}>{errors.image}</p>}
           </div>
         </div>
 
@@ -142,11 +147,7 @@ export default function FloorplanCreateDialog({
           <button
             className={`${styles.button} ${styles.buttonPrimary}`}
             onClick={handleSubmit}
-            disabled={!isFormValid || isSubmitting}
-            style={{
-              opacity: isFormValid ? 1 : 0.5,
-              cursor: isFormValid ? 'pointer' : 'not-allowed',
-            }}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Creating...' : 'Create'}
           </button>

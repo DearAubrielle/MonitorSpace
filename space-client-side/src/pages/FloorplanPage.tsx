@@ -33,9 +33,6 @@ export default function FloorplanPage() {
   const [success, setSuccess] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorFeedback, setErrorFeedback] = useState<{ title: string; message: string } | null>(null);
-  const [newName, setNewName] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletePhase, setDeletePhase] = useState<'idle' | 'moving' | 'deleting'>('idle');
 
@@ -217,25 +214,13 @@ export default function FloorplanPage() {
     }
   };
   const handleNewFloorplan = () => {
-    setNewName('');
-    setNewDescription('');
-    setNewImageFile(null);
     setOpenCreateFloorplan(true);
   };
 
-  const submitNewFloorplan = async (data?: { name: string; description: string; imageFile: File | null }) => {
-    const name = data?.name ?? newName;
-    const description = data?.description ?? newDescription;
-    const imageFile = data?.imageFile ?? newImageFile;
-
-    if (!name) {
-      setErrorFeedback({ title: 'Floorplan name required', message: 'Enter a name before creating your floorplan.' });
-      return;
-    }
-    if (!imageFile) {
-      setErrorFeedback({ title: 'Floorplan image required', message: 'Choose an image before creating your floorplan.' });
-      return;
-    }
+  const submitNewFloorplan = async (data: { name: string; description: string; imageFile: File | null }) => {
+    const { name, description, imageFile } = data;
+    // Field guidance is handled by the create dialog before submission.
+    if (!name.trim() || !imageFile) return false;
 
     try {
       const form = new FormData();

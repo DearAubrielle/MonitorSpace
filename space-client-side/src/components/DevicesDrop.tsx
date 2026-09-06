@@ -89,20 +89,7 @@ export default function DevicesDrop() {
         <DroppableContainer id="left" items={leftItems} title="Devices" />
         <DroppableContainer id="right" items={rightItems} title="To current floor plan" />
       </div>
-      <div style={{ textAlign: 'right', padding: '20px' }}>
-        <button
-          style={{
-            padding: '10px 20px',
-            borderRadius: '6px',
-            backgroundColor: '#e6f0ff',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-          onClick={() => alert('Saved!')}
-        >
-          Save
-        </button>
-      </div>
+
     </DndContext>
   );
 }
