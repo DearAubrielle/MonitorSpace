@@ -1,6 +1,6 @@
 import { DragEndEvent } from '@dnd-kit/core';
 
-export const BOX_SIZE_PERCENT = 0.07;
+export const BOX_SIZE_PERCENT = 0.06;
 export const MIN_BOX_SIZE = 20;
 export const MAX_BOX_SIZE = 40;
 
