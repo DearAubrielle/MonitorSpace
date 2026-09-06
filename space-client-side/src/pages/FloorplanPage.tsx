@@ -654,6 +654,7 @@ export default function FloorplanPage() {
                 </button>
               </div>
 
+              {(getAssignedDevices().length > 0 || error) && (
               <div className={styles.deleteModalBody}>
                 {getAssignedDevices().length > 0 && (
                   <>
@@ -696,6 +697,8 @@ export default function FloorplanPage() {
                   </div>
                 )}
               </div>
+
+              )}
 
               <div className={styles.modalActions}>
                 <Button

@@ -425,6 +425,10 @@ p {
   opacity: 0.5;
 }
 
+.deleteModalHeader + .modalActions {
+  border-top: 0;
+}
+
 .deleteModalBody {
   min-height: 0;
   overflow-x: hidden;
