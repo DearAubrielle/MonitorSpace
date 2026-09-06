@@ -1,4 +1,5 @@
 import Button from '@/components/Button';
+import SuccessModal from '@/components/SuccessModal';
 import { useFloorplan } from '@/context/useFlooplan';
 import { useEffect, useRef, useState } from 'react';
 import type { Device } from '../types/Device';
@@ -14,6 +15,7 @@ const Devices = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Device | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createSuccess, setCreateSuccess] = useState('');
   const [isCreatingDevice, setIsCreatingDevice] = useState(false);
   const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
   const createRequestInFlight = useRef(false);
@@ -160,7 +162,7 @@ const Devices = () => {
       }
 
       if (res.status === 201) {
-        setSuccess(data?.message || 'Device added successfully!');
+        setCreateSuccess(data?.message || 'Device added successfully!');
         // Refresh device list from backend
         fetch(`${SERVER_URL}/api/devices/getd`)
           .then((res) => res.json())
@@ -769,6 +771,8 @@ const Devices = () => {
             </div>
           </div>
         )}
+
+        <SuccessModal title="Device added" message={createSuccess} onClose={() => setCreateSuccess('')} />
 
         {success && (
           <div className={`${styles.overlay} ${styles.successOverlay}`} onClick={() => setSuccess('')}>
