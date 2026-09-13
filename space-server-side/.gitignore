@@ -3,6 +3,7 @@
 /**/*.map
 /**/*.d.ts
 /tsconfig.tsbuildinfo
+/test
 LICENSE
 readme.md
 .env

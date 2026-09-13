@@ -2,17 +2,7 @@ const db = require("../../db");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const isAdmin = (req, res) => {
-  if (!req.user || req.user.role !== 'admin') {
-    res.status(403).json({ message: 'Only admins can manage user accounts.' });
-    return false;
-  }
-  return true;
-};
-
 exports.createAccount = async (req, res) => {
-  if (!isAdmin(req, res)) return;
-
   const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
   const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const password = typeof req.body.password === 'string' ? req.body.password : '';
@@ -159,8 +149,6 @@ exports.logout = (req, res) => {
 
 // Get all users with role information
 exports.getAllUsers = async (req, res) => {
-  if (!isAdmin(req, res)) return;
-
   try {
     const [results] = await db.query(`
       SELECT u.id, u.username, u.email, u.created_at, 
@@ -179,8 +167,6 @@ exports.getAllUsers = async (req, res) => {
 
 // Get single user by ID with role information
 exports.getUserById = async (req, res) => {
-  if (!isAdmin(req, res)) return;
-
   try {
     const { id } = req.params;
     const [results] = await db.query(`
@@ -317,9 +303,6 @@ exports.updateUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;
 
-    // Only allow admins to update roles
-    if (!isAdmin(req, res)) return;
-
     // Get valid roles from database
     const [validRoles] = await db.query('SELECT id, name FROM roles WHERE is_active = TRUE');
     const roleMap = validRoles.reduce((acc, r) => {
@@ -366,8 +349,6 @@ exports.updateUserRole = async (req, res) => {
 
 // Get all available roles
 exports.getAllRoles = async (req, res) => {
-  if (!isAdmin(req, res)) return;
-
   try {
     const [roles] = await db.query(`
       SELECT id, name, display_name, description, is_active
@@ -385,8 +366,6 @@ exports.getAllRoles = async (req, res) => {
 // Create new role (admin only)
 exports.createRole = async (req, res) => {
   try {
-    if (!isAdmin(req, res)) return;
-
     const { name, display_name, description } = req.body;
     
     if (!name || !display_name) {

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('./controllers/usersController');
-const { verifyAccessToken, verifyRefreshToken } = require("../middleware/authMiddleware");
+const { verifyAccessToken, verifyRefreshToken, requireRoles } = require("../middleware/authMiddleware");
 
 // Login a user
 router.post('/login', userController.login);
@@ -16,18 +16,18 @@ router.put('/change-password', verifyAccessToken, userController.changePassword)
 // Refresh token endpoint
 router.post('/refresh-token', verifyRefreshToken, userController.refreshToken);
 
-// User account management (admin only; role is also enforced by the controller)
-router.post('/create-account', verifyAccessToken, userController.createAccount);
-router.get('/getall', verifyAccessToken, userController.getAllUsers);
+// User account management (admin only)
+router.post('/create-account', verifyAccessToken, requireRoles('admin'), userController.createAccount);
+router.get('/getall', verifyAccessToken, requireRoles('admin'), userController.getAllUsers);
 
-// Update user role (protected route)
-router.put('/update-role/:id', verifyAccessToken, userController.updateUserRole);
+// Update user role (admin only)
+router.put('/update-role/:id', verifyAccessToken, requireRoles('admin'), userController.updateUserRole);
 
-// Role management routes
-router.get('/roles', verifyAccessToken, userController.getAllRoles);
-router.post('/roles', verifyAccessToken, userController.createRole);
+// Role management routes (admin only)
+router.get('/roles', verifyAccessToken, requireRoles('admin'), userController.getAllRoles);
+router.post('/roles', verifyAccessToken, requireRoles('admin'), userController.createRole);
 
 // Dynamic routes must remain after named routes such as /roles and /profile
-router.get('/:id', verifyAccessToken, userController.getUserById);
+router.get('/:id', verifyAccessToken, requireRoles('admin'), userController.getUserById);
 
 module.exports = router;
