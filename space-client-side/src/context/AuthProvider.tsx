@@ -153,7 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   async function refresh(): Promise<void> {
-    const res = await api.post('/api/users/refresh');
+    const res = await api.post('/api/users/refresh-token');
     const accessToken = res.data.accessToken as string;
     setToken(accessToken);
 
