@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import api from '../api/axios';
 
 interface User {
   id: number;
@@ -15,9 +16,8 @@ const Users: React.FC = () => {
     // Fetch users data from the backend
     const fetchUsers = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/users/getall');
-        const data = await response.json();
-        setUsers(data);
+        const response = await api.get<User[]>('/api/users/getall');
+        setUsers(response.data);
       } catch (error) {
         console.error('Error fetching users:', error);
       }

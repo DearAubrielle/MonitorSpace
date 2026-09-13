@@ -1,6 +1,11 @@
 import { useState, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import api from '../api/axios';
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  AUTH_TOKEN_REFRESHED_EVENT,
+  refreshAccessToken,
+} from '../api/authSession';
 import { AuthContext, AuthContextType, DecodedToken } from './AuthContext';
 
 interface AuthProviderProps {
@@ -61,7 +66,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return null;
   });
 
-  const logoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const applyAccessToken = useCallback((accessToken: string) => {
+    const decoded = jwtDecode<DecodedToken>(accessToken);
+    localStorage.setItem('accessToken', accessToken);
+    setToken(accessToken);
+    setUser(decoded);
+    setRole(decoded.role);
+  }, []);
+
+  const clearAuthentication = useCallback(() => {
+    setToken(null);
+    setRole(null);
+    setUser(null);
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('username');
+
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+  }, []);
 
   // Logout function
   const logout = useCallback(async (): Promise<void> => {
@@ -71,23 +97,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch {
       console.warn('Server logout failed; local authentication state was cleared.');
     } finally {
-      // Clear client-side data regardless of server response
-      setToken(null);
-      setRole(null);
-      setUser(null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('username');
-
-      // Clear logout timeout
-      if (logoutTimeoutRef.current) {
-        clearTimeout(logoutTimeoutRef.current);
-        logoutTimeoutRef.current = null;
-      }
+      clearAuthentication();
     }
-  }, []);
+  }, [clearAuthentication]);
 
-  // Check token expiration and set auto-logout
-  const scheduleLogout = useCallback(
+  const refresh = useCallback(async (): Promise<void> => {
+    const accessToken = await refreshAccessToken();
+    applyAccessToken(accessToken);
+  }, [applyAccessToken]);
+
+  // Refresh the access token shortly before it expires.
+  const scheduleRefresh = useCallback(
     (token: string) => {
       try {
         const decoded = jwtDecode<DecodedToken>(token);
@@ -97,17 +117,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const timeUntilExpiration = expirationTime - currentTime;
 
           // Clear existing timeout
-          if (logoutTimeoutRef.current) {
-            clearTimeout(logoutTimeoutRef.current);
+          if (refreshTimeoutRef.current) {
+            clearTimeout(refreshTimeoutRef.current);
           }
 
-          // Schedule logout before token expires (5 minutes early)
-          const logoutTime = Math.max(0, timeUntilExpiration - 5 * 60 * 1000);
+          const refreshTime = Math.max(0, timeUntilExpiration - 5 * 60 * 1000);
 
-          logoutTimeoutRef.current = setTimeout(() => {
-            console.log('Token expired, logging out...');
-            logout();
-          }, logoutTime);
+          refreshTimeoutRef.current = setTimeout(() => {
+            refresh().catch(() => {
+              // The API client clears authentication and emits a session-expired event.
+            });
+          }, refreshTime);
 
           console.log(`Token expires in ${Math.floor(timeUntilExpiration / 1000 / 60)} minutes`);
         }
@@ -115,55 +135,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error('Error scheduling logout:', error);
       }
     },
-    [logout]
+    [refresh]
   );
 
-  // Check for token expiration on mount
+  useEffect(() => {
+    const handleTokenRefreshed = (event: Event) => {
+      const accessToken = (event as CustomEvent<string>).detail;
+      if (accessToken) applyAccessToken(accessToken);
+    };
+    const handleSessionExpired = () => clearAuthentication();
+
+    window.addEventListener(AUTH_TOKEN_REFRESHED_EVENT, handleTokenRefreshed);
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => {
+      window.removeEventListener(AUTH_TOKEN_REFRESHED_EVENT, handleTokenRefreshed);
+      window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+    };
+  }, [applyAccessToken, clearAuthentication]);
+
   useEffect(() => {
     if (token) {
-      scheduleLogout(token);
+      scheduleRefresh(token);
     }
 
     return () => {
-      if (logoutTimeoutRef.current) {
-        clearTimeout(logoutTimeoutRef.current);
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [token, scheduleLogout]);
+  }, [token, scheduleRefresh]);
 
   async function login(username: string, password: string): Promise<void> {
     try {
       const res = await api.post('/api/users/login', { username, password });
       const accessToken = res.data.accessToken as string;
-      setToken(accessToken);
-      localStorage.setItem('accessToken', accessToken); // Persist token securely
-
-      const decoded = jwtDecode<DecodedToken>(accessToken);
-
-      // Schedule auto-logout
-      scheduleLogout(accessToken);
-
-      setUser(decoded);
-      setRole(decoded.role);
+      applyAccessToken(accessToken);
     } catch (error) {
       // Optionally, handle error more gracefully
       console.error('Login failed:', error);
       throw error;
     }
-  }
-
-  async function refresh(): Promise<void> {
-    const res = await api.post('/api/users/refresh-token');
-    const accessToken = res.data.accessToken as string;
-    setToken(accessToken);
-
-    const decoded = jwtDecode<DecodedToken>(accessToken);
-
-    // Schedule auto-logout for refresh token
-    scheduleLogout(accessToken);
-
-    setUser(decoded);
-    setRole(decoded.role);
   }
 
   const authContextValue: AuthContextType = {

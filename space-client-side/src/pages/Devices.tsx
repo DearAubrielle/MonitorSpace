@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Device } from '../types/Device';
 import { getDeviceIconUrl, handleDeviceIconError } from '../utils/deviceIcon';
 import styles from './devices.module.css';
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+import api from '../api/axios';
+import { getApiErrorMessage } from '../api/apiError';
 
 const Devices = () => {
   const { floorplans, devices, deviceTypes, setDevices } = useFloorplan();
@@ -149,31 +150,14 @@ const Devices = () => {
     setIsCreatingDevice(true);
 
     try {
-      const res = await fetch(`${SERVER_URL}/api/devices/postd`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      let data = null;
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await res.json();
-      }
-
-      if (res.status === 201) {
-        setCreateSuccess(data?.message || 'Device added successfully!');
-        // Refresh device list from backend
-        fetch(`${SERVER_URL}/api/devices/getd`)
-          .then((res) => res.json())
-          .then((data) => setDevices(data));
-        handleCloseModal();
-      } else {
-        setError(data?.message || 'Failed to add device');
-      }
+      const response = await api.post<{ message?: string }>('/api/devices/postd', payload);
+      setCreateSuccess(response.data.message || 'Device added successfully!');
+      const devicesResponse = await api.get<Device[]>('/api/devices/getd');
+      setDevices(devicesResponse.data);
+      handleCloseModal();
     } catch (err) {
       console.error('Error adding device:', err);
-      setError('Network error. Please check your connection and try again.');
+      setError(getApiErrorMessage(err, 'Failed to add device'));
     } finally {
       createRequestInFlight.current = false;
       setIsCreatingDevice(false);
@@ -246,36 +230,16 @@ const Devices = () => {
         payload.max_alert = maxAlert;
       }
 
-      const res = await fetch(`${SERVER_URL}/api/devices/edit/${showEditDevice.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      let data = null;
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await res.json();
-      }
-
-      if (res.status === 200) {
-        fetch(`${SERVER_URL}/api/devices/getd`)
-          .then((res) => res.json())
-          .then((data) => {
-            setDevices(data);
-            // Find the updated device from the fresh data
-            const updatedDevice = data.find((d: Device) => d.id === showEditDevice.id);
-            setShowDeviceDetails(updatedDevice || null);
-          });
-        setShowEditDevice(null);
-        setSuccess('Device updated successfully!');
-        // Refresh device list from backend
-      } else {
-        setError(data && data.message ? data.message : 'Failed to update device');
-      }
+      await api.put(`/api/devices/edit/${showEditDevice.id}`, payload);
+      const devicesResponse = await api.get<Device[]>('/api/devices/getd');
+      setDevices(devicesResponse.data);
+      const updatedDevice = devicesResponse.data.find((device) => device.id === showEditDevice.id);
+      setShowDeviceDetails(updatedDevice || null);
+      setShowEditDevice(null);
+      setSuccess('Device updated successfully!');
     } catch (err) {
       console.error('Error updating device:', err);
-      setError('Network error');
+      setError(getApiErrorMessage(err, 'Failed to update device'));
     } finally {
       updateRequestInFlight.current = false;
       setIsUpdatingDevice(false);
@@ -291,29 +255,12 @@ const Devices = () => {
     setError('');
 
     try {
-      const res = await fetch(`${SERVER_URL}/api/devices/alert/${device.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ alert: !device.alert }),
-      });
-
-      let data = null;
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await res.json();
-      }
-
-      if (res.status === 200) {
-        // Refresh device list from backend
-        fetch(`${SERVER_URL}/api/devices/getd`)
-          .then((res) => res.json())
-          .then((data) => setDevices(data));
-      } else {
-        setError(data?.message || 'Failed to update alert status');
-      }
+      await api.put(`/api/devices/alert/${device.id}`, { alert: !device.alert });
+      const devicesResponse = await api.get<Device[]>('/api/devices/getd');
+      setDevices(devicesResponse.data);
     } catch (err) {
       console.error('Error toggling alert:', err);
-      setError('Network error. Please check your connection and try again.');
+      setError(getApiErrorMessage(err, 'Failed to update alert status'));
     }
   };
 
@@ -324,39 +271,22 @@ const Devices = () => {
     setSuccess('');
 
     try {
-      const res = await fetch(`${SERVER_URL}/api/devices/delete/${showDeleteConfirm.id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      await api.delete(`/api/devices/delete/${showDeleteConfirm.id}`);
+      setSuccess('Device deleted successfully!');
+      const devicesResponse = await api.get<Device[]>('/api/devices/getd');
+      setDevices(devicesResponse.data);
 
-      let data = null;
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await res.json();
+      if (showDeviceDetails && showDeviceDetails.id === showDeleteConfirm.id) {
+        setShowDeviceDetails(null);
+      }
+      if (showEditDevice && showEditDevice.id === showDeleteConfirm.id) {
+        setShowEditDevice(null);
       }
 
-      if (res.status === 200) {
-        setSuccess('Device deleted successfully!');
-        // Refresh device list from backend
-        fetch(`${SERVER_URL}/api/devices/getd`)
-          .then((res) => res.json())
-          .then((data) => setDevices(data));
-
-        // Close any open modals if the deleted device was being viewed/edited
-        if (showDeviceDetails && showDeviceDetails.id === showDeleteConfirm.id) {
-          setShowDeviceDetails(null);
-        }
-        if (showEditDevice && showEditDevice.id === showDeleteConfirm.id) {
-          setShowEditDevice(null);
-        }
-
-        setShowDeleteConfirm(null);
-      } else {
-        setError(data?.message || 'Failed to delete device');
-      }
+      setShowDeleteConfirm(null);
     } catch (err) {
       console.error('Error deleting device:', err);
-      setError('Network error. Please check your connection and try again.');
+      setError(getApiErrorMessage(err, 'Failed to delete device'));
     }
   };
 

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import styles from './Member.module.css';
 import { useAuth } from '../context/useAuth';
+import api from '../api/axios';
+import { getApiErrorMessage } from '../api/apiError';
 
 interface Member {
   id: number;
@@ -34,8 +36,6 @@ const EMPTY_CREATE_ACCOUNT_FORM: CreateAccountForm = {
   role: 'user',
 };
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-
 export default function Member() {
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
@@ -63,42 +63,13 @@ export default function Member() {
         setLoading(true);
         setRolesLoading(true);
         setError(null);
-        const token = localStorage.getItem('accessToken');
-        if (!token) throw new Error('No authentication token found');
-
-        const authHeaders = { Authorization: `Bearer ${token}` };
-        console.log('Attempting to fetch members from:', `${SERVER_URL}/api/users/getall`);
-
-        const membersResponse = await fetch(`${SERVER_URL}/api/users/getall`, { headers: authHeaders });
-        console.log('Members response status:', membersResponse.status);
-
-        if (!membersResponse.ok) {
-          const errorText = await membersResponse.text();
-          console.error('Members response error:', errorText);
-          throw new Error(`Failed to fetch members: ${membersResponse.status} ${membersResponse.statusText}`);
-        }
-        const membersData = await membersResponse.json();
-        console.log('Fetched members:', membersData);
-        setMembers(membersData);
+        const membersResponse = await api.get<Member[]>('/api/users/getall');
+        setMembers(membersResponse.data);
 
         // Fetch available roles
         try {
-          console.log('Attempting to fetch roles from:', `${SERVER_URL}/api/users/roles`);
-          const rolesResponse = await fetch(`${SERVER_URL}/api/users/roles`, { headers: authHeaders });
-
-          if (rolesResponse.ok) {
-            const rolesData = await rolesResponse.json();
-            console.log('Fetched roles:', rolesData);
-            setRoles(rolesData);
-          } else {
-            console.warn('Failed to fetch roles, using default roles');
-            // Fallback to default roles if fetch fails
-            setRoles([
-              { id: 1, name: 'user', display_name: 'User' },
-              { id: 2, name: 'manager', display_name: 'Manager' },
-              { id: 3, name: 'admin', display_name: 'Admin' },
-            ]);
-          }
+          const rolesResponse = await api.get<Role[]>('/api/users/roles');
+          setRoles(rolesResponse.data);
         } catch (rolesError) {
           console.error('Error fetching roles:', rolesError);
           // Fallback to default roles
@@ -112,8 +83,7 @@ export default function Member() {
         }
       } catch (err) {
         console.error('Fetch error:', err);
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-        setError(`${errorMessage} - Check if server is running on ${SERVER_URL}`);
+        setError(getApiErrorMessage(err, 'Failed to load members.'));
       } finally {
         setLoading(false);
       }
@@ -237,37 +207,24 @@ export default function Member() {
 
     setIsCreating(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No authentication token found');
-
-      const response = await fetch(`${SERVER_URL}/api/users/create-account`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          username: createForm.username,
-          email: createForm.email,
-          password: createForm.password,
-          role: createForm.role,
-        }),
+      const response = await api.post<{ message?: string; user?: Member }>('/api/users/create-account', {
+        username: createForm.username,
+        email: createForm.email,
+        password: createForm.password,
+        role: createForm.role,
       });
-      const responseData = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(responseData?.message || 'Failed to create account.');
-      }
+      const responseData = response.data;
 
       if (!responseData?.user) {
         throw new Error('The server did not return the created account.');
       }
 
-      setMembers((current) => [responseData.user, ...current]);
+      const createdUser = responseData.user;
+      setMembers((current) => [createdUser, ...current]);
       setAccountSuccess(responseData.message || 'Account created successfully.');
-      setCreatedAccount(responseData.user);
+      setCreatedAccount(createdUser);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'Failed to create account.');
+      setCreateError(getApiErrorMessage(err, 'Failed to create account.'));
     } finally {
       setIsCreating(false);
     }
@@ -288,63 +245,18 @@ export default function Member() {
     setUpdateSuccess(null);
 
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${SERVER_URL}/api/users/update-role/${selectedMember.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      const responseText = await response.text();
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to update role';
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = responseText || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch {
-        // If response is not JSON, assume success
-        responseData = { message: 'Role updated successfully' };
-      }
+      const response = await api.put<{ message?: string; user?: Member }>(
+        `/api/users/update-role/${selectedMember.id}`,
+        { role: newRole }
+      );
+      const responseData = response.data;
 
       // Refetch the updated member data
       try {
-        const updatedMemberResponse = await fetch(`${SERVER_URL}/api/users/${selectedMember.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (updatedMemberResponse.ok) {
-          const updatedMember = await updatedMemberResponse.json();
-          // Update the members list with fresh data
-          setMembers((prev) => prev.map((member) => (member.id === selectedMember.id ? updatedMember : member)));
-          // Update selected member with fresh data
-          setSelectedMember(updatedMember);
-        } else {
-          // Fallback: update with the new role and display name if refetch fails
-          const roleDisplayName =
-            roles.find((r) => r.name === newRole)?.display_name || newRole.charAt(0).toUpperCase() + newRole.slice(1);
-          setMembers((prev) =>
-            prev.map((member) =>
-              member.id === selectedMember.id ? { ...member, role: newRole, display_name: roleDisplayName } : member
-            )
-          );
-          setSelectedMember((prev) => (prev ? { ...prev, role: newRole, display_name: roleDisplayName } : null));
-        }
+        const updatedMemberResponse = await api.get<Member>(`/api/users/${selectedMember.id}`);
+        const updatedMember = updatedMemberResponse.data;
+        setMembers((prev) => prev.map((member) => (member.id === selectedMember.id ? updatedMember : member)));
+        setSelectedMember(updatedMember);
       } catch (refetchError) {
         console.warn('Failed to refetch updated member, using optimistic update:', refetchError);
         // Fallback: update with the new role and display name
@@ -366,7 +278,7 @@ export default function Member() {
       }, 3000);
     } catch (err) {
       console.error('Role update error:', err);
-      setUpdateError(err instanceof Error ? err.message : 'Failed to update role');
+      setUpdateError(getApiErrorMessage(err, 'Failed to update role'));
     } finally {
       setIsUpdating(false);
     }

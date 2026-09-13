@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import styles from './Account.module.css';
+import api from '../api/axios';
+import { getApiErrorMessage } from '../api/apiError';
 
 interface AccountProfile {
   id: number;
@@ -8,8 +10,6 @@ interface AccountProfile {
   role: string;
   display_name?: string;
 }
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export default function Account() {
   const [profile, setProfile] = useState<AccountProfile | null>(null);
@@ -26,17 +26,10 @@ export default function Account() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('accessToken');
-        if (!token) throw new Error('No authentication token found.');
-
-        const response = await fetch(`${SERVER_URL}/api/users/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(data?.message || 'Unable to load your account.');
-        setProfile(data);
+        const response = await api.get<AccountProfile>('/api/users/profile');
+        setProfile(response.data);
       } catch (error) {
-        setPageError(error instanceof Error ? error.message : 'Unable to load your account.');
+        setPageError(getApiErrorMessage(error, 'Unable to load your account.'));
       } finally {
         setLoading(false);
       }
@@ -79,26 +72,17 @@ export default function Account() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No authentication token found.');
-
-      const response = await fetch(`${SERVER_URL}/api/users/change-password`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
+      const response = await api.put<{ message?: string }>('/api/users/change-password', {
+        currentPassword,
+        newPassword,
       });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.message || 'Unable to update your password.');
 
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setSuccessMessage(data?.message || 'Password updated successfully.');
+      setSuccessMessage(response.data.message || 'Password updated successfully.');
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Unable to update your password.');
+      setFormError(getApiErrorMessage(error, 'Unable to update your password.'));
     } finally {
       setIsSubmitting(false);
     }

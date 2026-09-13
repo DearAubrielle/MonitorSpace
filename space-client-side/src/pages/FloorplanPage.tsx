@@ -13,6 +13,8 @@ import { useDeviceMonitoring } from '../hooks/useDeviceMonitoring';
 import UnassignedDevicesView from '../components/UnassignedDevicesView';
 import SuccessModal from '../components/SuccessModal';
 import ErrorModal from '../components/ErrorModal';
+import api from '../api/axios';
+import { getApiErrorMessage, getApiStatus } from '../api/apiError';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -142,11 +144,7 @@ export default function FloorplanPage() {
       // Send a PUT request for each device being added
       await Promise.all(
         toAdd.map((device) =>
-          fetch(`${SERVER_URL}/api/devices/putdf/${device.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ floorplan_id: selected.id }),
-          })
+          api.put(`/api/devices/putdf/${device.id}`, { floorplan_id: selected.id })
         )
       );
       // Update local state after successful update
@@ -174,13 +172,9 @@ export default function FloorplanPage() {
           const pos = devicePositions[device.id];
           if (!pos) return;
 
-          await fetch(`${SERVER_URL}/api/devices/putdlo/${device.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              x_percent: pos.x,
-              y_percent: pos.y,
-            }),
+          await api.put(`/api/devices/putdlo/${device.id}`, {
+            x_percent: pos.x,
+            y_percent: pos.y,
           });
         })
       );
@@ -228,17 +222,7 @@ export default function FloorplanPage() {
       form.append('description', description);
       form.append('image', imageFile);
 
-      const res = await fetch(`${SERVER_URL}/api/floorplans/createf`, {
-        method: 'POST',
-        body: form,
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create floorplan');
-      }
-
-      const created = await res.json();
+      const { data: created } = await api.post('/api/floorplans/createf', form);
       setOpenCreateFloorplan(false);
       if (created && created.id) {
         setSelected(created);
@@ -246,7 +230,7 @@ export default function FloorplanPage() {
       return true;
     } catch (err) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create floorplan';
+      const errorMessage = getApiErrorMessage(err, 'Failed to create floorplan');
       setErrorFeedback({ title: 'Unable to create floorplan', message: errorMessage });
       return false;
     }
@@ -271,17 +255,7 @@ export default function FloorplanPage() {
         form.append('image', data.imageFile);
       }
 
-      const res = await fetch(`${SERVER_URL}/api/floorplans/edit/${data.id}`, {
-        method: 'PUT',
-        body: form,
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update floorplan');
-      }
-
-      const updated = await res.json();
+      const { data: updated } = await api.put(`/api/floorplans/edit/${data.id}`, form);
 
       // Update the selected floorplan
       setSelected(updated);
@@ -293,7 +267,7 @@ export default function FloorplanPage() {
       setSuccessMessage('Your floorplan is up to date.');
     } catch (err) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update floorplan';
+      const errorMessage = getApiErrorMessage(err, 'Failed to update floorplan');
       setErrorFeedback({ title: 'Unable to update', message: errorMessage });
     }
   };
@@ -323,76 +297,55 @@ export default function FloorplanPage() {
 
       if (assignedDevices.length > 0) {
         setDeletePhase('moving');
-        const moveResponses = await Promise.all(
-          assignedDevices.map((device) =>
-            fetch(`${SERVER_URL}/api/devices/putdf/${device.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ floorplan_id: null }),
-            })
-          )
-        );
-
-        if (moveResponses.some((response) => !response.ok)) {
+        try {
+          await Promise.all(
+            assignedDevices.map((device) =>
+              api.put(`/api/devices/putdf/${device.id}`, { floorplan_id: null })
+            )
+          );
+        } catch {
           throw new Error('MOVE_DEVICES_FAILED');
         }
       }
 
       setDeletePhase('deleting');
-      const res = await fetch(`${SERVER_URL}/api/floorplans/delete/${selected.id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      await api.delete(`/api/floorplans/delete/${selected.id}`);
 
-      let data = null;
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await res.json();
-      }
-
-      if (res.status === 200) {
-        setSuccess(
-          assignedDevices.length > 0
-            ? `Floor plan deleted. ${assignedDevices.length} device(s) were moved to Unassigned.`
-            : 'Floor plan deleted successfully.'
-        );
-        // Clear the selected floorplan since it's been deleted
-        setSelected(null);
-        setShowDeleteConfirm(false);
-        setDevices((prev) =>
-          prev
-            ? prev.map((device) =>
-                assignedDevices.some((assignedDevice) => assignedDevice.id === device.id)
-                  ? { ...device, floorplan_id: 0 }
-                  : device
-              )
-            : []
-        );
-        // Refresh the floorplans list
-        await refreshFloorplans();
-      } else if (res.status === 400) {
-        // Handle devices still assigned error
+      setSuccess(
+        assignedDevices.length > 0
+          ? `Floor plan deleted. ${assignedDevices.length} device(s) were moved to Unassigned.`
+          : 'Floor plan deleted successfully.'
+      );
+      setSelected(null);
+      setShowDeleteConfirm(false);
+      setDevices((prev) =>
+        prev
+          ? prev.map((device) =>
+              assignedDevices.some((assignedDevice) => assignedDevice.id === device.id)
+                ? { ...device, floorplan_id: 0 }
+                : device
+            )
+          : []
+      );
+      await refreshFloorplans();
+    } catch (err) {
+      console.error('Error deleting floorplan:', err);
+      const status = getApiStatus(err);
+      if (err instanceof Error && err.message === 'MOVE_DEVICES_FAILED') {
+        setError('Some devices could not be moved to Unassigned. The floor plan was not deleted. Please try again.');
+      } else if (status === 400) {
         const deviceCount = devices?.filter((d) => d.floorplan_id === selected.id)?.length || 0;
         if (deviceCount > 0) {
           setError(
             `Cannot delete floorplan "${selected.name}". ${deviceCount} device(s) are still assigned to this floorplan. Please remove or reassign the devices first.`
           );
         } else {
-          setError(data?.message || 'Cannot delete this floorplan');
+          setError(getApiErrorMessage(err, 'Cannot delete this floorplan'));
         }
-      } else if (res.status === 404) {
+      } else if (status === 404) {
         setError('Floorplan not found. It may have already been deleted.');
       } else {
-        setError(data?.message || 'Failed to delete floorplan. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error deleting floorplan:', err);
-      if (err instanceof Error && err.message === 'MOVE_DEVICES_FAILED') {
-        setError('Some devices could not be moved to Unassigned. The floor plan was not deleted. Please try again.');
-      } else if (err instanceof TypeError && err.message.includes('fetch')) {
-        setError('Network error. Please check your connection and try again.');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
+        setError(getApiErrorMessage(err, 'Failed to delete floorplan. Please try again.'));
       }
     } finally {
       setIsDeleting(false);
