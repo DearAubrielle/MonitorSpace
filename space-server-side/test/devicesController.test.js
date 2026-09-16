@@ -1,8 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const jwt = require('jsonwebtoken');
 
 const dbModulePath = require.resolve('../db');
 const controllerModulePath = require.resolve('../routes/controllers/devicesController');
+const cameraControllerModulePath = require.resolve('../routes/controllers/cameraStreamController');
+const streamSecret = 'camera-stream-test-secret';
 
 const loadController = (query) => {
   delete require.cache[controllerModulePath];
@@ -13,6 +16,17 @@ const loadController = (query) => {
     exports: { query },
   };
   return require(controllerModulePath);
+};
+
+const loadCameraController = (query) => {
+  delete require.cache[cameraControllerModulePath];
+  require.cache[dbModulePath] = {
+    id: dbModulePath,
+    filename: dbModulePath,
+    loaded: true,
+    exports: { query },
+  };
+  return require(cameraControllerModulePath);
 };
 
 const createResponse = () => ({
@@ -150,4 +164,65 @@ test('saveEditDevice returns 409 when another device already uses the name', asy
 
   assert.equal(res.statusCode, 409);
   assert.deepEqual(res.body, { message: 'A device with this name already exists.' });
+});
+
+test('createStreamToken creates a short-lived token scoped to the camera', async () => {
+  process.env.CAMERA_STREAM_SECRET = streamSecret;
+  const controller = loadCameraController(async (_sql, params) => {
+    assert.deepEqual(params, [12]);
+    return [[{ id: 12, path_topic: 'http://camera.example/stream' }]];
+  });
+  const req = { params: { id: '12' }, user: { id: 7 } };
+  const res = createResponse();
+
+  await controller.createStreamToken(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.expiresInSeconds, 300);
+  const streamUrl = new URL(res.body.streamPath, 'https://server.example');
+  const payload = jwt.verify(streamUrl.searchParams.get('token'), streamSecret, {
+    audience: 'camera-stream',
+  });
+  assert.equal(payload.deviceId, 12);
+  assert.equal(payload.sub, '7');
+  assert.equal(payload.purpose, 'camera-stream');
+});
+
+test('streamCamera rejects a token issued for another camera', async () => {
+  process.env.CAMERA_STREAM_SECRET = streamSecret;
+  let queryCalled = false;
+  const controller = loadCameraController(async () => {
+    queryCalled = true;
+    return [[]];
+  });
+  const token = jwt.sign(
+    { purpose: 'camera-stream', deviceId: 10 },
+    streamSecret,
+    { audience: 'camera-stream', expiresIn: '5m' }
+  );
+  const req = { params: { id: '11' }, query: { token } };
+  const res = createResponse();
+
+  await controller.streamCamera(req, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(res.body, { message: 'Invalid camera stream token' });
+  assert.equal(queryCalled, false);
+});
+
+test('streamCamera rejects a non-HTTP camera path from the database', async () => {
+  process.env.CAMERA_STREAM_SECRET = streamSecret;
+  const controller = loadCameraController(async () => [[{ id: 12, path_topic: 'file:///secret' }]]);
+  const token = jwt.sign(
+    { purpose: 'camera-stream', deviceId: 12 },
+    streamSecret,
+    { audience: 'camera-stream', expiresIn: '5m' }
+  );
+  const req = { params: { id: '12' }, query: { token } };
+  const res = createResponse();
+
+  await controller.streamCamera(req, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Camera stream URL must use HTTP or HTTPS' });
 });

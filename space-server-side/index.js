@@ -57,6 +57,7 @@ app.get('/api/health', (req, res) => {
 app.use("/api/users", usersRoutes);
 app.use("/api/floorplans", floorplansRoutes);
 app.use("/api/devices", require("./routes/devices"));
+app.use("/api/camera-streams", require("./routes/cameraStreams"));
 app.use('/private_uploads', express.static(path.join(__dirname, 'private_uploads')));
 
 

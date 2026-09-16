@@ -7,7 +7,7 @@ import { useFloorplan } from '@/context/useFlooplan';
 type Camera = {
   id: string;
   name: string;
-  streamUrl: string;
+  streamConfigured: boolean;
   details: string;
 };
 
@@ -51,7 +51,7 @@ export default function MonitorPage() {
           return {
             id: device.id.toString(),
             name: device.name,
-            streamUrl: device.path_topic?.trim() ?? '',
+            streamConfigured: Boolean(device.path_topic?.trim()),
             details: floorplanName,
           };
         });

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './MonitorComponent.module.css';
+import CameraStreamImage from './CameraStreamImage';
 
-type Camera = { id: string; name: string; streamUrl: string; details: string };
+type Camera = { id: string; name: string; streamConfigured: boolean; details: string };
 type MonitorComponentProps = { cameras: Camera[] };
 
 const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(cameras.filter((camera) => !camera.streamUrl).map((camera) => [camera.id, true]))
+    Object.fromEntries(cameras.filter((camera) => !camera.streamConfigured).map((camera) => [camera.id, true]))
   );
   const [loadedImages, setLoadedImages] = useState<Record<string, string>>({});
   const [retryKeys, setRetryKeys] = useState<Record<string, number>>({});
@@ -16,7 +17,7 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
   useEffect(() => {
     setImageErrors((current) => {
       const next = { ...current };
-      cameras.forEach((camera) => { if (!camera.streamUrl) next[camera.id] = true; });
+      cameras.forEach((camera) => { if (!camera.streamConfigured) next[camera.id] = true; });
       return next;
     });
   }, [cameras]);
@@ -35,10 +36,10 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
   }, [expandedCamera]);
 
   const offlineCount = useMemo(
-    () => cameras.filter((camera) => !camera.streamUrl || imageErrors[camera.id]).length,
+    () => cameras.filter((camera) => !camera.streamConfigured || imageErrors[camera.id]).length,
     [cameras, imageErrors]
   );
-  const imageToken = (camera: Camera) => `${camera.streamUrl}:${retryKeys[camera.id] ?? 0}`;
+  const imageToken = (camera: Camera) => `${camera.id}:${retryKeys[camera.id] ?? 0}`;
   const isLoaded = (camera: Camera, view: string) =>
     !imageErrors[camera.id] && loadedImages[`${view}:${camera.id}`] === imageToken(camera);
   const markLoaded = (camera: Camera, view: string) => {
@@ -48,7 +49,7 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
   const clock = currentTime.toLocaleTimeString('en-GB');
 
   const retryCamera = (camera: Camera) => {
-    if (!camera.streamUrl) return;
+    if (!camera.streamConfigured) return;
     setImageErrors((current) => ({ ...current, [camera.id]: false }));
     setRetryKeys((current) => ({ ...current, [camera.id]: (current[camera.id] ?? 0) + 1 }));
   };
@@ -63,7 +64,7 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
 
       <div className={styles.cameraGrid}>
         {cameras.map((camera) => {
-          const isOffline = !camera.streamUrl || imageErrors[camera.id];
+          const isOffline = !camera.streamConfigured || imageErrors[camera.id];
           return (
             <article key={camera.id} className={styles.cameraCard}>
               <div className={styles.cameraPreview}>
@@ -71,11 +72,11 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
                   <div className={styles.errorPlaceholder}>
                     <strong>Camera unavailable</strong>
                     <span>The stream is currently unreachable</span>
-                    <button type="button" className={styles.retryButton} onClick={() => retryCamera(camera)} disabled={!camera.streamUrl}>↻ Try reconnecting</button>
+                    <button type="button" className={styles.retryButton} onClick={() => retryCamera(camera)} disabled={!camera.streamConfigured}>↻ Try reconnecting</button>
                   </div>
                 ) : (
                   <>
-                    <img key={retryKeys[camera.id] ?? 0} src={camera.streamUrl} alt={camera.name} className={styles.cameraImage} onLoad={() => markLoaded(camera, 'grid')} onError={() => setImageErrors((current) => ({ ...current, [camera.id]: true }))} />
+                    <CameraStreamImage key={retryKeys[camera.id] ?? 0} deviceId={camera.id} reloadKey={retryKeys[camera.id] ?? 0} alt={camera.name} className={styles.cameraImage} onLoad={() => markLoaded(camera, 'grid')} onStreamError={() => setImageErrors((current) => ({ ...current, [camera.id]: true }))} />
                     {isLoaded(camera, 'grid') && <span className={styles.liveBadge}><i /> LIVE</span>}
                     <time className={styles.feedTime}>{clock}</time>
                     <button type="button" className={styles.expandButton} onClick={() => { setLoadedImages((current) => ({ ...current, [`expanded:${camera.id}`]: '' })); setExpandedCamera(camera); }} aria-label={`Expand ${camera.name}`}>⛶</button>
@@ -96,7 +97,7 @@ const MonitorComponent: React.FC<MonitorComponentProps> = ({ cameras }) => {
               {imageErrors[expandedCamera.id] ? (
                 <div className={styles.expandedErrorPlaceholder}><h3>Camera unavailable</h3><p>This camera stream is currently offline or unreachable.</p><button type="button" className={styles.retryButton} onClick={() => retryCamera(expandedCamera)}>↻ Try reconnecting</button></div>
               ) : (
-                <img key={retryKeys[expandedCamera.id] ?? 0} src={expandedCamera.streamUrl} alt={expandedCamera.name} className={styles.expandedImage} onLoad={() => markLoaded(expandedCamera, 'expanded')} onError={() => setImageErrors((current) => ({ ...current, [expandedCamera.id]: true }))} />
+                <CameraStreamImage key={retryKeys[expandedCamera.id] ?? 0} deviceId={expandedCamera.id} reloadKey={retryKeys[expandedCamera.id] ?? 0} alt={expandedCamera.name} className={styles.expandedImage} onLoad={() => markLoaded(expandedCamera, 'expanded')} onStreamError={() => setImageErrors((current) => ({ ...current, [expandedCamera.id]: true }))} />
               )}
               {!imageErrors[expandedCamera.id] && <>{isLoaded(expandedCamera, 'expanded') && <span className={styles.modalLiveBadge}><i /> LIVE</span>}<div className={styles.overlayActions}><button type="button" onClick={() => retryCamera(expandedCamera)} title="Refresh feed">↻</button></div><div className={styles.cinematicBar}><div><h2>{expandedCamera.name}</h2><p>{expandedCamera.details} · Secure live stream</p></div><time className={styles.modalTime}>{clock}</time></div></>}
             </div>

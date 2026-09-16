@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const devicesController = require('./controllers/devicesController');
+const cameraStreamController = require('./controllers/cameraStreamController');
 const { verifyAccessToken, requireRoles } = require('../middleware/authMiddleware');
 
 router.use(verifyAccessToken);
@@ -11,6 +12,8 @@ router.get('/getd', devicesController.getAllDevices);
 router.put('/putdf/:id', requireRoles('manager', 'admin'), devicesController.putDevicesTofloorplan);
 // GET all device types
 router.get('/gettypes', devicesController.getAllDeviceTypes);
+// Create a short-lived URL that an <img> element can use for a camera stream.
+router.get('/:id/stream-token', cameraStreamController.createStreamToken);
 // POST create a new device
 router.post('/postd', requireRoles('manager', 'admin'), devicesController.createDevice);
 // PUT update device location

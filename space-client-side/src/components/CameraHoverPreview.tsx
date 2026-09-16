@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import styles from './CameraHoverPreview.module.css';
+import CameraStreamImage from './CameraStreamImage';
 
 type CameraHoverPreviewProps = {
   name: string;
-  streamUrl: string;
+  deviceId: string;
   align?: 'left' | 'right';
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
@@ -11,17 +12,13 @@ type CameraHoverPreviewProps = {
 
 export default function CameraHoverPreview({
   name,
-  streamUrl,
+  deviceId,
   align = 'right',
   onMouseEnter,
   onMouseLeave,
 }: CameraHoverPreviewProps) {
   const [imageError, setImageError] = useState(false);
   const [time, setTime] = useState(() => new Date());
-
-  useEffect(() => {
-    setImageError(false);
-  }, [streamUrl]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setTime(new Date()), 1000);
@@ -43,7 +40,7 @@ export default function CameraHoverPreview({
             <span>Camera preview unavailable</span>
           </div>
         ) : (
-          <img src={streamUrl} alt={`Live view from ${name}`} onError={() => setImageError(true)} />
+          <CameraStreamImage deviceId={deviceId} alt={`Live view from ${name}`} onStreamError={() => setImageError(true)} />
         )}
         <span className={`${styles.liveBadge} ${imageError ? styles.offlineBadge : ''}`}>
           <span className={styles.liveDot} />

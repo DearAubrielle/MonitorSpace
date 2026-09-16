@@ -60,7 +60,7 @@ export interface DraggableBoxProps {
   value?: string | number;
   unit?: string;
   useBuiltInModal?: boolean; // New prop to control modal behavior
-  cameraPreviewUrl?: string;
+  cameraPreviewDeviceId?: string;
   dragging?: boolean;
 }
 
@@ -77,7 +77,7 @@ export default function DraggableBox({
   value,
   unit,
   useBuiltInModal = false,
-  cameraPreviewUrl,
+  cameraPreviewDeviceId,
   dragging = false,
 }: DraggableBoxProps) {
   const boxSize = getDeviceBoxSize(containerWidth);
@@ -115,7 +115,7 @@ export default function DraggableBox({
     tooltipCloseTimer.current = window.setTimeout(() => {
       setShowTooltip(false);
       tooltipCloseTimer.current = null;
-    }, cameraPreviewUrl ? 220 : 0);
+    }, cameraPreviewDeviceId ? 220 : 0);
   };
 
   const left = position.x * (containerWidth - boxSize);
@@ -538,10 +538,10 @@ export default function DraggableBox({
           }}
         />
         {/* Camera devices get a live hover card; other devices keep the compact value tooltip. */}
-        {showTooltip && cameraPreviewUrl ? (
+        {showTooltip && cameraPreviewDeviceId ? (
           <CameraHoverPreview
             name={deviceName || 'Camera'}
-            streamUrl={cameraPreviewUrl}
+            deviceId={cameraPreviewDeviceId}
             align={position.x > 0.64 ? 'left' : 'right'}
             onMouseEnter={openTooltip}
             onMouseLeave={scheduleTooltipClose}

@@ -83,9 +83,9 @@ export default function Floorplan({
               deviceName={device.name}
               value={getDeviceValue?.(device) ?? device.latest_value}
               unit={type?.unit}
-              cameraPreviewUrl={
+              cameraPreviewDeviceId={
                 type?.name.toLowerCase() === 'camera' && device.path_topic?.trim()
-                  ? device.path_topic
+                  ? String(device.id)
                   : undefined
               }
               dragging={activeDeviceId === String(device.id)}
