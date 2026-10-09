@@ -295,6 +295,10 @@
   padding: 1.6rem 2rem 1.75rem;
 }
 
+.addDeviceModal > form.addDeviceForm {
+  padding-right: 2rem;
+}
+
 .addDeviceSectionTitle {
   margin: 0 0 0.85rem;
   color: #063763;
@@ -410,6 +414,7 @@
 @media (max-width: 640px) {
   .addDeviceModal { width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
   .addDeviceHeader, .addDeviceForm { padding-left: 1.2rem; padding-right: 1.2rem; }
+  .addDeviceModal > form.addDeviceForm { padding-right: 1.2rem; }
   .deviceTypeGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .addDeviceFieldRow { grid-template-columns: 1fr; gap: 0.9rem; }
   .addDeviceActions { align-items: stretch; flex-direction: column; }

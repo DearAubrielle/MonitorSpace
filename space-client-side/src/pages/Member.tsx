@@ -487,7 +487,7 @@ export default function Member() {
                     </label>
 
                     <label className={styles.formField}>
-                      <span>Temporary password</span>
+                      <span>Password</span>
                       <input name="password" type="password" value={createForm.password} onChange={(event) => handleCreateFieldChange('password', event.target.value)} autoComplete="new-password" minLength={8} required disabled={isCreating} />
                       <small>Use at least 8 characters.</small>
                     </label>

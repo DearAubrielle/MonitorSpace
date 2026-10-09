@@ -313,7 +313,7 @@ export default function FloorplanPage() {
 
       setSuccess(
         assignedDevices.length > 0
-          ? `Floor plan deleted. ${assignedDevices.length} device(s) were moved to Unassigned.`
+          ? `Floor plan deleted. ${assignedDevices.length} device(s) were moved to Unplaced.`
           : 'Floor plan deleted successfully.'
       );
       setSelected(null);
@@ -332,7 +332,7 @@ export default function FloorplanPage() {
       console.error('Error deleting floorplan:', err);
       const status = getApiStatus(err);
       if (err instanceof Error && err.message === 'MOVE_DEVICES_FAILED') {
-        setError('Some devices could not be moved to Unassigned. The floor plan was not deleted. Please try again.');
+        setError('Some devices could not be moved to Unplaced. The floor plan was not deleted. Please try again.');
       } else if (status === 400) {
         const deviceCount = devices?.filter((d) => d.floorplan_id === selected.id)?.length || 0;
         if (deviceCount > 0) {
@@ -600,9 +600,13 @@ export default function FloorplanPage() {
                 {getAssignedDevices().length > 0 && (
                   <>
                     <div className={styles.moveNotice}>
-                      <span className={styles.moveNoticeIcon} aria-hidden="true">→</span>
+                      <span className={styles.moveNoticeIcon} aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none">
+                          <path d="M4 10h12m-4-4 4 4-4 4" />
+                        </svg>
+                      </span>
                       <div>
-                        <strong>{getAssignedDevices().length} device(s) will be moved to Unassigned</strong>
+                        <strong>{getAssignedDevices().length} device(s) will be moved to Unplaced</strong>
                         <p>Your devices and their settings will be kept. You can assign them to another floor plan later.</p>
                       </div>
                     </div>
@@ -611,7 +615,7 @@ export default function FloorplanPage() {
                       <h4>Devices to move</h4>
                       <span>{getAssignedDevices().length} devices</span>
                     </div>
-                    <ul className={styles.devicesList} aria-label="Devices that will be moved to Unassigned">
+                    <ul className={styles.devicesList} aria-label="Devices that will be moved to Unplaced">
                       {getAssignedDevices().map((device) => {
                         const deviceType = deviceTypes?.find((type) => type.id === device.device_type_id);
                         const icon = getDeviceIconUrl(deviceType?.icon_url);
