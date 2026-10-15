@@ -4,6 +4,7 @@ export const ROLE_ACCESS = {
   device: ['manager', 'admin'],
   member: ['admin'],
   account: ['user', 'manager', 'admin'],
+  history: ['user', 'manager', 'admin'],
 } as const;
 
 export interface NavigationItem {

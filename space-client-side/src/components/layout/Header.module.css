@@ -135,6 +135,45 @@
   font-size: 0.7rem;
 }
 
+.historyButton {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid #bcd0fa;
+  border-radius: 9px;
+  color: #155eef;
+  background: #ffffff;
+  cursor: pointer;
+  transition:
+    color 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.historyButton svg {
+  width: 17px;
+  height: 17px;
+}
+
+.historyButton:hover {
+  color: #0b4ed1;
+  border-color: #155eef;
+  background: #f5f8ff;
+  transform: translateY(-1px);
+}
+
+.historyButton:active {
+  transform: translateY(0);
+}
+
+.historyButton:focus-visible {
+  outline: 3px solid rgba(21, 94, 239, 0.22);
+  outline-offset: 2px;
+}
+
 .alertPopover {
   position: absolute;
   z-index: 1000;

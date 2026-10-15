@@ -9,6 +9,7 @@ import PrivateRoute from '../utils/PrivateRoute.tsx';
 import Start from '../pages/Start.tsx';
 import Unauthorized from '../pages/Unauthorized.tsx';
 import Account from '../pages/Account.tsx';
+import History from '../pages/History.tsx';
 import { ROLE_ACCESS } from './access.ts';
 const routes = createBrowserRouter([
   { index: true, Component: Start },
@@ -52,6 +53,14 @@ const routes = createBrowserRouter([
         element: (
           <PrivateRoute allowedRoles={ROLE_ACCESS.account}>
             <Account />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: '/history',
+        element: (
+          <PrivateRoute allowedRoles={ROLE_ACCESS.history}>
+            <History />
           </PrivateRoute>
         ),
       },

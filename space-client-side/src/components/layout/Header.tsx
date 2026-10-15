@@ -108,6 +108,28 @@ export default function Header() {
             </li>
           )}
           <li>
+            <button
+              className={styles.historyButton}
+              type="button"
+              onClick={() => {
+                setShowAlerts(false);
+                navigate('/history');
+              }}
+              aria-label="Open alert history"
+              title="Alert history"
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.7V9h4.3M12 8v4.5l3 1.8"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </li>
+          <li>
             <button className={styles.accountButton} onClick={() => navigate('/account')} aria-label="Open your account">
               <span className={styles.accountAvatar} aria-hidden="true">{initials}</span>
               <span className={styles.accountName}>{user?.username || 'Guest'}</span>
