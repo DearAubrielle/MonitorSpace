@@ -9,6 +9,7 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 
 const db = require('./db'); // Make sure this is at the top if not already
+const { syncAlertEvents } = require('./services/alertEventsService');
 
 dotenv.config();
 const app = express();
@@ -57,6 +58,7 @@ app.get('/api/health', (req, res) => {
 app.use("/api/users", usersRoutes);
 app.use("/api/floorplans", floorplansRoutes);
 app.use("/api/devices", require("./routes/devices"));
+app.use("/api/alert-events", require("./routes/alertEvents"));
 app.use("/api/camera-streams", require("./routes/cameraStreams"));
 app.use('/private_uploads', express.static(path.join(__dirname, 'private_uploads')));
 
@@ -82,11 +84,12 @@ const maxBroadcastErrors = 5;
 let broadcastInterval = null;
 let broadcastRestartTimeout = null;
 let databaseConnectionLost = false;
+let alertSyncInProgress = false;
 
 async function broadcastDeviceValues() {
   try {
     const [rows] = await db.query(
-      "SELECT id, latest_value FROM devices"
+      "SELECT id, latest_value, min_alert, max_alert, alert FROM devices"
     );
 
     if (databaseConnectionLost) {
@@ -94,8 +97,17 @@ async function broadcastDeviceValues() {
       databaseConnectionLost = false;
     }
 
-    broadcast(rows); // send all devices in one packet
+    broadcast(rows.map(({ id, latest_value }) => ({ id, latest_value })));
     broadcastErrors = 0; // Reset error count on success
+
+    if (!alertSyncInProgress) {
+      alertSyncInProgress = true;
+      syncAlertEvents(rows)
+        .catch((error) => console.error('Error synchronizing alert events:', error.message))
+        .finally(() => {
+          alertSyncInProgress = false;
+        });
+    }
   } catch (err) {
     databaseConnectionLost = true;
     broadcastErrors++;

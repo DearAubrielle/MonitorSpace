@@ -4,6 +4,10 @@
 /**/*.d.ts
 /tsconfig.tsbuildinfo
 /test
+!/test/
+/test/*
+!/test/alertEventsController.test.js
+!/test/alertEventsService.test.js
 LICENSE
 readme.md
 .env
