@@ -15,7 +15,7 @@ const Devices = () => {
   const [showDeviceDetails, setShowDeviceDetails] = useState<Device | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Device | null>(null);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState<{ title: string; message: string } | null>(null);
   const [createSuccess, setCreateSuccess] = useState('');
   const [isCreatingDevice, setIsCreatingDevice] = useState(false);
   const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
@@ -27,7 +27,7 @@ const Devices = () => {
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
-        setSuccess('');
+        setSuccess(null);
       }, 5000); // Change this value to adjust timing
       return () => clearTimeout(timer);
     }
@@ -83,7 +83,7 @@ const Devices = () => {
     if (createRequestInFlight.current) return;
 
     setError('');
-    setSuccess('');
+    setSuccess(null);
 
     // Validate form on frontend
     if (!form.name.trim()) {
@@ -182,7 +182,7 @@ const Devices = () => {
     if (!showEditDevice || updateRequestInFlight.current) return;
 
     setError('');
-    setSuccess('');
+    setSuccess(null);
 
     const normalizedName = editDeviceForm.name.trim();
     if (!normalizedName) {
@@ -236,7 +236,7 @@ const Devices = () => {
       const updatedDevice = devicesResponse.data.find((device) => device.id === showEditDevice.id);
       setShowDeviceDetails(updatedDevice || null);
       setShowEditDevice(null);
-      setSuccess('Device updated successfully!');
+      setSuccess({ title: 'Device updated', message: 'Device updated successfully!' });
     } catch (err) {
       console.error('Error updating device:', err);
       setError(getApiErrorMessage(err, 'Failed to update device'));
@@ -268,11 +268,11 @@ const Devices = () => {
     if (!showDeleteConfirm) return;
 
     setError('');
-    setSuccess('');
+    setSuccess(null);
 
     try {
       await api.delete(`/api/devices/delete/${showDeleteConfirm.id}`);
-      setSuccess('Device deleted successfully!');
+      setSuccess({ title: 'Device deleted', message: 'Device deleted successfully!' });
       const devicesResponse = await api.get<Device[]>('/api/devices/getd');
       setDevices(devicesResponse.data);
 
@@ -704,18 +704,11 @@ const Devices = () => {
 
         <SuccessModal title="Device added" message={createSuccess} onClose={() => setCreateSuccess('')} />
 
-        {success && (
-          <div className={`${styles.overlay} ${styles.successOverlay}`} onClick={() => setSuccess('')}>
-            <div className={`${styles.modal} ${styles.successModal}`} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.successIcon}>✓</div>
-              <h3 className={styles.successTitle}>Success!</h3>
-              <p className={styles.successMessage}>{success}</p>
-              <Button variant="primary" onClick={() => setSuccess('')}>
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
+        <SuccessModal
+          title={success?.title}
+          message={success?.message ?? ''}
+          onClose={() => setSuccess(null)}
+        />
       </div>
     </div>
   );

@@ -906,38 +906,6 @@
   }
 }
 
-.successOverlay {
-  backdrop-filter: blur(5px);
-}
-
-.successModal {
-  min-width: 200px;
-  text-align: center;
-  padding: 2rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 2px solid #10b95cff;
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
-}
-
-.successIcon {
-  font-size: 3rem;
-  color: #10b95cff;
-  margin-bottom: 1rem;
-}
-
-.successTitle {
-  color: #1c6d56ff;
-  margin-bottom: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.successMessage {
-  color: #256d58ff;
-  margin-bottom: 1.5rem;
-  font-size: 1rem;
-}
-
 /* Delete confirmation modal styles */
 .deleteOverlay {
   backdrop-filter: blur(5px);
