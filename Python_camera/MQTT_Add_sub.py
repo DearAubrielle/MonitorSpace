@@ -50,7 +50,7 @@ def on_message(client, userdata, msg):
         mydb = mysql.connector.connect(host=hostname, database=database, user=username, password=password, port=port)
         mycursor = mydb.cursor()
 
-        sql = "UPDATE devices SET latest_value = %s WHERE path_topic = %s"
+        sql = "UPDATE devices SET latest_value = %s, last_updated = CURRENT_TIMESTAMP WHERE path_topic = %s"
         # val = (msg.payload.decode("utf-8"),Topic[1],)
         # val = (2568,1,)
         val = (msg.payload.decode("utf-8"),msg.topic,)

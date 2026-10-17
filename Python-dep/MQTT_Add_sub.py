@@ -63,7 +63,10 @@ def on_message(client, userdata, msg):
         cursor = db.cursor()
 
         # อัปเดตค่า sensor ล่าสุด
-        cursor.execute("UPDATE devices SET latest_value = %s WHERE path_topic = %s", (payload, topic))
+        cursor.execute(
+            "UPDATE devices SET latest_value = %s, last_updated = CURRENT_TIMESTAMP WHERE path_topic = %s",
+            (payload, topic),
+        )
         db.commit()
 
         # ดึงข้อมูล device เพื่อตรวจสอบแจ้งเตือน
