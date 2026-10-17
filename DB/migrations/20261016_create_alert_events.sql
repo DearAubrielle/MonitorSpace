@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS alert_events (
   INDEX idx_alert_events_device_status (device_id, status),
 
   CONSTRAINT fk_alert_events_device
-    FOREIGN KEY (device_id) REFERENCES devices(id),
+    FOREIGN KEY (device_id) REFERENCES devices(id)
+      ON DELETE CASCADE,
   CONSTRAINT fk_alert_events_silenced_by
     FOREIGN KEY (silenced_by_user_id) REFERENCES users(id)
 );
