@@ -1,29 +1,80 @@
 import styles from './Header.module.css';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '@/context/useAuth';
 import { useFloorplan } from '@/context/useFlooplan';
+import { getAlertEvents, silenceAlertEvent } from '../../api/alertEvents';
+import type { AlertEvent } from '@/types/AlertEvent';
+import { getApiErrorMessage } from '../../api/apiError';
 import { getDeviceIconUrl, handleDeviceIconError } from '@/utils/deviceIcon';
-import { isDeviceAlertActive } from '@/utils/deviceAlert';
 
 export default function Header() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { devices, deviceTypes, floorplans, setSelected } = useFloorplan();
+  const { floorplans, setSelected } = useFloorplan();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
+  const [activeAlerts, setActiveAlerts] = useState<AlertEvent[]>([]);
+  const [silencingAlertIds, setSilencingAlertIds] = useState<Set<number>>(new Set());
+  const [alertError, setAlertError] = useState<string | null>(null);
+  const alertRequestId = useRef(0);
   const initials = user?.username.slice(0, 2).toUpperCase() || 'GU';
 
-  const activeAlerts = useMemo(
-    () => (devices ?? []).filter((device) => isDeviceAlertActive(device)),
-    [devices]
-  );
+  const refreshActiveAlerts = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++alertRequestId.current;
 
-  const openAlertDevice = (floorplanId: number) => {
+    try {
+      const events = await getAlertEvents('all', { status: 'active', signal });
+      if (requestId !== alertRequestId.current) return;
+
+      setActiveAlerts(events);
+      setAlertError(null);
+    } catch (error) {
+      if (signal?.aborted || requestId !== alertRequestId.current) return;
+      setAlertError(getApiErrorMessage(error, 'Unable to refresh active alerts.'));
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void refreshActiveAlerts(controller.signal);
+
+    const intervalId = window.setInterval(() => {
+      if (!document.hidden) void refreshActiveAlerts();
+    }, 10_000);
+
+    return () => {
+      controller.abort();
+      window.clearInterval(intervalId);
+    };
+  }, [refreshActiveAlerts]);
+
+  const openAlertDevice = (floorplanId: number | null) => {
     const floorplan = floorplans?.find((plan) => Number(plan.id) === Number(floorplanId));
     if (floorplan) setSelected(floorplan);
     setShowAlerts(false);
     navigate('/dashboard');
+  };
+
+  const handleSilenceAlert = async (event: AlertEvent) => {
+    if (silencingAlertIds.has(event.id)) return;
+
+    setAlertError(null);
+    setSilencingAlertIds((current) => new Set(current).add(event.id));
+
+    try {
+      await silenceAlertEvent(event.id);
+      alertRequestId.current += 1;
+      setActiveAlerts((current) => current.filter((alert) => alert.id !== event.id));
+    } catch (error) {
+      setAlertError(getApiErrorMessage(error, 'Unable to silence this alert.'));
+    } finally {
+      setSilencingAlertIds((current) => {
+        const next = new Set(current);
+        next.delete(event.id);
+        return next;
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -59,11 +110,16 @@ export default function Header() {
             <li className={styles.alertMenuItem}>
               <button
                 className={styles.alertButton}
-                onClick={() => setShowAlerts((current) => !current)}
+                onClick={() => {
+                  if (!showAlerts) void refreshActiveAlerts();
+                  setShowAlerts((current) => !current);
+                }}
                 aria-expanded={showAlerts}
                 aria-haspopup="true"
               >
-                <span className={styles.alertIcon} aria-hidden="true">!</span>
+                <span className={styles.alertIcon} aria-hidden="true">
+                  !
+                </span>
                 <span>Alerts</span>
                 <span className={styles.alertCount}>{activeAlerts.length}</span>
               </button>
@@ -73,35 +129,57 @@ export default function Header() {
                     <strong>Active alerts</strong>
                     <span>{activeAlerts.length} critical</span>
                   </div>
+                  {alertError && (
+                    <div className={styles.alertError} role="alert">
+                      {alertError}
+                    </div>
+                  )}
                   <div className={styles.alertList}>
-                  {activeAlerts.map((device) => {
-                    const floorplan = floorplans?.find(
-                      (plan) => Number(plan.id) === Number(device.floorplan_id)
-                    );
-                    const deviceType = deviceTypes?.find((type) => type.id === device.device_type_id);
-                    return (
-                      <button
-                        key={device.id}
-                        className={styles.alertEntry}
-                        onClick={() => openAlertDevice(device.floorplan_id)}
-                      >
-                        <span className={styles.alertEntryIcon} aria-hidden="true">
-                          <img
-                            src={getDeviceIconUrl(deviceType?.icon_url)}
-                            alt=""
-                            onError={handleDeviceIconError}
-                          />
-                        </span>
-                        <span>
-                          <strong>{device.name}</strong>
-                          <small>
-                            {floorplan?.name ?? 'Unknown floor'} · {device.latest_value}
-                          </small>
-                        </span>
-                        <span className={styles.alertEntryArrow} aria-hidden="true">›</span>
-                      </button>
-                    );
-                  })}
+                    {activeAlerts.map((event) => {
+                      const floorplan = floorplans?.find((plan) => Number(plan.id) === Number(event.floorplan_id));
+                      const isSilencing = silencingAlertIds.has(event.id);
+                      return (
+                        <div key={event.id} className={styles.alertEntry}>
+                          <button
+                            type="button"
+                            className={styles.alertEntryMain}
+                            onClick={() => openAlertDevice(event.floorplan_id)}
+                          >
+                            <span className={styles.alertEntryIcon} aria-hidden="true">
+                              <img src={getDeviceIconUrl(event.icon_url)} alt="" onError={handleDeviceIconError} />
+                            </span>
+                            <span className={styles.alertEntryText}>
+                              <strong>{event.device_name}</strong>
+                              <small>
+                                {floorplan?.name ?? 'Unknown floor'} · {event.alert_value ?? '—'}
+                                {event.unit ? ` ${event.unit}` : ''}
+                              </small>
+                            </span>
+                            <span className={styles.alertEntryArrow} aria-hidden="true">
+                              ›
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.silenceButton}
+                            onClick={() => void handleSilenceAlert(event)}
+                            disabled={isSilencing}
+                            aria-label={`Silence alert for ${event.device_name}`}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <path
+                                d="M11 5.5 7.8 8H5v8h2.8l3.2 2.5v-13ZM15.5 9l4 6m0-6-4 6"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                            <span>{isSilencing ? 'Silencing…' : 'Silence'}</span>
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -130,10 +208,18 @@ export default function Header() {
             </button>
           </li>
           <li>
-            <button className={styles.accountButton} onClick={() => navigate('/account')} aria-label="Open your account">
-              <span className={styles.accountAvatar} aria-hidden="true">{initials}</span>
+            <button
+              className={styles.accountButton}
+              onClick={() => navigate('/account')}
+              aria-label="Open your account"
+            >
+              <span className={styles.accountAvatar} aria-hidden="true">
+                {initials}
+              </span>
               <span className={styles.accountName}>{user?.username || 'Guest'}</span>
-              <span className={styles.accountArrow} aria-hidden="true">›</span>
+              <span className={styles.accountArrow} aria-hidden="true">
+                ›
+              </span>
             </button>
           </li>
           <li>

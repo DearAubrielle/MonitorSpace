@@ -82,3 +82,63 @@ test('getAlertEvents leaves the all-time query without a date condition', async 
   assert.equal(res.statusCode, 200);
   assert.doesNotMatch(capturedSql, /DATE_SUB/);
 });
+
+test('silenceAlertEvent records the user who silenced an active alert', async () => {
+  const calls = [];
+  const controller = loadController(async (sql, params) => {
+    calls.push({ sql, params });
+    return [{ affectedRows: 1 }];
+  });
+  const res = createResponse();
+
+  await controller.silenceAlertEvent(
+    { params: { id: '12' }, user: { id: 7, username: 'alex' } },
+    res
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /status = 'silenced'/);
+  assert.match(calls[0].sql, /silenced_at = NOW\(\)/);
+  assert.deepEqual(calls[0].params, [7, 12]);
+  assert.deepEqual(res.body, {
+    id: 12,
+    status: 'silenced',
+    silenced_by_user_id: 7,
+    silenced_by_username: 'alex',
+  });
+});
+
+test('silenceAlertEvent rejects an invalid event ID without querying the database', async () => {
+  let queryCalled = false;
+  const controller = loadController(async () => {
+    queryCalled = true;
+    return [{ affectedRows: 1 }];
+  });
+  const res = createResponse();
+
+  await controller.silenceAlertEvent(
+    { params: { id: 'not-an-id' }, user: { id: 7, username: 'alex' } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid alert event ID' });
+  assert.equal(queryCalled, false);
+});
+
+test('silenceAlertEvent reports when an event is no longer active', async () => {
+  const controller = loadController(async (sql) => {
+    if (sql.startsWith('UPDATE')) return [{ affectedRows: 0 }];
+    return [[{ status: 'resolved' }]];
+  });
+  const res = createResponse();
+
+  await controller.silenceAlertEvent(
+    { params: { id: '12' }, user: { id: 7, username: 'alex' } },
+    res
+  );
+
+  assert.equal(res.statusCode, 409);
+  assert.deepEqual(res.body, { message: 'Alert event is no longer active' });
+});

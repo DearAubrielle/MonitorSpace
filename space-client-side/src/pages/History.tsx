@@ -72,14 +72,19 @@ function detailText(event: AlertEvent): string {
 function outcomeText(event: AlertEvent): string {
   if (event.status === 'active') return 'Still active';
 
+  const silencedBy = event.silenced_by_username
+    ? `Silenced by ${event.silenced_by_username}`
+    : event.silenced_at
+      ? 'Silenced'
+      : null;
+
   if (event.status === 'silenced') {
-    return event.silenced_by_username
-      ? `Silenced by ${event.silenced_by_username}`
-      : 'Silenced';
+    return silencedBy ?? 'Silenced';
   }
 
   const duration = formatDuration(event.started_at, event.resolved_at);
-  return duration ? `Resolved automatically after ${duration}` : 'Resolved automatically';
+  const resolution = duration ? `Resolved automatically after ${duration}` : 'Resolved automatically';
+  return silencedBy ? `${silencedBy} · ${resolution}` : resolution;
 }
 
 function statusLabel(status: AlertStatus): string {

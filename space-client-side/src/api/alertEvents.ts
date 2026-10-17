@@ -14,3 +14,16 @@ export async function getAlertEvents(
 
   return response.data;
 }
+
+export interface SilenceAlertEventResponse {
+  id: number;
+  status: 'silenced';
+  silenced_by_user_id: number;
+  silenced_by_username: string | null;
+}
+
+export async function silenceAlertEvent(alertEventId: number): Promise<SilenceAlertEventResponse> {
+  const response = await api.patch<SilenceAlertEventResponse>(`/api/alert-events/${alertEventId}/silence`);
+
+  return response.data;
+}

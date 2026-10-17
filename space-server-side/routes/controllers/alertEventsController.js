@@ -73,4 +73,49 @@ exports.getAlertEvents = async (req, res) => {
   }
 };
 
+exports.silenceAlertEvent = async (req, res) => {
+  const alertEventId = Number(req.params.id);
+  const userId = Number(req.user?.id);
+
+  if (!Number.isInteger(alertEventId) || alertEventId <= 0) {
+    return res.status(400).json({ message: 'Invalid alert event ID' });
+  }
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  try {
+    const [result] = await db.query(
+      `UPDATE alert_events
+       SET status = 'silenced', silenced_at = NOW(), silenced_by_user_id = ?
+       WHERE id = ? AND status = 'active'`,
+      [userId, alertEventId]
+    );
+
+    if (result.affectedRows === 0) {
+      const [rows] = await db.query(
+        'SELECT status FROM alert_events WHERE id = ? LIMIT 1',
+        [alertEventId]
+      );
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: 'Alert event not found' });
+      }
+
+      return res.status(409).json({ message: 'Alert event is no longer active' });
+    }
+
+    res.json({
+      id: alertEventId,
+      status: 'silenced',
+      silenced_by_user_id: userId,
+      silenced_by_username: req.user.username ?? null,
+    });
+  } catch (err) {
+    console.error('Error silencing alert event:', err);
+    res.status(500).json({ message: 'Unable to silence alert' });
+  }
+};
+
 exports.normalizeAlertEvent = normalizeAlertEvent;
