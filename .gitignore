@@ -29,3 +29,5 @@ DB/MONITORSPACE_DEMO_DATA.sql
 DB/MONITORSPACE_DEMO_FULL.sql
 /.codex-work
 /docs
+/output
+/tmp
