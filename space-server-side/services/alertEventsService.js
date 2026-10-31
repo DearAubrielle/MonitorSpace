@@ -7,6 +7,8 @@ function finiteNumber(value) {
 }
 
 function getThresholdBreach(device) {
+  if (device.device_type === 'Camera') return null;
+
   const alertsEnabled = device.alert === true || Number(device.alert) === 1;
   const value = finiteNumber(device.latest_value);
 
@@ -28,7 +30,12 @@ function getThresholdBreach(device) {
 
 async function syncAlertEvents(devices, query = db.query.bind(db)) {
   const [openEvents] = await query(
-    "SELECT id, device_id, direction, status FROM alert_events WHERE status IN ('active', 'silenced') ORDER BY started_at ASC, id ASC"
+    `SELECT ae.id, ae.device_id, ae.direction, ae.status
+     FROM alert_events ae
+     INNER JOIN devices d ON d.id = ae.device_id
+     INNER JOIN device_type dt ON dt.id = d.device_type_id
+     WHERE ae.status IN ('active', 'silenced') AND dt.name <> 'Camera'
+     ORDER BY ae.started_at ASC, ae.id ASC`
   );
 
   const openByDevice = new Map();
@@ -42,6 +49,9 @@ async function syncAlertEvents(devices, query = db.query.bind(db)) {
   const changes = { created: 0, resolved: 0 };
 
   for (const device of devices) {
+    // Camera incidents are owned by the Python worker, including resolution.
+    if (device.device_type === 'Camera') continue;
+
     const deviceId = String(device.id);
     const breach = getThresholdBreach(device);
     const existingEvents = openByDevice.get(deviceId) ?? [];

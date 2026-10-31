@@ -151,8 +151,9 @@ export default function Header() {
                             <span className={styles.alertEntryText}>
                               <strong>{event.device_name}</strong>
                               <small>
-                                {floorplan?.name ?? 'Unknown floor'} · {event.alert_value ?? '—'}
-                                {event.unit ? ` ${event.unit}` : ''}
+                                {floorplan?.name ?? 'Unknown floor'} · {event.device_type === 'Camera'
+                                  ? 'Possible fall detected'
+                                  : `${event.alert_value ?? '—'}${event.unit ? ` ${event.unit}` : ''}`}
                               </small>
                             </span>
                             <span className={styles.alertEntryArrow} aria-hidden="true">

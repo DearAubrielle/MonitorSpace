@@ -89,7 +89,10 @@ let alertSyncInProgress = false;
 async function broadcastDeviceValues() {
   try {
     const [rows] = await db.query(
-      "SELECT id, latest_value, min_alert, max_alert, alert FROM devices"
+      `SELECT d.id, d.latest_value, d.min_alert, d.max_alert, d.alert,
+              dt.name AS device_type
+       FROM devices d
+       INNER JOIN device_type dt ON dt.id = d.device_type_id`
     );
 
     if (databaseConnectionLost) {

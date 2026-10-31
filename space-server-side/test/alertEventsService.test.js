@@ -83,3 +83,36 @@ test('syncAlertEvents resolves an open event after the device returns to range',
   const update = calls.find((call) => call.sql.includes('UPDATE alert_events'));
   assert.deepEqual(update.params, [19]);
 });
+
+test('camera devices cannot produce sensor threshold breaches', () => {
+  assert.equal(getThresholdBreach({
+    device_type: 'Camera', alert: 1, latest_value: 100, min_alert: 0, max_alert: 10,
+  }), null);
+});
+
+test('sensor synchronization leaves active and silenced camera incidents to the worker', async () => {
+  const calls = [];
+  const query = async (sql, params = []) => {
+    calls.push({ sql, params });
+    if (sql.startsWith('SELECT')) {
+      // Even if camera records are supplied, the device loop must not touch them.
+      return [[
+        { id: 21, device_id: 7, direction: null, status: 'active' },
+        { id: 22, device_id: 8, direction: null, status: 'silenced' },
+        { id: 23, device_id: 5, direction: 'above_max', status: 'active' },
+      ]];
+    }
+    return [{ affectedRows: 1 }];
+  };
+
+  const changes = await syncAlertEvents([
+    { id: 7, device_type: 'Camera', alert: 1, latest_value: null },
+    { id: 8, device_type: 'Camera', alert: 0, latest_value: 100, max_alert: 10 },
+    { id: 5, device_type: 'Gas', alert: 1, latest_value: 250, max_alert: 300 },
+  ], query);
+
+  assert.deepEqual(changes, { created: 0, resolved: 1 });
+  assert.match(calls[0].sql, /dt\.name <> 'Camera'/);
+  assert.deepEqual(calls.filter((call) => call.sql.includes('UPDATE')).map((call) => call.params), [[23]]);
+  assert.equal(calls.some((call) => call.sql.includes('INSERT')), false);
+});

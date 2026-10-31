@@ -69,6 +69,21 @@ test('getAlertEvents applies date and status filters and normalizes decimal valu
   assert.equal(res.body[0].threshold_value, 30);
 });
 
+test('getAlertEvents returns camera incidents without inventing numeric readings', async () => {
+  const row = {
+    id: 9, device_id: 4, device_type: 'Camera', device_name: 'Hall camera',
+    floorplan_id: null, direction: null, alert_value: null, threshold_value: null,
+    status: 'silenced', silenced_by_username: 'alex',
+  };
+  const controller = loadController(async () => [[row]]);
+  const res = createResponse();
+
+  await controller.getAlertEvents({ query: { days: 'all' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, [row]);
+});
+
 test('getAlertEvents leaves the all-time query without a date condition', async () => {
   let capturedSql = '';
   const controller = loadController(async (sql) => {

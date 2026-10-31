@@ -56,12 +56,16 @@ function formatDuration(startValue: string, endValue: string | null): string | n
 }
 
 function directionLabel(event: AlertEvent): string {
+  if (event.device_type === 'Camera') return 'Possible fall detected';
   if (event.direction === 'below_min') return 'Below minimum';
   if (event.direction === 'above_max') return 'Above maximum';
   return 'Threshold alert';
 }
 
 function detailText(event: AlertEvent): string {
+  if (event.device_type === 'Camera') {
+    return `A possible fall was detected by ${event.device_name}. Repeated detections during the same incident are grouped into this event.`;
+  }
   const thresholdKind = event.direction === 'below_min' ? 'minimum' : 'maximum';
   return `Recorded ${formatReading(event.alert_value, event.unit)} against the ${thresholdKind} threshold of ${formatReading(
     event.threshold_value,
@@ -83,7 +87,9 @@ function outcomeText(event: AlertEvent): string {
   }
 
   const duration = formatDuration(event.started_at, event.resolved_at);
-  const resolution = duration ? `Resolved automatically after ${duration}` : 'Resolved automatically';
+  const resolution = event.device_type === 'Camera'
+    ? 'Resolved'
+    : duration ? `Resolved automatically after ${duration}` : 'Resolved automatically';
   return silencedBy ? `${silencedBy} · ${resolution}` : resolution;
 }
 
@@ -244,7 +250,7 @@ export default function History() {
             <div className={styles.emptyState}>
               <div>
                 <strong>No alerts in this period</strong>
-                <p>Your monitored devices stayed within their configured thresholds.</p>
+                <p>No alert events were recorded for the selected period and device type.</p>
               </div>
               {selectedType !== null && (
                 <button className={styles.emptyAction} type="button" onClick={() => setSelectedType(null)}>
@@ -297,7 +303,9 @@ export default function History() {
                         {statusLabel(event.status)}
                       </span>
 
-                      <span className={styles.valuePill}>{formatReading(event.alert_value, event.unit)}</span>
+                      <span className={styles.valuePill}>
+                        {event.device_type === 'Camera' ? 'Fall detection' : formatReading(event.alert_value, event.unit)}
+                      </span>
 
                       <span className={styles.alertDate}>
                         <strong>{formatDate(event.started_at)}</strong>
