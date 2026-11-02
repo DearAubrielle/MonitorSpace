@@ -11,6 +11,8 @@ services:
     startCommand: python -u MQTT_Add_sub.py
     autoDeployTrigger: off
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
       - key: DB_HOST
         sync: false
       - key: DB_PORT
@@ -46,6 +48,8 @@ services:
     startCommand: python -u Camera.py
     autoDeployTrigger: off
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
       - key: DB_HOST
         sync: false
       - key: DB_PORT
