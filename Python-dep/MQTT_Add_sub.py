@@ -1,4 +1,7 @@
 import time
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 import ssl
 import mysql.connector
 import paho.mqtt.client as mqtt
@@ -6,28 +9,20 @@ import threading
 from linebot.v3.messaging import MessagingApi, PushMessageRequest, TextMessage
 from linebot.v3.messaging.configuration import Configuration
 from linebot.v3.messaging.api_client import ApiClient
-# from dotenv import load_dotenv
+load_dotenv(Path(__file__).with_name(".env"))
 
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASS = os.getenv("DB_PASS", os.getenv("DB_PASSWORD", ""))
+DB_NAME = os.getenv("DB_NAME", "spacemonitor")
+DB_PORT = int(os.getenv("DB_PORT", "3306"))
 
-DB_HOST = "hopper.proxy.rlwy.net"
-DB_USER = "root"
-DB_PASS = "zymkADYOgYCCkZgSvtAJAnesOKlKivWN"
-DB_NAME = "spacemonitor"
-DB_PORT = 28173
-
-# DB_HOST ="localhost"
-# DB_USER ="root"
-# DB_PASS =""
-# DB_NAME ="spacemonitor"
-# DB_PORT = "3306"
-
-MQTT_HOST = "49ee04006403486ea360ca6114faf597.s2.eu.hivemq.cloud"
-MQTT_PORT = 8883
-MQTT_USER = "Vittapong"
-MQTT_PASS = "HappyS7*"
-
-LINE_TOKEN = "KwOqh2ygwm/ZEELgTi8wcHx1ZTOnjkddJA1rzjBKRan7OezkRaJtstVGsgTYgtjD2KijQCS6aGsea7ivdDyQ+GX2uvE+pjqubAyokDi3VtPyN3KgFTmIFySsPMDiiKOmshW43V8evvJHx/ZWAw/j2wdB04t89/1O/w1cDnyilFU="
-LINE_USER_ID = "C51151f2b2a353530e69ab5c43c3fb026"
+MQTT_HOST = os.getenv("MQTT_HOST", "localhost")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "8883"))
+MQTT_USER = os.getenv("MQTT_USER", "")
+MQTT_PASS = os.getenv("MQTT_PASS", "")
+LINE_TOKEN = os.getenv("LINE_TOKEN", "")
+LINE_USER_ID = os.getenv("LINE_USER_ID", "")
 
 # === LINE แจ้งเตือน ===
 def send_line_message(msg):
@@ -155,7 +150,7 @@ def refresh_topics():
         subscribe_from_db(client)
 
 # === MQTT CONFIG ===
-client = mqtt.Client(protocol=mqtt.MQTTv5)
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
 client.username_pw_set(MQTT_USER, MQTT_PASS)
 client.tls_set(tls_version=ssl.PROTOCOL_TLS)
 client.on_connect = on_connect
