@@ -39,10 +39,12 @@ class FallPoseTests(unittest.TestCase):
         self.assertIs(detector.update(upright, 640, 480, 3), True)
         self.assertIs(detector.update(upright, 640, 480, 5.1), False)
 
-    def test_lying_without_visible_transition_is_unknown(self):
+    def test_lying_without_visible_transition_triggers(self):
         detector = FallPoseDetector()
         lying = TorsoPose(270, 350, 430, 360)
-        self.assertIsNone(detector.update(lying, 640, 480, 0))
+        self.assertIs(detector.update(lying, 640, 480, 0), True)
+        self.assertIsNone(detector.update(None, 640, 480, 1))
+        self.assertIs(detector.update(lying, 640, 480, 2), True)
 
     def test_pose_result_ignores_cropped_person(self):
         points = [[0, 0] for _ in range(17)]

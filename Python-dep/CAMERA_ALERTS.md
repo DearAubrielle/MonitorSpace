@@ -23,9 +23,10 @@ not the worker configured by this Procfile.
 - History shows first detection, silence details, and generic resolution. The
   existing schema does not store last detection time or resolution reason.
 - The worker now samples enabled cameras continuously with a YOLOv8 pose model.
-  It requires a visible upright-to-horizontal transition and downward movement;
-  cropped or missing poses are unknown rather than clear checks. The camera
-  must show the full torso and floor area for this heuristic to work.
+  A visible horizontal torso counts as a possible fall even when the person was
+  already lying down when observation began. Cropped or missing poses are unknown
+  rather than clear checks. The camera must show the full torso for this heuristic
+  to work; intentional lying can also trigger an alert.
 
 Run only one detector worker for each camera: clear-check counters live in process memory.
 Database transactions lock the camera row before creating an event to serialize

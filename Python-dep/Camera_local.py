@@ -1,13 +1,15 @@
-"""Run the Camera.py alert workflow for device 26 using local webcam 0.
+"""Run the Camera.py alert workflow for device 26 using a configured stream.
 
 Run locally with: python Camera_local.py
 Press Q or Esc to close the preview.
 """
 
 from pathlib import Path
+import os
 import time
 
 import cv2
+from dotenv import load_dotenv
 from ultralytics import YOLO
 
 from Camera import connect_database, get_camera_list, notify_camera
@@ -15,11 +17,12 @@ from camera_alert_events import CameraAlertEvents, CameraAlertMonitor
 from fall_pose import FallPoseDetector, best_torso_from_results
 
 
-CAMERA_INDEX = 0
-DEVICE_ID = 26
+load_dotenv(Path(__file__).with_name(".env"))
+CAMERA_STREAM_URL = os.getenv("CAMERA_STREAM_URL", "").strip()
+DEVICE_ID = 32
 POSE_MODEL_PATH = Path(__file__).with_name("yolov8n-pose.pt")
 CHECK_INTERVAL_SECONDS = 4.3
-WINDOW_NAME = "Device 26 - camera 0"
+WINDOW_NAME = "Detectfall IP camera"
 
 
 def draw_detections(frame, results, detector, now):
@@ -46,12 +49,13 @@ def get_target_camera():
     camera = next((item for item in cameras if item["device_id"] == DEVICE_ID), None)
     if camera is None:
         raise RuntimeError(f"Camera device {DEVICE_ID} was not found in the database.")
-    if str(camera["path_topic"]).strip() != str(CAMERA_INDEX):
-        raise RuntimeError(f"Camera device {DEVICE_ID} must have path_topic = '0'.")
     return camera
 
 
 def main():
+    if not CAMERA_STREAM_URL:
+        raise RuntimeError("Set CAMERA_STREAM_URL in Python-dep/.env.")
+
     # Ultralytics downloads the pose weights on first use if they are absent.
     model_path = str(POSE_MODEL_PATH) if POSE_MODEL_PATH.exists() else POSE_MODEL_PATH.name
     model = YOLO(model_path)
@@ -59,10 +63,10 @@ def main():
     events = CameraAlertEvents(connect_database)
     monitor = CameraAlertMonitor(events, notify_camera)
 
-    camera = cv2.VideoCapture(CAMERA_INDEX)
+    camera = cv2.VideoCapture(CAMERA_STREAM_URL)
     if not camera.isOpened():
         camera.release()
-        raise RuntimeError("Cannot open camera 0. Check webcam permissions and close other camera apps.")
+        raise RuntimeError("Cannot open the configured camera stream. Check its URL and network connection.")
 
     window_open = False
     try:
@@ -80,9 +84,9 @@ def main():
             ok, frame = camera.read()
             if not ok or frame is None:
                 events.observation_failed(DEVICE_ID)
-                raise RuntimeError("Camera 0 stopped returning frames.")
+                raise RuntimeError("The configured camera stream stopped returning frames.")
 
-            # Preserve the webcam's aspect ratio; stretching can distort posture.
+            # Preserve the stream's aspect ratio; stretching can distort posture.
             if frame.shape[1] > 960:
                 frame = cv2.resize(frame, (960, round(frame.shape[0] * 960 / frame.shape[1])))
             try:

@@ -1,4 +1,4 @@
-"""Conservative, temporal fall heuristic for COCO 17-keypoint pose output.
+"""Lying-posture heuristic for COCO 17-keypoint pose output.
 
 This is a test heuristic, not a trained fall classifier. Missing or cropped
 poses are unknown so they cannot clear a stored camera incident.
@@ -81,19 +81,15 @@ def best_torso_from_results(results, width, height):
 
 
 class FallPoseDetector:
-    """Require a recent upright pose, downward motion, then a horizontal torso."""
+    """Treat a visible horizontal torso as a possible fall or lying person."""
 
     def __init__(self):
-        self.last_upright = None
         self.fall_active = False
         self.upright_since = None
 
     def update(self, pose, width, height, now):
         """Return True (fall), False (clear), or None (pose unavailable)."""
         if pose is None:
-            # Keep a short pre-fall history through brief occlusion/motion blur.
-            if self.last_upright is not None and now - self.last_upright[0] > 2.5:
-                self.last_upright = None
             self.upright_since = None
             return None
 
@@ -103,27 +99,17 @@ class FallPoseDetector:
                     self.upright_since = now
                 elif now - self.upright_since >= 2.0:
                     self.fall_active = False
-                    self.last_upright = (now, pose.center_x, pose.center_y)
                     return False
             else:
                 self.upright_since = None
             return True
 
         if pose.upright:
-            self.last_upright = (now, pose.center_x, pose.center_y)
             return False
 
-        if pose.horizontal and self.last_upright is not None:
-            previous_time, previous_x, previous_y = self.last_upright
-            if (
-                now - previous_time <= 2.5
-                and pose.center_y - previous_y >= 0.12 * height
-                and abs(pose.center_x - previous_x) <= 0.35 * width
-            ):
-                self.fall_active = True
-                self.last_upright = None
-                return True
+        if pose.horizontal:
+            self.fall_active = True
+            return True
 
-        # A horizontal pose without a visible transition is not proof of a fall
-        # or of recovery from an earlier incident.
+        # Diagonal or uncertain poses cannot confirm lying or recovery.
         return None

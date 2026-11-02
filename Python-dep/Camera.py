@@ -3,6 +3,7 @@ import time
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 import mysql.connector
 from camera_alert_events import CameraAlertEvents, CameraAlertMonitor
 from fall_pose import FallPoseDetector, best_torso_from_results
@@ -16,11 +17,11 @@ from linebot.v3.messaging.api_client import ApiClient
 load_dotenv()
 
 # === Database Config (local MySQL by default) ===
-hostname = os.getenv("DB_HOST", "127.0.0.1")
-username = os.getenv("DB_USER", "root")
-password = os.getenv("DB_PASS", os.getenv("DB_PASSWORD", ""))
-database = os.getenv("DB_NAME", "spacemonitor")
-port = int(os.getenv("DB_PORT", "3306"))
+hostname = os.getenv("DB_HOST", "")
+username = os.getenv("DB_USER", "")
+password = os.getenv("DB_PASS", "")
+database = os.getenv("DB_NAME", "")
+port = int(os.getenv("DB_PORT", ""))
 
 # === LINE Config ===
 CHANNEL_ACCESS_TOKEN = os.getenv("LINE_TOKEN", "")
@@ -116,7 +117,7 @@ class CameraSource:
     path: str
     capture: object
     detector: FallPoseDetector
-    latest: bool | None = None
+    latest: Optional[bool] = None
     pending_fall: bool = False
 
     def close(self):
