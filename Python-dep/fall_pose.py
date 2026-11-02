@@ -53,6 +53,33 @@ def torso_from_keypoints(points, confidences, box, width, height):
     return TorsoPose(*shoulders, *hips)
 
 
+def best_torso_from_results(results, width, height):
+    """Choose the largest fully visible person from one YOLO pose prediction."""
+    def as_list(value):
+        return value.cpu().tolist() if hasattr(value, "cpu") else value.tolist()
+
+    best_pose = None
+    best_area = 0
+
+    for result in results:
+        if result.keypoints is None:
+            continue
+        points_by_person = as_list(result.keypoints.xy)
+        confidence_tensor = result.keypoints.conf
+        confidence_by_person = as_list(confidence_tensor) if confidence_tensor is not None else None
+        for index, box in enumerate(result.boxes):
+            if index >= len(points_by_person):
+                break
+            coords = as_list(box.xyxy[0])
+            confidences = confidence_by_person[index] if confidence_by_person is not None else None
+            pose = torso_from_keypoints(points_by_person[index], confidences, coords, width, height)
+            area = (coords[2] - coords[0]) * (coords[3] - coords[1])
+            if pose is not None and area > best_area:
+                best_pose, best_area = pose, area
+
+    return best_pose
+
+
 class FallPoseDetector:
     """Require a recent upright pose, downward motion, then a horizontal torso."""
 

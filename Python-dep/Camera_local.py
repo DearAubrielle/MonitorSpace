@@ -12,7 +12,7 @@ from ultralytics import YOLO
 
 from Camera import connect_database, get_camera_list, notify_camera
 from camera_alert_events import CameraAlertEvents, CameraAlertMonitor
-from fall_pose import FallPoseDetector, torso_from_keypoints
+from fall_pose import FallPoseDetector, best_torso_from_results
 
 
 CAMERA_INDEX = 0
@@ -22,32 +22,12 @@ CHECK_INTERVAL_SECONDS = 4.3
 WINDOW_NAME = "Device 26 - camera 0"
 
 
-def as_list(value):
-    return value.cpu().tolist() if hasattr(value, "cpu") else value.tolist()
-
-
 def draw_detections(frame, results, detector, now):
     """Draw pose keypoints and classify the current temporal observation."""
     result = results[0]
     annotated = result.plot()
     height, width = frame.shape[:2]
-    best_pose = None
-    best_area = 0
-
-    if result.keypoints is not None:
-        points_by_person = as_list(result.keypoints.xy)
-        confidence_tensor = result.keypoints.conf
-        confidence_by_person = as_list(confidence_tensor) if confidence_tensor is not None else None
-        for index, box in enumerate(result.boxes):
-            if index >= len(points_by_person):
-                break
-            coords = as_list(box.xyxy[0])
-            confidences = confidence_by_person[index] if confidence_by_person is not None else None
-            pose = torso_from_keypoints(points_by_person[index], confidences, coords, width, height)
-            area = (coords[2] - coords[0]) * (coords[3] - coords[1])
-            if pose is not None and area > best_area:
-                best_pose, best_area = pose, area
-
+    best_pose = best_torso_from_results(results, width, height)
     detected = detector.update(best_pose, width, height, now)
     status = "POSSIBLE FALL" if detected else "Upright / no fall" if detected is False else "Pose unavailable"
     color = (0, 0, 255) if detected else (0, 200, 0) if detected is False else (0, 180, 255)

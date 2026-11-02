@@ -1,8 +1,11 @@
 import cv2
 import time
 import os
+from dataclasses import dataclass
+from pathlib import Path
 import mysql.connector
 from camera_alert_events import CameraAlertEvents, CameraAlertMonitor
+from fall_pose import FallPoseDetector, best_torso_from_results
 from dotenv import load_dotenv
 from ultralytics import YOLO
 from linebot.v3.messaging import MessagingApi, PushMessageRequest, TextMessage
@@ -20,12 +23,12 @@ database = os.getenv("DB_NAME", "spacemonitor")
 port = int(os.getenv("DB_PORT", "3306"))
 
 # === LINE Config ===
-CHANNEL_ACCESS_TOKEN = 'KwOqh2ygwm/ZEELgTi8wcHx1ZTOnjkddJA1rzjBKRan7OezkRaJtstVGsgTYgtjD2KijQCS6aGsea7ivdDyQ+GX2uvE+pjqubAyokDi3VtPyN3KgFTmIFySsPMDiiKOmshW43V8evvJHx/ZWAw/j2wdB04t89/1O/w1cDnyilFU='
-USER_ID = 'C51151f2b2a353530e69ab5c43c3fb026'
+CHANNEL_ACCESS_TOKEN = os.getenv("LINE_TOKEN", "")
+USER_ID = os.getenv("LINE_USER_ID", "")
 
 # === YOLO Config ===
-MODEL_PATH = "yolov8s.pt"
-CLASSES_PATH = "classes.txt"
+MODEL_PATH = Path(__file__).with_name("yolov8n-pose.pt")
+CHECK_INTERVAL_SECONDS = 4.3
 
 # === LINE Function ===
 def send_line_message(msg):
@@ -72,48 +75,52 @@ def get_camera_list():
             conn.close()
 
 
-FALL_ASPECT_RATIO = 1.2
-
-
-def read_fall_observation(camera, model, classnames):
+def read_fall_observation(camera, model, detector, capture=None):
     """Return None for missing footage; only a processed frame can clear a check."""
-    camera_url = str(camera['path_topic'] or '').strip()
+    camera_url = str(camera['path_topic'] if camera['path_topic'] is not None else '').strip()
     if not camera_url:
         return None
 
-    cap = None
+    owns_capture = capture is None
+    cap = capture
     try:
-        cap = cv2.VideoCapture(int(camera_url) if camera_url.isdigit() else camera_url)
+        if owns_capture:
+            cap = cv2.VideoCapture(int(camera_url) if camera_url.isdigit() else camera_url)
         if not cap.isOpened():
+            detector.update(None, 0, 0, time.monotonic())
             return None
-
-        # Discard buffered frames before inspecting the latest available image.
-        for _ in range(5):
-            cap.read()
-            time.sleep(0.05)
 
         success, frame = cap.read()
         if not success or frame is None:
+            detector.update(None, 0, 0, time.monotonic())
             return None
 
-        frame = cv2.resize(frame, (640, 360))
+        # Keep the source aspect ratio so body posture is not stretched.
+        if frame.shape[1] > 960:
+            frame = cv2.resize(frame, (960, round(frame.shape[0] * 960 / frame.shape[1])))
         results = model(frame, verbose=False)
-        for result in results:
-            for box in result.boxes:
-                cls = int(box.cls[0])
-                confidence = float(box.conf[0])
-                if classnames[cls] == 'person' and confidence > 0.7:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    aspect_ratio = (x2 - x1) / (y2 - y1 + 1)
-                    if aspect_ratio > FALL_ASPECT_RATIO:
-                        return True
-        return False
+        height, width = frame.shape[:2]
+        pose = best_torso_from_results(results, width, height)
+        return detector.update(pose, width, height, time.monotonic())
     except Exception as error:
         print(f"Camera {camera['device_id']} observation failed: {error}")
+        detector.update(None, 0, 0, time.monotonic())
         return None
     finally:
-        if cap is not None:
+        if owns_capture and cap is not None:
             cap.release()
+
+
+@dataclass
+class CameraSource:
+    path: str
+    capture: object
+    detector: FallPoseDetector
+    latest: bool | None = None
+    pending_fall: bool = False
+
+    def close(self):
+        self.capture.release()
 
 
 def notify_camera(camera):
@@ -126,29 +133,69 @@ def notify_camera(camera):
 
 
 def main():
-    model = YOLO(MODEL_PATH)
-    with open(CLASSES_PATH) as classes_file:
-        classnames = classes_file.read().splitlines()
+    # Ultralytics downloads the pose model on first use if it is absent.
+    model_path = str(MODEL_PATH) if MODEL_PATH.exists() else MODEL_PATH.name
+    model = YOLO(model_path)
     events = CameraAlertEvents(connect_database)
     monitor = CameraAlertMonitor(events, notify_camera)
+    sources = {}
+    cameras = []
+    next_check = 0.0
 
-    while True:
-        cameras = get_camera_list()
-        if not cameras:
-            # A database outage must not count as uninterrupted clear footage.
-            events.reset_observations()
-            time.sleep(5)
-            continue
+    try:
+        while True:
+            if time.monotonic() >= next_check:
+                cameras = get_camera_list()
+                if not cameras:
+                    # A database outage cannot count as clear footage.
+                    events.reset_observations()
+                    for source in sources.values():
+                        source.close()
+                    sources.clear()
+                    time.sleep(5)
+                    next_check = 0.0
+                    continue
 
-        for camera in cameras:
-            detected = read_fall_observation(camera, model, classnames) if camera['alert'] else None
-            try:
-                # Rechecks the alert switch in the transaction, and closes disabled incidents.
-                monitor.observe(camera, detected)
-            except Exception as error:
-                print(f"Camera {camera['device_id']} alert update failed: {error}")
-            time.sleep(4)
-        time.sleep(0.3)
+                active_paths = {
+                    camera['device_id']: str(camera['path_topic']).strip()
+                    for camera in cameras
+                    if camera['alert'] and camera['path_topic'] is not None
+                }
+                for device_id, source in list(sources.items()):
+                    if active_paths.get(device_id) != source.path or not source.capture.isOpened():
+                        source.close()
+                        del sources[device_id]
+
+                for camera in cameras:
+                    device_id = camera['device_id']
+                    path = active_paths.get(device_id, '')
+                    if path and device_id not in sources:
+                        capture = cv2.VideoCapture(int(path) if path.isdigit() else path)
+                        sources[device_id] = CameraSource(path, capture, FallPoseDetector())
+
+                    source = sources.get(device_id)
+                    detected = (True if source.pending_fall else source.latest) if source else None
+                    try:
+                        # The monitor rechecks the alert switch in the transaction.
+                        monitor.observe(camera, detected if camera['alert'] else None)
+                        if source is not None:
+                            source.pending_fall = False
+                    except Exception as error:
+                        print(f"Camera {device_id} alert update failed: {error}")
+                next_check = time.monotonic() + CHECK_INTERVAL_SECONDS
+
+            # Keep sampling between database writes so a fast fall is visible.
+            for camera in cameras:
+                source = sources.get(camera['device_id'])
+                if source is None:
+                    continue
+                source.latest = read_fall_observation(camera, model, source.detector, source.capture)
+                if source.latest is True:
+                    source.pending_fall = True
+            time.sleep(0.01)
+    finally:
+        for source in sources.values():
+            source.close()
 
 
 if __name__ == '__main__':

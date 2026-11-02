@@ -22,8 +22,12 @@ not the worker configured by this Procfile.
 - A later incident creates a new record and can notify again.
 - History shows first detection, silence details, and generic resolution. The
   existing schema does not store last detection time or resolution reason.
+- The worker now samples enabled cameras continuously with a YOLOv8 pose model.
+  It requires a visible upright-to-horizontal transition and downward movement;
+  cropped or missing poses are unknown rather than clear checks. The camera
+  must show the full torso and floor area for this heuristic to work.
 
-Run one detector worker per camera: clear-check counters live in process memory.
+Run only one detector worker for each camera: clear-check counters live in process memory.
 Database transactions lock the camera row before creating an event to serialize
 creation. Database outages are logged and processing retries on subsequent
 checks; observations are not durably queued while the database is unavailable.
@@ -33,7 +37,8 @@ checks; observations are not durably queued while the database is unavailable.
 1. Deploy/restart the updated Node backend first. Its sensor synchronization must
    exclude cameras before the worker starts writing camera events.
 2. Deploy the client so the alert panel and History display camera descriptions.
-3. Deploy both `Camera.py` and `camera_alert_events.py`, then restart the worker
+3. Deploy `Camera.py`, `camera_alert_events.py`, `fall_pose.py`, and the
+   `yolov8n-pose.pt` model, then restart the worker
    from the `Python-dep` directory with `python Camera.py`.
 4. Verify a controlled detection appears in Alerts and the Camera history filter,
    repeated detections share one row, silence suppresses repeats, and clear

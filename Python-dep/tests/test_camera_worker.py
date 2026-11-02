@@ -37,11 +37,16 @@ class CameraWorkerTests(unittest.TestCase):
         self.camera = {'device_id': 7, 'path_topic': '0'}
         self.cap = self.cv2.VideoCapture.return_value
         self.cap.isOpened.return_value = True
-        self.cap.read.return_value = (True, object())
-        self.model = Mock(return_value=[SimpleNamespace(boxes=[])])
+        self.cap.read.return_value = (True, SimpleNamespace(shape=(480, 640, 3)))
+        self.model = Mock(return_value=[SimpleNamespace(keypoints=None)])
+        self.detector = Mock()
+        self.detector.update.return_value = False
+        pose = patch.object(self.worker, 'best_torso_from_results', return_value=object())
+        pose.start()
+        self.addCleanup(pose.stop)
 
     def read(self):
-        return self.worker.read_fall_observation(self.camera, self.model, ['person', 'chair'])
+        return self.worker.read_fall_observation(self.camera, self.model, self.detector)
 
     def test_missing_url_is_unknown(self):
         self.camera['path_topic'] = None
@@ -72,11 +77,35 @@ class CameraWorkerTests(unittest.TestCase):
         self.cv2.VideoCapture.assert_called_once_with(0)
         self.cap.release.assert_called_once()
 
-    def test_multiple_boxes_result_in_one_positive_observation(self):
-        standing = SimpleNamespace(cls=[0], conf=[0.95], xyxy=[[0, 0, 50, 200]])
-        falling = SimpleNamespace(cls=[0], conf=[0.95], xyxy=[[0, 0, 200, 50]])
-        self.model.return_value = [SimpleNamespace(boxes=[standing, falling, falling])]
+    def test_pose_detector_controls_positive_observation(self):
+        self.detector.update.return_value = True
         self.assertIs(self.read(), True)
+        self.detector.update.assert_called_once()
+        self.cap.release.assert_called_once()
+
+    def test_reused_capture_stays_open_between_frames(self):
+        self.assertIs(self.worker.read_fall_observation(
+            self.camera, self.model, self.detector, self.cap), False)
+        self.cv2.VideoCapture.assert_not_called()
+        self.cap.release.assert_not_called()
+
+    def test_main_samples_between_alert_updates(self):
+        self.camera['alert'] = 1
+        self.worker.get_camera_list = Mock(return_value=[self.camera])
+        self.worker.read_fall_observation = Mock(side_effect=[True, False])
+        self.worker.YOLO = Mock(return_value=self.model)
+        monitor = Mock()
+        self.worker.CameraAlertMonitor = Mock(return_value=monitor)
+        self.worker.CameraAlertEvents = Mock()
+
+        with patch.object(self.worker.time, 'monotonic', side_effect=[0, 0, 5, 5]), \
+             patch.object(self.worker.time, 'sleep', side_effect=[None, KeyboardInterrupt]):
+            with self.assertRaises(KeyboardInterrupt):
+                self.worker.main()
+
+        self.assertEqual(monitor.observe.call_args_list[0].args[1], None)
+        self.assertEqual(monitor.observe.call_args_list[1].args[1], True)
+        self.assertEqual(self.worker.read_fall_observation.call_count, 2)
         self.cap.release.assert_called_once()
 
 
