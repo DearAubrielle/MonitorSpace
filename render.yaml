@@ -1,0 +1,62 @@
+services:
+  - type: worker
+    name: monitorspace-mqtt
+    runtime: python
+    region: singapore
+    plan: 0.5c-512mb
+    repo: https://github.com/DearAubrielle/MonitorSpace
+    branch: main
+    rootDir: Python-dep
+    buildCommand: pip install -r requirements-mqtt.txt
+    startCommand: python -u MQTT_Add_sub.py
+    autoDeployTrigger: off
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: MQTT_HOST
+        sync: false
+      - key: MQTT_PORT
+        sync: false
+      - key: MQTT_USER
+        sync: false
+      - key: MQTT_PASS
+        sync: false
+      - key: LINE_TOKEN
+        sync: false
+      - key: LINE_USER_ID
+        sync: false
+
+  - type: worker
+    name: monitorspace-camera
+    runtime: python
+    region: singapore
+    plan: 1c-2g
+    repo: https://github.com/DearAubrielle/MonitorSpace
+    branch: main
+    rootDir: Python-dep
+    buildCommand: pip install -r requirements-camera.txt
+    startCommand: python -u Camera.py
+    autoDeployTrigger: off
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: LINE_TOKEN
+        sync: false
+      - key: LINE_USER_ID
+        sync: false

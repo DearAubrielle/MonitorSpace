@@ -1,0 +1,5 @@
+mysql-connector-python==9.4.0
+line-bot-sdk==3.17.1
+opencv-python-headless==4.9.0.80
+ultralytics==8.3.154
+python-dotenv==1.1.1
